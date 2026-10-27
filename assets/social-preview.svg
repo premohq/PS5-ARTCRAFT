@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070912"/>
+      <stop offset="1" stop-color="#0c1230"/>
+    </linearGradient>
+    <radialGradient id="glowMagenta" cx="1040" cy="90" r="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff4fd1" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#ff4fd1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCyan" cx="1220" cy="640" r="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowViolet" cx="80" cy="600" r="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#7c5cff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.045"/>
+    </pattern>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff5ccf"/>
+      <stop offset="0.5" stop-color="#8b6cff"/>
+      <stop offset="1" stop-color="#33d6ff"/>
+    </linearGradient>
+    <linearGradient id="faceTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd36e"/>
+      <stop offset="1" stop-color="#ff5ccf"/>
+    </linearGradient>
+    <linearGradient id="faceLeft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a48bff"/>
+      <stop offset="1" stop-color="#5b3df5"/>
+    </linearGradient>
+    <linearGradient id="faceRight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fe0ff"/>
+      <stop offset="1" stop-color="#1f6fff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <rect width="1280" height="640" fill="url(#glowViolet)"/>
+  <rect width="1280" height="640" fill="url(#glowMagenta)"/>
+  <rect width="1280" height="640" fill="url(#glowCyan)"/>
+
+  <!-- Watermark cube + brush strokes, top right -->
+  <g transform="translate(930 56) scale(2.6)" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1" stroke-linejoin="round">
+    <path d="M46 4 L86 27 L86 73 L46 96 L6 73 L6 27 Z M6 27 L46 50 L86 27 M46 50 L46 96"/>
+  </g>
+  <path d="M780 300 C 880 200, 980 340, 1090 240 S 1250 150, 1310 200" fill="none" stroke="url(#brand)" stroke-width="30" stroke-linecap="round" stroke-opacity="0.22"/>
+  <path d="M820 120 C 900 70, 1000 150, 1080 100" fill="none" stroke="url(#brand)" stroke-width="7" stroke-linecap="round" stroke-opacity="0.35"/>
+
+  <!-- Eyebrow pill -->
+  <g transform="translate(96 64)">
+    <rect width="190" height="36" rx="18" fill="#33d6ff" fill-opacity="0.10" stroke="#33d6ff" stroke-opacity="0.45"/>
+    <circle cx="22" cy="18" r="5.5" fill="#33d6ff"/>
+    <text x="38" y="24" font-family="JetBrains Mono" font-weight="600" font-size="16" letter-spacing="3" fill="#9be9ff">PS5 EDITION</text>
+  </g>
+
+  <!-- Logo mark: faceted cube -->
+  <g transform="translate(96 128) scale(1.3)">
+    <polygon points="46,4 86,27 46,50 6,27" fill="url(#faceTop)"/>
+    <polygon points="6,27 46,50 46,96 6,73" fill="url(#faceLeft)"/>
+    <polygon points="46,50 86,27 86,73 46,96" fill="url(#faceRight)"/>
+    <path d="M46 4 L86 27 L86 73 L46 96 L6 73 L6 27 Z M6 27 L46 50 L86 27 M46 50 L46 96" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M88 0 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#ffffff"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="246" y="234" font-family="Inter Display, Inter" font-weight="800" font-size="124" letter-spacing="-3" fill="#ffffff">Art<tspan fill="url(#brand)">Craft</tspan></text>
+
+  <!-- Tagline -->
+  <text x="98" y="318" font-family="Inter" font-weight="500" font-size="34" fill="#c7cfea">The suite of art craft software — now on PS5.</text>
+
+  <!-- Feature chips -->
+  <g font-family="Inter" font-weight="600" font-size="18" fill="#e8ecff">
+    <g transform="translate(96 352)">
+      <rect width="196" height="48" rx="24" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.16"/>
+      <g transform="translate(18 11) scale(1.1)" fill="none" stroke="#ff8ee0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2"/>
+        <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>
+      </g>
+      <text x="54" y="30.5">USB keyboard</text>
+    </g>
+    <g transform="translate(306 352)">
+      <rect width="208" height="48" rx="24" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.16"/>
+      <g transform="translate(18 11) scale(1.1)" fill="none" stroke="#b4a2ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="3" width="12" height="18" rx="6"/>
+        <path d="M12 7v4"/>
+      </g>
+      <text x="54" y="30.5">Mouse support</text>
+    </g>
+    <g transform="translate(528 352)">
+      <rect width="248" height="48" rx="24" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.16"/>
+      <g transform="translate(18 11) scale(1.1)" fill="none" stroke="#7fe6ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="2"/>
+        <rect x="9" y="9" width="6" height="6"/>
+        <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+      </g>
+      <text x="54" y="30.5">Built on Mihawk OS</text>
+    </g>
+  </g>
+
+  <!-- App tiles -->
+  <g font-family="Inter" font-weight="600" font-size="18" fill="#f2f4ff">
+    <g transform="translate(96 448)">
+      <rect width="168" height="124" rx="16" fill="#ff5ccf" fill-opacity="0.16" stroke="#ff5ccf" stroke-opacity="0.85" stroke-width="1.5"/>
+      <g transform="translate(18 18) scale(1.4)" fill="none" stroke="#ff8ee0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2"/>
+        <circle cx="9" cy="9.5" r="1.8"/>
+        <path d="M3 17l5-5 4 4 3-3 6 6"/>
+      </g>
+      <text x="18" y="104">PhotoCraft</text>
+    </g>
+    <g transform="translate(280 448)">
+      <rect width="168" height="124" rx="16" fill="#8b6cff" fill-opacity="0.14" stroke="#8b6cff" stroke-opacity="0.45"/>
+      <g transform="translate(18 18) scale(1.4)" fill="none" stroke="#b4a2ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2"/>
+        <path d="M7 4v16M17 4v16M3 8h4M3 12h4M3 16h4M17 8h4M17 12h4M17 16h4"/>
+      </g>
+      <text x="18" y="104">FilmCraft</text>
+    </g>
+    <g transform="translate(464 448)">
+      <rect width="168" height="124" rx="16" fill="#ffb547" fill-opacity="0.13" stroke="#ffb547" stroke-opacity="0.45"/>
+      <g transform="translate(18 18) scale(1.4)" fill="none" stroke="#ffcf7f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 7h9M19 7h1M4 17h3M13 17h7"/>
+        <circle cx="16" cy="7" r="2.5"/>
+        <circle cx="10" cy="17" r="2.5"/>
+      </g>
+      <text x="18" y="104">LightCraft</text>
+    </g>
+    <g transform="translate(648 448)">
+      <rect width="168" height="124" rx="16" fill="#ff6b6b" fill-opacity="0.13" stroke="#ff6b6b" stroke-opacity="0.45"/>
+      <g transform="translate(18 18) scale(1.4)" fill="none" stroke="#ff9a9a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3h8l5 5v13H6z"/>
+        <path d="M14 3v5h5"/>
+        <path d="M9 13h6M9 17h6"/>
+      </g>
+      <text x="18" y="104">PdfCraft</text>
+    </g>
+    <g transform="translate(832 448)">
+      <rect width="168" height="124" rx="16" fill="#33d6ff" fill-opacity="0.12" stroke="#33d6ff" stroke-opacity="0.45"/>
+      <g transform="translate(18 18) scale(1.4)" fill="none" stroke="#7fe6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 3l1.8 4.7 4.7 1.8-4.7 1.8L11 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/>
+        <path d="M18.5 14l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>
+      </g>
+      <text x="18" y="104">EffectCraft</text>
+    </g>
+    <g transform="translate(1016 448)">
+      <rect width="168" height="124" rx="16" fill="#3ee07f" fill-opacity="0.12" stroke="#3ee07f" stroke-opacity="0.45"/>
+      <g transform="translate(18 18) scale(1.4)" fill="none" stroke="#86efb0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+        <path d="M2 2l7.6 7.6"/>
+        <circle cx="11" cy="11" r="2"/>
+      </g>
+      <text x="18" y="104">DesignCraft</text>
+    </g>
+  </g>
+
+  <!-- Mouse cursor hovering PhotoCraft -->
+  <g transform="translate(222 512) scale(1.15)">
+    <path d="M0 0 L0 26 L7 19.5 L11.5 30 L16 28 L11.5 17.8 L21 17.8 Z" fill="#ffffff" stroke="#0b0f24" stroke-width="2" stroke-linejoin="round"/>
+  </g>
+</svg>
