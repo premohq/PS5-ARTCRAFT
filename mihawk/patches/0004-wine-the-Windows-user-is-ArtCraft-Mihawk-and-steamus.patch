@@ -1,4 +1,4 @@
-From 91a2df581e4bbe41e5cdef26d3d820eb66794f52 Mon Sep 17 00:00:00 2001
+From 8ceb4285b36e86cca7ee546b50f03d00bd4e3ad4 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 28 Oct 2026 04:00:08 +0000
 Subject: [PATCH] wine: the Windows user is ArtCraft; Mihawk and steamuser
@@ -41,14 +41,14 @@ Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
 ---
  native/proton_wine.cpp                        |   8 +-
  src/pw_wine_launch.h                          |   2 +-
- src/pw_wine_profile.c                         | 111 ++++++---
+ src/pw_wine_profile.c                         | 113 +++++++---
  src/pw_wine_profile.h                         |  79 ++++---
  tests/test_pw_wine_launch.c                   |   4 +-
  tests/test_pw_wine_profile.c                  | 211 +++++++++++++-----
  tools/stage-wine.py                           |  10 +-
  ...api32-ps5-the-windows-user-is-mihawk.patch |  16 +-
  wine/ps5/pw_wine_compat.c                     |   2 +-
- 9 files changed, 294 insertions(+), 149 deletions(-)
+ 9 files changed, 296 insertions(+), 149 deletions(-)
 
 diff --git a/native/proton_wine.cpp b/native/proton_wine.cpp
 index 4b6747f..4e82e82 100644
@@ -88,7 +88,7 @@ index 4e8454f..5cc73ff 100644
   * process. Without AppData\Roaming, .NET's GetFolderPath(ApplicationData) is empty, so a program builds a
   * relative save path; a .NET (MonoGame) game then saved beside the game and its load menu, combining that relative
 diff --git a/src/pw_wine_profile.c b/src/pw_wine_profile.c
-index a40f041..3c9f72c 100644
+index a40f041..12a240d 100644
 --- a/src/pw_wine_profile.c
 +++ b/src/pw_wine_profile.c
 @@ -11,11 +11,13 @@
@@ -257,7 +257,7 @@ index a40f041..3c9f72c 100644
          return fail(move, "folder");
      char have[sizeof(PW_WINE_PROFILE_USER) + 1] = {0};
      FILE *file = fopen(marker, "rb");
-@@ -215,10 +254,14 @@ int pw_wine_profile_migrate(const char *prefix, PwWineProfileMove *move)
+@@ -215,10 +254,16 @@ int pw_wine_profile_migrate(const char *prefix, PwWineProfileMove *move)
      }
      if (join(path, prefix, "system.reg")) return fail(move, "registry");
      const int existing = stat(path, &state) == 0;
@@ -269,10 +269,12 @@ index a40f041..3c9f72c 100644
 +        if (join(from, users, pw_wine_profile_formers[i]) || join(to, users, PW_WINE_PROFILE_USER))
 +            return fail(move, "folder");
 +        if (merge(from, to, move)) return fail(move, "folder");
-+        if (existing && stat(from, &state) != 0) {
-+            if (errno != ENOENT || ensure_link(users, pw_wine_profile_formers[i])) return fail(move, "link");
-+            move->linked++;
-+        }
++    }
++    for (size_t i = 0; existing && i < PW_WINE_PROFILE_FORMER_COUNT; i++) {
++        if (join(from, users, pw_wine_profile_formers[i])) return fail(move, "link");
++        if (stat(from, &state) == 0) continue;
++        if (errno != ENOENT || ensure_link(users, pw_wine_profile_formers[i])) return fail(move, "link");
++        move->linked++;
      }
      for (size_t i = 0; i < sizeof(registry) / sizeof(registry[0]); i++)
          if (join(path, prefix, registry[i]) || rewrite_registry(path, move)) return fail(move, "registry");

@@ -83,6 +83,10 @@ jobs:
         with:
           name: artcraft-session
           path: session
+      # The toolchain action craft-launcher's own CI uses, at the same commit (the workspace needs Rust 1.90+).
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: stable
       - name: Stage the launcher and one small app
         run: |
           python -m artcraft_ps5 fetch --apps soundcraft
