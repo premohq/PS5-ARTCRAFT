@@ -28,7 +28,7 @@ jobs:
           pacman -Syu --noconfirm --needed git python patch unzip curl
           archive=https://archive.archlinux.org/packages
           urls=()
-          for name in llvm-libs llvm clang lld compiler-rt; do
+          for name in llvm-libs llvm clang-libs clang lld compiler-rt; do
             file=$(curl -sSf "$archive/${name:0:1}/$name/" | grep -o "\"$name-$LLVM_VERSION-[0-9]*-x86_64.pkg.tar.zst\"" |
               tr -d '"' | sort -V | tail -1)
             [ -n "$file" ] || { echo "no $name $LLVM_VERSION in the Arch Linux Archive" >&2; exit 1; }
