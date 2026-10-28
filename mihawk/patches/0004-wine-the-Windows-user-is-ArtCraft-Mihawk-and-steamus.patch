@@ -1,0 +1,821 @@
+From 91a2df581e4bbe41e5cdef26d3d820eb66794f52 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 04:00:08 +0000
+Subject: [PATCH 4/4] wine: the Windows user is ArtCraft; Mihawk and steamuser
+ profiles move to it
+
+Every prefix's Windows user was Mihawk (patch 1240's GetUserNameA/W, the
+title's user folders, wine/ps5/pw_wine_compat.c's passwd), so Start's account
+row, C:\users and every Documents path said Mihawk. The ArtCraft edition's
+user is ArtCraft.
+
+A prefix made before keeps its saves in C:\users\Mihawk (MihawkOS v3, whose
+marker names Mihawk) or C:\users\steamuser (v2.0.0-alpha-1 and -2), so the
+title's one-time move (src/pw_wine_profile.h) now takes a list of former
+profiles, newest first, and moves each into users/ArtCraft by the same four
+repeatable steps:
+  - each former folder merges into ArtCraft (one rename, or name by name);
+  - each gone former name becomes a link line to ArtCraft, and a line an
+    earlier move wrote (steamuser -> Mihawk) is pointed straight at
+    ArtCraft, so no link leads to another;
+  - the registry's references to either name become ArtCraft. ArtCraft is
+    longer than Mihawk, so pw_wine_profile_rewrite now writes into a buffer
+    of pw_wine_profile_rewrite_room(length) bytes instead of in place;
+  - the marker names ArtCraft last; one naming Mihawk is moved again.
+HKCU\Software\Mihawk and \MihawkOS keys, and names that only look alike
+(users\MihawkOS, users\Mihawks, C:\Mihawk), are kept. A new prefix (the
+ArtCraft desktop's) is ArtCraft's from the start. tools/stage-wine.py's PC
+template prefix follows.
+
+Proven on the host (gcc 13, -Wall -Wextra -Werror, ASan and UBSan):
+tests/test_pw_wine_profile.c passes with its alpha-2 cases retargeted at
+ArtCraft and new ones for a whole MihawkOS v3 prefix (folder moved, saves
+kept, steamuser -> Mihawk repointed and Mihawk linked, 9 references
+rewritten, the second start a no-op), growing text and the worst-case room;
+tests/test_pw_wine_launch.c (users/ArtCraft folders) and
+tests/test_pw_wine_prefix.c pass. tools/host-tests.sh itself needs
+../PS5_Vulkan, not in this checkout. No console run.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
+---
+ native/proton_wine.cpp                        |   8 +-
+ src/pw_wine_launch.h                          |   2 +-
+ src/pw_wine_profile.c                         | 111 ++++++---
+ src/pw_wine_profile.h                         |  79 ++++---
+ tests/test_pw_wine_launch.c                   |   4 +-
+ tests/test_pw_wine_profile.c                  | 211 +++++++++++++-----
+ tools/stage-wine.py                           |  10 +-
+ ...api32-ps5-the-windows-user-is-mihawk.patch |  16 +-
+ wine/ps5/pw_wine_compat.c                     |   2 +-
+ 9 files changed, 294 insertions(+), 149 deletions(-)
+
+diff --git a/native/proton_wine.cpp b/native/proton_wine.cpp
+index 4b6747f..4e82e82 100644
+--- a/native/proton_wine.cpp
++++ b/native/proton_wine.cpp
+@@ -1353,15 +1353,15 @@ void proton_run_wine()
+     }
+     // The Windows user is Mihawk (patch 1240); a prefix made before v2.0.0-alpha-3 has Proton's C:\users\steamuser,
+     // which moves once, with its registry's paths and a link from the old name, before Wine starts on it
+-    // (src/pw_wine_profile.h). Before the user folders below, which would otherwise make an empty Mihawk beside it.
++    // (src/pw_wine_profile.h). Before the user folders below, which would otherwise make an empty ArtCraft beside it.
+     PwWineProfileMove profile_move;
+     if (pw_wine_profile_migrate(prefix.c_str(), &profile_move)) {
+         say("Wine: the profile's move to %s stopped at its %s step (%s); Wine starts, the next start goes on",
+             PW_WINE_PROFILE_USER, profile_move.step, strerror(errno));
+     } else if (!profile_move.already) {
+-        say("Wine: profile %s: %u renames, %u kept in %s, link %s, %u registry files rewritten (%zu references)",
+-            PW_WINE_PROFILE_USER, profile_move.moved, profile_move.kept, PW_WINE_PROFILE_FORMER,
+-            profile_move.linked ? "from " PW_WINE_PROFILE_FORMER : "none", profile_move.files, profile_move.replaced);
++        say("Wine: profile %s: %u renames, %u kept in former profiles (%s), %d links, %u registry files rewritten "
++            "(%zu references)", PW_WINE_PROFILE_USER, profile_move.moved, profile_move.kept, PW_WINE_PROFILE_FORMER_NAMES,
++            profile_move.linked, profile_move.files, profile_move.replaced);
+     }
+     // wineboot makes the user folders, but not in the single layout (no child processes) nor in a prefix copied
+     // from a PC; without AppData\Roaming a .NET program gets an empty application-data folder (src/pw_wine_launch.h).
+diff --git a/src/pw_wine_launch.h b/src/pw_wine_launch.h
+index 4e8454f..5cc73ff 100644
+--- a/src/pw_wine_launch.h
++++ b/src/pw_wine_launch.h
+@@ -69,7 +69,7 @@ int pw_wine_launch_host_dir(const char *prefix, const char *windows_path, char *
+  * mihawk and retired those folders (2026-10-10). Returns 0, or -1 for an invalid ID or insufficient storage. */
+ int pw_wine_launch_prefix_id(const char *requested, const char *game_id, char *out, size_t size);
+ 
+-/* The user folders wineboot makes in a prefix on Linux (C:\users\Mihawk\AppData\Roaming, Documents,
++/* The user folders wineboot makes in a prefix on Linux (C:\users\ArtCraft\AppData\Roaming, Documents,
+  * Saved Games, ... and C:\users\Public\...), which no process can make on the console: wineboot is a child
+  * process. Without AppData\Roaming, .NET's GetFolderPath(ApplicationData) is empty, so a program builds a
+  * relative save path; a .NET (MonoGame) game then saved beside the game and its load menu, combining that relative
+diff --git a/src/pw_wine_profile.c b/src/pw_wine_profile.c
+index a40f041..3c9f72c 100644
+--- a/src/pw_wine_profile.c
++++ b/src/pw_wine_profile.c
+@@ -11,11 +11,13 @@
+ 
+ enum { PATH_MAX_BYTES = 1024, TABLE_MAX = 4096 };   /* the link table as Wine's Unix side reads it, at most */
+ 
+-/* Whether text holds word (lowercase letters) here, in either case. */
++const char *const pw_wine_profile_formers[PW_WINE_PROFILE_FORMER_COUNT] = {"Mihawk", "steamuser"};
++
++/* Whether text holds word (ASCII letters) here, in either case. */
+ static int same_word(const char *text, const char *word, size_t length)
+ {
+     for (size_t i = 0; i < length; i++)
+-        if ((text[i] | 0x20) != word[i]) return 0;
++        if ((text[i] | 0x20) != (word[i] | 0x20)) return 0;
+     return 1;
+ }
+ 
+@@ -38,25 +40,40 @@ static int is_profile_name(const char *done, size_t out, char after)
+     return same_word(done + users, "users", 5) && separator_before(done, users);
+ }
+ 
+-size_t pw_wine_profile_rewrite(char *text, size_t length, size_t *replaced)
++size_t pw_wine_profile_rewrite_room(size_t length)
+ {
+-    const size_t former = strlen(PW_WINE_PROFILE_FORMER), user = strlen(PW_WINE_PROFILE_USER);
+-    size_t in = 0, out = 0, count = 0;
++    const size_t user = strlen(PW_WINE_PROFILE_USER);
++    size_t shortest = (size_t)-1;
++    for (size_t i = 0; i < PW_WINE_PROFILE_FORMER_COUNT; i++)
++        if (strlen(pw_wine_profile_formers[i]) < shortest) shortest = strlen(pw_wine_profile_formers[i]);
++    /* Each replacement reads at least `shortest` bytes and writes `user`. */
++    return user <= shortest ? length : length + (length / shortest + 1) * (user - shortest);
++}
++
++size_t pw_wine_profile_rewrite(const char *text, size_t length, char *out, size_t *replaced)
++{
++    const size_t user = strlen(PW_WINE_PROFILE_USER);
++    size_t in = 0, at = 0, count = 0;
+ 
+-    /* The new name is shorter, so the text written never passes the text read. */
+     while (in < length) {
+-        if (length - in > former && same_word(text + in, PW_WINE_PROFILE_FORMER, former) &&
+-            is_profile_name(text, out, text[in + former])) {
+-            memcpy(text + out, PW_WINE_PROFILE_USER, user);
+-            out += user;
++        size_t former = 0;
++        for (size_t i = 0; i < PW_WINE_PROFILE_FORMER_COUNT && !former; i++) {
++            const size_t name = strlen(pw_wine_profile_formers[i]);
++            if (length - in > name && same_word(text + in, pw_wine_profile_formers[i], name) &&
++                is_profile_name(out, at, text[in + name]))
++                former = name;
++        }
++        if (former) {
++            memcpy(out + at, PW_WINE_PROFILE_USER, user);
++            at += user;
+             in += former;
+             count++;
+         } else {
+-            text[out++] = text[in++];
++            out[at++] = text[in++];
+         }
+     }
+     if (replaced) *replaced = count;
+-    return out;
++    return at;
+ }
+ 
+ /* Append "/name" to path, a buffer of PATH_MAX_BYTES. */
+@@ -135,14 +152,16 @@ static int replace_file(const char *path, const char *text, size_t length)
+     return 0;
+ }
+ 
+-/* Step 2: users/.pw-symlinks names steamuser -> Mihawk, the table's other lines kept. */
+-static int ensure_link(const char *users)
++/* Step 2: users/.pw-symlinks names former -> ArtCraft, its other lines kept and an earlier line for former (steamuser
++ * -> Mihawk) pointed at ArtCraft. */
++static int ensure_link(const char *users, const char *former)
+ {
+-    static const char line[] = PW_WINE_PROFILE_FORMER "\t" PW_WINE_PROFILE_USER "\n";
+-    char table[PATH_MAX_BYTES], text[TABLE_MAX + 1];
+-    size_t have = 0;
++    char table[PATH_MAX_BYTES], text[TABLE_MAX + 1], out[TABLE_MAX + 1], line[PATH_MAX_BYTES];
++    size_t have = 0, at = 0;
++    int found = 0, changed = 0;
+ 
+-    if (join(table, users, ".pw-symlinks")) return -1;
++    const int wanted = snprintf(line, sizeof(line), "%s\t%s\n", former, PW_WINE_PROFILE_USER);
++    if (wanted <= 0 || (size_t)wanted >= sizeof(line) || join(table, users, ".pw-symlinks")) return -1;
+     FILE *file = fopen(table, "rb");
+     if (file) {
+         have = fread(text, 1, TABLE_MAX, file);
+@@ -153,12 +172,31 @@ static int ensure_link(const char *users)
+         return -1;
+     }
+     text[have] = 0;
+-    for (const char *at = text; at && *at; at = strchr(at, '\n') ? strchr(at, '\n') + 1 : NULL)
+-        if (!strncmp(at, PW_WINE_PROFILE_FORMER "\t", sizeof(PW_WINE_PROFILE_FORMER "\t") - 1)) return 0;
+-    if (have && text[have - 1] != '\n') text[have++] = '\n';
+-    if (have + sizeof(line) - 1 > TABLE_MAX) { errno = EFBIG; return -1; }
+-    memcpy(text + have, line, sizeof(line) - 1);
+-    return replace_file(table, text, have + sizeof(line) - 1);
++    const size_t key = strlen(former) + 1;   /* "former\t" */
++    for (size_t start = 0; start < have;) {
++        const char *end = memchr(text + start, '\n', have - start);
++        const size_t length = end ? (size_t)(end - (text + start)) + 1 : have - start;
++        const int ours = length > key && !strncmp(text + start, line, key);
++        const char *put = ours ? line : text + start;
++        const size_t size = ours ? (size_t)wanted : length;
++        if (ours) {
++            changed = changed || length != (size_t)wanted || memcmp(text + start, line, (size_t)wanted);
++            if (found) { start += length; changed = 1; continue; }   /* a second line for former: dropped */
++            found = 1;
++        }
++        if (at + size + 1 > TABLE_MAX) { errno = EFBIG; return -1; }
++        memcpy(out + at, put, size);
++        at += size;
++        if (!ours && !end) out[at++] = '\n';   /* the last line had no end */
++        start += length;
++    }
++    if (!found) {
++        if (at + (size_t)wanted > TABLE_MAX) { errno = EFBIG; return -1; }
++        memcpy(out + at, line, (size_t)wanted);
++        at += (size_t)wanted;
++        changed = 1;
++    }
++    return changed ? replace_file(table, out, at) : 0;
+ }
+ 
+ /* Step 3 for one registry file: rewritten when it names the former profile; a missing file is none to do. */
+@@ -167,21 +205,23 @@ static int rewrite_registry(const char *path, PwWineProfileMove *move)
+     struct stat state;
+     if (stat(path, &state) != 0) return errno == ENOENT ? 0 : -1;
+     char *text = malloc((size_t)state.st_size + 1);
+-    if (!text) { errno = ENOMEM; return -1; }
++    char *out = text ? malloc(pw_wine_profile_rewrite_room((size_t)state.st_size + 1)) : NULL;
++    if (!out) { free(text); errno = ENOMEM; return -1; }
+     FILE *file = fopen(path, "rb");
+     const size_t got = file ? fread(text, 1, (size_t)state.st_size + 1, file) : 0;
+     const int whole = file && !ferror(file) && feof(file);
+     const int saved = errno;
+     if (file) fclose(file);
+-    if (!whole) { free(text); errno = file ? EIO : saved; return -1; }
++    if (!whole) { free(text); free(out); errno = file ? EIO : saved; return -1; }
+     size_t replaced = 0;
+-    const size_t length = pw_wine_profile_rewrite(text, got, &replaced);
++    const size_t length = pw_wine_profile_rewrite(text, got, out, &replaced);
+     int status = 0;
+     if (replaced) {
+-        status = replace_file(path, text, length);
++        status = replace_file(path, out, length);
+         if (!status) { move->files++; move->replaced += replaced; }
+     }
+     free(text);
++    free(out);
+     return status;
+ }
+ 
+@@ -200,8 +240,7 @@ int pw_wine_profile_migrate(const char *prefix, PwWineProfileMove *move)
+     if (!move) { errno = EINVAL; return -1; }
+     *move = (PwWineProfileMove){0};
+     if (!prefix || !*prefix) { errno = EINVAL; return fail(move, "folder"); }
+-    if (join(marker, prefix, PW_WINE_PROFILE_MARKER) || join(users, prefix, "drive_c/users") ||
+-        join(from, users, PW_WINE_PROFILE_FORMER) || join(to, users, PW_WINE_PROFILE_USER))
++    if (join(marker, prefix, PW_WINE_PROFILE_MARKER) || join(users, prefix, "drive_c/users"))
+         return fail(move, "folder");
+     char have[sizeof(PW_WINE_PROFILE_USER) + 1] = {0};
+     FILE *file = fopen(marker, "rb");
+@@ -215,10 +254,14 @@ int pw_wine_profile_migrate(const char *prefix, PwWineProfileMove *move)
+     }
+     if (join(path, prefix, "system.reg")) return fail(move, "registry");
+     const int existing = stat(path, &state) == 0;
+-    if (merge(from, to, move)) return fail(move, "folder");
+-    if (existing && stat(from, &state) != 0) {
+-        if (errno != ENOENT || ensure_link(users)) return fail(move, "link");
+-        move->linked = 1;
++    for (size_t i = 0; i < PW_WINE_PROFILE_FORMER_COUNT; i++) {
++        if (join(from, users, pw_wine_profile_formers[i]) || join(to, users, PW_WINE_PROFILE_USER))
++            return fail(move, "folder");
++        if (merge(from, to, move)) return fail(move, "folder");
++        if (existing && stat(from, &state) != 0) {
++            if (errno != ENOENT || ensure_link(users, pw_wine_profile_formers[i])) return fail(move, "link");
++            move->linked++;
++        }
+     }
+     for (size_t i = 0; i < sizeof(registry) / sizeof(registry[0]); i++)
+         if (join(path, prefix, registry[i]) || rewrite_registry(path, move)) return fail(move, "registry");
+diff --git a/src/pw_wine_profile.h b/src/pw_wine_profile.h
+index 1e319ba..c5b36d8 100644
+--- a/src/pw_wine_profile.h
++++ b/src/pw_wine_profile.h
+@@ -2,56 +2,69 @@
+ #ifndef PW_WINE_PROFILE_H
+ #define PW_WINE_PROFILE_H
+ /*
+- * The Windows user of every prefix, and the one-time move of an older prefix's profile to that user.
++ * The Windows user of every prefix, ArtCraft, and the one-time move of an older prefix's profile to that user.
+  *
+- * Wine names the profile after GetUserNameW, which patch 1240 makes "Mihawk" (Proton answered a fixed "steamuser"):
+- * shell32 expands %USERPROFILE% to C:\users\<name>, so Documents, AppData and Saved Games live there, and wineboot
+- * records the folder in the registry. A prefix made by v2.0.0-alpha-1 or -2 keeps the user's saves and settings in
+- * C:\users\steamuser, and its registry names that folder: User Shell Folders and Shell Folders (user.reg, userdef.reg),
+- * TEMP and TMP, the saved Volatile Environment (USERNAME, USERPROFILE, HOMEPATH), ProfileList's ProfileImagePath
+- * (system.reg) and any path a program recorded. Started as it is, the new Wine would make an empty C:\users\Mihawk
+- * beside it, and every game would lose its saves.
++ * Wine names the profile after GetUserNameW, which patch 1240 makes "ArtCraft" (Proton answered a fixed "steamuser",
++ * MihawkOS v3 "Mihawk"): shell32 expands %USERPROFILE% to C:\users\<name>, so Documents, AppData and Saved Games live
++ * there, and wineboot records the folder in the registry. A prefix made by MihawkOS keeps the user's saves and settings
++ * in C:\users\Mihawk (v3.0.0) or C:\users\steamuser (v2.0.0-alpha-1 and -2), and its registry names that folder: User
++ * Shell Folders and Shell Folders (user.reg, userdef.reg), TEMP and TMP, the saved Volatile Environment (USERNAME,
++ * USERPROFILE, HOMEPATH), ProfileList's ProfileImagePath (system.reg) and any path a program recorded. Started as it
++ * is, the new Wine would make an empty C:\users\ArtCraft beside it, and every game would lose its saves.
+  *
+  * pw_wine_profile_migrate moves such a prefix, in the title, before Wine starts on it (no wineserver holds the registry
+  * then), in four steps that are each safe to repeat, so an interrupted move finishes on the next start:
+- *   1. users/steamuser moves into users/Mihawk: one rename, or, when Mihawk exists too (a deploy or an earlier run made
+- *      its folders), name by name, renaming whatever Mihawk lacks and descending into folders both hold. A file both
+- *      hold stays where it is in steamuser: no copy is lost, steamuser stays a real folder, and step 2 is skipped.
+- *   2. users/steamuser becomes a link to Mihawk, for programs that stored the old absolute path (a config file, a
+- *      registry hex value). A title cannot make symbolic links: it is a line of users/.pw-symlinks, the table Wine's
+- *      Unix side follows (wine/ps5/pw_wine_cwd.h). Explorer does not list it (a dot file), so C:\users shows Mihawk
+- *      and Public. The link matches the exact name only: a stored C:\users\SteamUser does not follow it.
+- *   3. Each registry file's references become Mihawk (pw_wine_profile_rewrite), written beside the file, synced and
+- *      renamed over it, so a crash leaves the old file or the new one.
+- *   4. PW_WINE_PROFILE_MARKER is written, last: a prefix holding it is not looked at again.
+- * A prefix with no registry yet (the title makes it, Wine fills it) is Mihawk's from the start: only the marker is
++ *   1. Each former profile (pw_wine_profile_formers, newest first) moves into users/ArtCraft: one rename, or, when
++ *      ArtCraft exists too (a deploy, an earlier run or an older former profile made its folders), name by name,
++ *      renaming whatever ArtCraft lacks and descending into folders both hold. A file both hold stays where it is in
++ *      the former profile: no copy is lost, that folder stays a real folder, and step 2 is skipped for it.
++ *   2. Each former profile folder that is gone becomes a link to ArtCraft, for programs that stored the old absolute
++ *      path (a config file, a registry hex value). A title cannot make symbolic links: it is a line of
++ *      users/.pw-symlinks, the table Wine's Unix side follows (wine/ps5/pw_wine_cwd.h). A line an earlier move wrote
++ *      (steamuser to Mihawk) is pointed at ArtCraft, so no link leads to another. Explorer does not list the table (a
++ *      dot file), so C:\users shows ArtCraft and Public. A link matches the exact name only: a stored
++ *      C:\users\SteamUser does not follow it.
++ *   3. Each registry file's references to a former profile become ArtCraft (pw_wine_profile_rewrite), written beside
++ *      the file, synced and renamed over it, so a crash leaves the old file or the new one.
++ *   4. PW_WINE_PROFILE_MARKER is written, last, holding the user's name: a prefix whose marker names ArtCraft is not
++ *      looked at again; one that names Mihawk (MihawkOS v3 wrote it) is moved as above.
++ * A prefix with no registry yet (the title makes it, Wine fills it) is ArtCraft's from the start: only the marker is
+  * written. A refusal (an I/O error) stops at its step without the marker; the title logs it and starts Wine anyway,
+  * and the next start goes on from there.
+  */
+ #include <stddef.h>
+ 
+-#define PW_WINE_PROFILE_USER "Mihawk"
+-#define PW_WINE_PROFILE_FORMER "steamuser"
++#define PW_WINE_PROFILE_USER "ArtCraft"
+ #define PW_WINE_PROFILE_MARKER ".pw-profile-user"
++/* The former profiles' names, newest first, for the title's log. */
++#define PW_WINE_PROFILE_FORMER_NAMES "Mihawk, steamuser"
++enum { PW_WINE_PROFILE_FORMER_COUNT = 2 };
++/* The former profiles' folder names, as MihawkOS v3 and Proton made them, newest first; ASCII letters only. */
++extern const char *const pw_wine_profile_formers[PW_WINE_PROFILE_FORMER_COUNT];
+ 
+ typedef struct PwWineProfileMove {
+-    int already;         /* the marker was there: nothing was looked at */
+-    unsigned moved;      /* renames into users/Mihawk (1: the whole folder at once) */
+-    unsigned kept;       /* names both profiles held as files, left in users/steamuser */
+-    int linked;          /* users/steamuser leads to users/Mihawk (a link added or already there) */
++    int already;         /* the marker named ArtCraft: nothing was looked at */
++    unsigned moved;      /* renames into users/ArtCraft (1 per former profile moved as a whole) */
++    unsigned kept;       /* names a former profile and ArtCraft both held as files, left in the former one */
++    int linked;          /* former profiles that now lead to users/ArtCraft (a link added, repointed or already there) */
+     unsigned files;      /* registry files rewritten */
+-    size_t replaced;     /* references to the former profile they held */
++    size_t replaced;     /* references to former profiles they held */
+     const char *step;    /* on -1: "folder", "link", "registry" or "marker" */
+ } PwWineProfileMove;
+ 
+-/* Rewrite registry text (a .reg file, in place) so the former profile is Mihawk's: "steamuser", in either case, after
+- * a users folder and a separator (\\ as the file escapes a backslash, or /) and followed by a separator, a quote, ';',
+- * ',' or ']' (C:\users\steamuser\Documents, \users\steamuser, C:/users/steamuser), or as a whole quoted string
+- * ("USERNAME"="steamuser"). Other text, hex values among it, is kept. Returns the new length (never longer); counts
+- * the replacements into *replaced when it is not NULL. */
+-size_t pw_wine_profile_rewrite(char *text, size_t length, size_t *replaced);
++/* The bytes pw_wine_profile_rewrite may write for `length` bytes of text: ArtCraft is longer than Mihawk, so the text
++ * can grow. */
++size_t pw_wine_profile_rewrite_room(size_t length);
+ 
+-/* Move the prefix folder's profile to Mihawk as above. Returns 0 (move says what was done), or -1 with errno set and
++/* Rewrite registry text (a .reg file) into out, which holds pw_wine_profile_rewrite_room(length) bytes, so former
++ * profiles are ArtCraft's: a former name, in either case, after a users folder and a separator (\\ as the file escapes
++ * a backslash, or /) and followed by a separator, a quote, ';', ',' or ']' (C:\users\Mihawk\Documents,
++ * \users\steamuser, C:/users/Mihawk), or as a whole quoted string ("USERNAME"="Mihawk"). Other text, hex values and
++ * the HKCU\Software\Mihawk keys among it, is kept. Returns the new length; counts the replacements into *replaced when
++ * it is not NULL. text and out must not overlap. */
++size_t pw_wine_profile_rewrite(const char *text, size_t length, char *out, size_t *replaced);
++
++/* Move the prefix folder's profile to ArtCraft as above. Returns 0 (move says what was done), or -1 with errno set and
+  * move->step naming the step that failed. */
+ int pw_wine_profile_migrate(const char *prefix, PwWineProfileMove *move);
+ #endif
+diff --git a/tests/test_pw_wine_launch.c b/tests/test_pw_wine_launch.c
+index 7477ba0..8f8d8db 100644
+--- a/tests/test_pw_wine_launch.c
++++ b/tests/test_pw_wine_launch.c
+@@ -152,9 +152,9 @@ static void test_profile_dirs(void)
+     assert(mkdir(path, 0777) == 0);
+     /* Parents come before children, so one pass makes the whole tree; a second pass changes nothing. */
+     assert(pw_wine_launch_profile_dirs(base, make_dir, &calls) == 0 && calls == 24);
+-    snprintf(path, sizeof(path), "%s/drive_c/users/Mihawk/AppData/Roaming", base);
++    snprintf(path, sizeof(path), "%s/drive_c/users/ArtCraft/AppData/Roaming", base);
+     assert(stat(path, &status) == 0 && S_ISDIR(status.st_mode));
+-    snprintf(path, sizeof(path), "%s/drive_c/users/Mihawk/Saved Games", base);
++    snprintf(path, sizeof(path), "%s/drive_c/users/ArtCraft/Saved Games", base);
+     assert(stat(path, &status) == 0 && S_ISDIR(status.st_mode));
+     snprintf(path, sizeof(path), "%s/drive_c/users/Public/Videos", base);
+     assert(stat(path, &status) == 0 && S_ISDIR(status.st_mode));
+diff --git a/tests/test_pw_wine_profile.c b/tests/test_pw_wine_profile.c
+index c84e4ee..e2daa49 100644
+--- a/tests/test_pw_wine_profile.c
++++ b/tests/test_pw_wine_profile.c
+@@ -1,6 +1,7 @@
+ /* SPDX-License-Identifier: GPL-3.0-or-later */
+-/* The move of a prefix's profile from steamuser to Mihawk (src/pw_wine_profile.h), on a prefix laid out as an alpha-2
+- * console prefix is: its three registry files with the lines the console's wineboot wrote, a save in Documents.
++/* The move of a prefix's profile to ArtCraft (src/pw_wine_profile.h): from steamuser, on a prefix laid out as an
++ * alpha-2 console prefix is (its three registry files with the lines the console's wineboot wrote, a save in
++ * Documents), and from Mihawk, on one laid out as a MihawkOS v3 prefix is (the same, moved to Mihawk by v3's title).
+  * PW_PROFILE_REAL_REGISTRY=<folder holding a console prefix's system.reg/user.reg/userdef.reg> also moves a copy of a
+  * real one (never committed: it is a user's state). */
+ #include "../src/pw_wine_profile.h"
+@@ -41,25 +42,54 @@ static const char userdef_reg[] =
+     "WINE REGISTRY Version 2\n;; All keys relative to \\\\User\\\\.Default\n\n#arch=win64\n\n"
+     "[Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\Shell Folders] 1791520605\n"
+     "\"AppData\"=\"C:\\\\users\\\\steamuser\\\\AppData\\\\Roaming\"\n";
+-/* user_reg as Mihawk's: every reference above replaced, nothing else. */
++/* user_reg as ArtCraft's: every reference above replaced, nothing else. */
+ static const char user_reg_moved[] =
+     "WINE REGISTRY Version 2\n;; All keys relative to \\\\User\\\\S-1-5-21-0-0-0-1000\n\n#arch=win64\n\n"
+-    "[Environment] 1791520605\n\"TEMP\"=\"C:\\\\users\\\\Mihawk\\\\AppData\\\\Local\\\\Temp\"\n"
+-    "\"TMP\"=\"C:\\\\users\\\\Mihawk\\\\AppData\\\\Local\\\\Temp\"\n\n"
++    "[Environment] 1791520605\n\"TEMP\"=\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Local\\\\Temp\"\n"
++    "\"TMP\"=\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Local\\\\Temp\"\n\n"
+     "[Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\User Shell Folders] 1791520605\n"
+-    "\"Personal\"=\"C:\\\\users\\\\Mihawk\\\\Documents\"\n"
+-    "\"{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}\"=\"C:\\\\users\\\\Mihawk\\\\Saved Games\"\n\n"
++    "\"Personal\"=\"C:\\\\users\\\\ArtCraft\\\\Documents\"\n"
++    "\"{4C5C32FF-BB9D-43B0-B5B4-2D72E54EAAA4}\"=\"C:\\\\users\\\\ArtCraft\\\\Saved Games\"\n\n"
+     "[Software\\\\Wine\\\\MUICache] 1791520605\n"
+-    "\"C:\\\\Users\\\\Mihawk\\\\Desktop\\\\Game.exe\"=\"Game\"\n\n"
++    "\"C:\\\\Users\\\\ArtCraft\\\\Desktop\\\\Game.exe\"=\"Game\"\n\n"
+     "[Software\\\\Game] 1791520605\n"
+-    "\"Launch\"=\"\\\"C:\\\\users\\\\Mihawk\\\\AppData\\\\Game\\\\run.exe\\\" -x\"\n"
+-    "\"Unix\"=\"Z:\\\\data\\\\ps5proton\\\\prefixes\\\\mihawk\\\\drive_c\\\\users\\\\Mihawk\\\\AppData\"\n"
+-    "\"Slashes\"=\"C:/users/Mihawk/Documents/My Games\"\n"
+-    "\"List\"=\"C:\\\\users\\\\Mihawk;C:\\\\users\\\\Mihawk,D:\\\\\"\n"
++    "\"Launch\"=\"\\\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Game\\\\run.exe\\\" -x\"\n"
++    "\"Unix\"=\"Z:\\\\data\\\\ps5proton\\\\prefixes\\\\mihawk\\\\drive_c\\\\users\\\\ArtCraft\\\\AppData\"\n"
++    "\"Slashes\"=\"C:/users/ArtCraft/Documents/My Games\"\n"
++    "\"List\"=\"C:\\\\users\\\\ArtCraft;C:\\\\users\\\\ArtCraft,D:\\\\\"\n"
+     "\"Other\"=\"C:\\\\users\\\\steamuserdata\\\\x C:\\\\steamuser\\\\x myusers\\\\steamuser\\\\x steamuser2\"\n"
+     "\"Hex\"=hex(2):43,00,3a,00,5c,00,75,00,73,00,65,00,72,00,73,00,5c,00\n\n"
++    "[Volatile Environment] 1791520605\n\"HOMEPATH\"=\"\\\\users\\\\ArtCraft\"\n"
++    "\"USERNAME\"=\"ArtCraft\"\n\"USERPROFILE\"=\"C:\\\\users\\\\ArtCraft\"\n";
++
++/* A MihawkOS v3 prefix's user.reg: its profile is Mihawk, beside its shell's own keys and names that only look alike. */
++static const char user_reg_v3[] =
++    "WINE REGISTRY Version 2\n;; All keys relative to \\\\User\\\\S-1-5-21-0-0-0-1000\n\n#arch=win64\n\n"
++    "[Environment] 1791520605\n\"TEMP\"=\"C:\\\\users\\\\Mihawk\\\\AppData\\\\Local\\\\Temp\"\n"
++    "\"TMP\"=\"C:\\\\users\\\\Mihawk\\\\AppData\\\\Local\\\\Temp\"\n\n"
++    "[Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\User Shell Folders] 1791520605\n"
++    "\"Personal\"=\"C:\\\\users\\\\Mihawk\\\\Documents\"\n\n"
++    "[Software\\\\Mihawk\\\\Shell] 1791520605\n\"BrowserPinned\"=dword:00000001\n\n"
++    "[Software\\\\MihawkOS] 1791520605\n\"WallpaperInitialized\"=dword:00000001\n\n"
++    "[Software\\\\Game] 1791520605\n"
++    "\"Slashes\"=\"C:/users/mihawk/Documents/My Games\"\n"
++    "\"Other\"=\"C:\\\\users\\\\MihawkOS\\\\x C:\\\\users\\\\Mihawks\\\\x C:\\\\Mihawk\\\\x Mihawk2\"\n\n"
+     "[Volatile Environment] 1791520605\n\"HOMEPATH\"=\"\\\\users\\\\Mihawk\"\n"
+     "\"USERNAME\"=\"Mihawk\"\n\"USERPROFILE\"=\"C:\\\\users\\\\Mihawk\"\n";
++/* user_reg_v3 as ArtCraft's: the seven profile references replaced, the shell's keys and the look-alikes kept. */
++static const char user_reg_moved_v3[] =
++    "WINE REGISTRY Version 2\n;; All keys relative to \\\\User\\\\S-1-5-21-0-0-0-1000\n\n#arch=win64\n\n"
++    "[Environment] 1791520605\n\"TEMP\"=\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Local\\\\Temp\"\n"
++    "\"TMP\"=\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Local\\\\Temp\"\n\n"
++    "[Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Explorer\\\\User Shell Folders] 1791520605\n"
++    "\"Personal\"=\"C:\\\\users\\\\ArtCraft\\\\Documents\"\n\n"
++    "[Software\\\\Mihawk\\\\Shell] 1791520605\n\"BrowserPinned\"=dword:00000001\n\n"
++    "[Software\\\\MihawkOS] 1791520605\n\"WallpaperInitialized\"=dword:00000001\n\n"
++    "[Software\\\\Game] 1791520605\n"
++    "\"Slashes\"=\"C:/users/ArtCraft/Documents/My Games\"\n"
++    "\"Other\"=\"C:\\\\users\\\\MihawkOS\\\\x C:\\\\users\\\\Mihawks\\\\x C:\\\\Mihawk\\\\x Mihawk2\"\n\n"
++    "[Volatile Environment] 1791520605\n\"HOMEPATH\"=\"\\\\users\\\\ArtCraft\"\n"
++    "\"USERNAME\"=\"ArtCraft\"\n\"USERPROFILE\"=\"C:\\\\users\\\\ArtCraft\"\n";
+ 
+ static char base[] = "/tmp/pw-wine-profile-XXXXXX";
+ 
+@@ -121,33 +151,55 @@ static void old_prefix(void)
+ static void assert_moved(void)
+ {
+     assert(!exists("drive_c/users/steamuser"));
+-    assert(!strcmp(get("drive_c/users/Mihawk/Documents/My Games/save.dat"), "day 12, 3 hearts"));
+-    assert(!strcmp(get("drive_c/users/Mihawk/Saved Games/slot1"), "slot one"));
++    assert(!strcmp(get("drive_c/users/ArtCraft/Documents/My Games/save.dat"), "day 12, 3 hearts"));
++    assert(!strcmp(get("drive_c/users/ArtCraft/Saved Games/slot1"), "slot one"));
+     assert(exists("drive_c/users/Public/Documents"));
+-    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "steamuser\tMihawk\n"));
++    /* Both former names lead to ArtCraft, in whichever order the moves wrote them. */
++    const char *links = get("drive_c/users/.pw-symlinks");
++    assert(!strcmp(links, "steamuser\tArtCraft\nMihawk\tArtCraft\n") || !strcmp(links, "Mihawk\tArtCraft\nsteamuser\tArtCraft\n"));
+     assert(!strcmp(get("user.reg"), user_reg_moved));
+-    assert(!strstr(get("system.reg"), "steamuser") && strstr(get("system.reg"), "\"ProfileImagePath\"=\"C:\\\\users\\\\Mihawk\""));
++    assert(!strstr(get("system.reg"), "steamuser") && strstr(get("system.reg"), "\"ProfileImagePath\"=\"C:\\\\users\\\\ArtCraft\""));
+     assert(!strstr(get("userdef.reg"), "steamuser"));
+     assert(!exists("user.reg.pw-profile-new") && !exists("drive_c/users/.pw-symlinks.pw-profile-new"));
+-    assert(!strcmp(get(PW_WINE_PROFILE_MARKER), "Mihawk\n"));
++    assert(!strcmp(get(PW_WINE_PROFILE_MARKER), "ArtCraft\n"));
++}
++
++/* Rewrite text into a fresh buffer of the room the header asks for; returns it NUL-terminated (static). */
++static const char *rewritten(const char *text, size_t length, size_t *out_length, size_t *replaced)
++{
++    static char out[16384];
++    assert(pw_wine_profile_rewrite_room(length) < sizeof(out));
++    memset(out, 0x55, sizeof(out));
++    const size_t got = pw_wine_profile_rewrite(text, length, out, replaced);
++    assert(got <= pw_wine_profile_rewrite_room(length));
++    out[got] = 0;
++    if (out_length) *out_length = got;
++    return out;
+ }
+ 
+ static void test_rewrite(void)
+ {
+-    char text[sizeof(user_reg)];
+-    size_t replaced = 99;
+-    memcpy(text, user_reg, sizeof(user_reg));
+-    size_t length = pw_wine_profile_rewrite(text, sizeof(user_reg) - 1, &replaced);
+-    text[length] = 0;
++    size_t replaced = 99, length = 0;
++    const char *text = rewritten(user_reg, sizeof(user_reg) - 1, &length, &replaced);
+     assert(!strcmp(text, user_reg_moved) && replaced == 13);
+-    assert(length == sizeof(user_reg) - 1 - 13 * 3);
++    assert(length == sizeof(user_reg) - 1 - 13 * 1);
+     /* Once moved, nothing more is. */
+-    assert(pw_wine_profile_rewrite(text, length, &replaced) == length && replaced == 0);
++    char again[sizeof(user_reg)];
++    memcpy(again, text, length + 1);
++    assert(!strcmp(rewritten(again, length, NULL, &replaced), user_reg_moved) && replaced == 0);
+     /* The name at the very end (no quote after it) and at the start are not a profile's. */
+-    char edge[] = "\\\\users\\\\steamuser";
+-    assert(pw_wine_profile_rewrite(edge, sizeof(edge) - 1, &replaced) == sizeof(edge) - 1 && replaced == 0);
+-    char start[] = "steamuser\"";
+-    assert(pw_wine_profile_rewrite(start, sizeof(start) - 1, NULL) == sizeof(start) - 1);
++    static const char edge[] = "\\\\users\\\\steamuser";
++    assert(!strcmp(rewritten(edge, sizeof(edge) - 1, NULL, &replaced), edge) && replaced == 0);
++    static const char start[] = "steamuser\"";
++    assert(!strcmp(rewritten(start, sizeof(start) - 1, NULL, NULL), start));
++    /* MihawkOS v3's profile grows into ArtCraft's; its own keys and look-alikes are kept. */
++    size_t grown = 0;
++    assert(!strcmp(rewritten(user_reg_v3, sizeof(user_reg_v3) - 1, &grown, &replaced), user_reg_moved_v3));
++    assert(replaced == 7 && grown == sizeof(user_reg_v3) - 1 + 7 * 2);
++    /* The worst case: nothing but quoted names, each grown by two bytes, within the room. */
++    static const char names[] = "\"Mihawk\"\"Mihawk\"\"Mihawk\"";
++    assert(!strcmp(rewritten(names, sizeof(names) - 1, &grown, &replaced), "\"ArtCraft\"\"ArtCraft\"\"ArtCraft\"") &&
++           replaced == 3);
+ }
+ 
+ static void test_migrate(void)
+@@ -169,28 +221,25 @@ static void test_interrupted(void)
+ 
+     /* Stopped after the folder's rename: the link, the registry and the marker are still to do. */
+     old_prefix();
+-    assert(rename(at("drive_c/users/steamuser"), at("drive_c/users/Mihawk")) == 0);
++    assert(rename(at("drive_c/users/steamuser"), at("drive_c/users/ArtCraft")) == 0);
+     assert(pw_wine_profile_migrate(base, &move) == 0 && move.moved == 0 && move.linked && move.files == 3);
+     assert_moved();
+ 
+-    /* Stopped in the middle of a merge (a deploy had made Mihawk's empty folders): part moved, part not. */
++    /* Stopped in the middle of a merge (a deploy had made ArtCraft's empty folders): part moved, part not. */
+     old_prefix();
+-    static const char *const skeleton[] = {"drive_c/users/Mihawk", "drive_c/users/Mihawk/Documents",
+-        "drive_c/users/Mihawk/Downloads", "drive_c/users/Mihawk/Saved Games", NULL};
++    static const char *const skeleton[] = {"drive_c/users/ArtCraft", "drive_c/users/ArtCraft/Documents",
++        "drive_c/users/ArtCraft/Downloads", "drive_c/users/ArtCraft/Saved Games", NULL};
+     folders(skeleton);
+-    assert(rename(at("drive_c/users/steamuser/Saved Games/slot1"), at("drive_c/users/Mihawk/Saved Games/slot1")) == 0);
++    assert(rename(at("drive_c/users/steamuser/Saved Games/slot1"), at("drive_c/users/ArtCraft/Saved Games/slot1")) == 0);
+     assert(pw_wine_profile_migrate(base, &move) == 0 && move.moved == 2 && !move.kept && move.linked);
+     assert_moved();
+-    assert(exists("drive_c/users/Mihawk/Downloads"));
++    assert(exists("drive_c/users/ArtCraft/Downloads"));
+ 
+     /* Stopped while rewriting the registry: system.reg done, user.reg's new copy half written, the link there. */
+     old_prefix();
+-    assert(rename(at("drive_c/users/steamuser"), at("drive_c/users/Mihawk")) == 0);
+-    put("drive_c/users/.pw-symlinks", "steamuser\tMihawk\n");
+-    char text[sizeof(system_reg)];
+-    memcpy(text, system_reg, sizeof(system_reg));
+-    text[pw_wine_profile_rewrite(text, sizeof(system_reg) - 1, NULL)] = 0;
+-    put("system.reg", text);
++    assert(rename(at("drive_c/users/steamuser"), at("drive_c/users/ArtCraft")) == 0);
++    put("drive_c/users/.pw-symlinks", "steamuser\tArtCraft\n");
++    put("system.reg", rewritten(system_reg, sizeof(system_reg) - 1, NULL, NULL));
+     put("user.reg.pw-profile-new", "WINE REGISTRY Version 2\n[Envir");
+     assert(pw_wine_profile_migrate(base, &move) == 0 && move.files == 2 && move.linked);
+     assert_moved();
+@@ -200,7 +249,7 @@ static void test_interrupted(void)
+     assert(pw_wine_profile_migrate(base, &move) == 0 && !move.already && !move.moved && move.linked && !move.files);
+     assert_moved();
+     /* A torn marker is no marker. */
+-    put(PW_WINE_PROFILE_MARKER, "Mih");
++    put(PW_WINE_PROFILE_MARKER, "Art");
+     assert(pw_wine_profile_migrate(base, &move) == 0 && !move.already);
+     assert_moved();
+ }
+@@ -209,36 +258,37 @@ static void test_conflicts_and_tables(void)
+ {
+     PwWineProfileMove move;
+ 
+-    /* A file both profiles hold: Mihawk's stays, steamuser's is kept where it was, so the old name is no link. */
++    /* A file both profiles hold: ArtCraft's stays, steamuser's is kept where it was, so that name is no link (Mihawk,
++     * never a folder here, still leads to ArtCraft, as every former name of a prefix made before does). */
+     old_prefix();
+-    static const char *const newer[] = {"drive_c/users/Mihawk", "drive_c/users/Mihawk/Documents",
+-        "drive_c/users/Mihawk/Documents/My Games", NULL};
++    static const char *const newer[] = {"drive_c/users/ArtCraft", "drive_c/users/ArtCraft/Documents",
++        "drive_c/users/ArtCraft/Documents/My Games", NULL};
+     folders(newer);
+-    put("drive_c/users/Mihawk/Documents/My Games/save.dat", "day 1");
+-    assert(pw_wine_profile_migrate(base, &move) == 0 && move.kept == 1 && !move.linked && move.files == 3);
+-    assert(!strcmp(get("drive_c/users/Mihawk/Documents/My Games/save.dat"), "day 1"));
++    put("drive_c/users/ArtCraft/Documents/My Games/save.dat", "day 1");
++    assert(pw_wine_profile_migrate(base, &move) == 0 && move.kept == 1 && move.linked == 1 && move.files == 3);
++    assert(!strcmp(get("drive_c/users/ArtCraft/Documents/My Games/save.dat"), "day 1"));
+     assert(!strcmp(get("drive_c/users/steamuser/Documents/My Games/save.dat"), "day 12, 3 hearts"));
+-    assert(!strcmp(get("drive_c/users/Mihawk/Saved Games/slot1"), "slot one"));
+-    assert(!exists("drive_c/users/steamuser/Saved Games") && !exists("drive_c/users/.pw-symlinks"));
+-    assert(!strcmp(get("user.reg"), user_reg_moved) && !strcmp(get(PW_WINE_PROFILE_MARKER), "Mihawk\n"));
++    assert(!strcmp(get("drive_c/users/ArtCraft/Saved Games/slot1"), "slot one"));
++    assert(!exists("drive_c/users/steamuser/Saved Games") && !strcmp(get("drive_c/users/.pw-symlinks"), "Mihawk\tArtCraft\n"));
++    assert(!strcmp(get("user.reg"), user_reg_moved) && !strcmp(get(PW_WINE_PROFILE_MARKER), "ArtCraft\n"));
+ 
+-    /* A table with other links keeps them; one already naming steamuser is left as it is. */
++    /* A table with other links keeps them; one already naming steamuser for ArtCraft is left as it is. */
+     old_prefix();
+     put("drive_c/users/.pw-symlinks", "games\t/data/games");
+     assert(pw_wine_profile_migrate(base, &move) == 0 && move.linked);
+-    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "games\t/data/games\nsteamuser\tMihawk\n"));
++    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "games\t/data/games\nMihawk\tArtCraft\nsteamuser\tArtCraft\n"));
+     old_prefix();
+-    put("drive_c/users/.pw-symlinks", "steamuser\tMihawk\ngames\t/data/games\n");
++    put("drive_c/users/.pw-symlinks", "steamuser\tArtCraft\ngames\t/data/games\n");
+     assert(pw_wine_profile_migrate(base, &move) == 0 && move.linked);
+-    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "steamuser\tMihawk\ngames\t/data/games\n"));
++    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "steamuser\tArtCraft\ngames\t/data/games\nMihawk\tArtCraft\n"));
+ 
+-    /* A prefix the title is about to make: Mihawk's from the start, so only the marker, and no link. */
++    /* A prefix the title is about to make: ArtCraft's from the start, so only the marker, and no link. */
+     old_prefix();
+     char cleanup[128];
+     snprintf(cleanup, sizeof(cleanup), "rm -rf '%s'/*", base);
+     assert(system(cleanup) == 0);
+     assert(pw_wine_profile_migrate(base, &move) == 0 && !move.moved && !move.linked && !move.files);
+-    assert(!exists("drive_c") && !strcmp(get(PW_WINE_PROFILE_MARKER), "Mihawk\n"));
++    assert(!exists("drive_c") && !strcmp(get(PW_WINE_PROFILE_MARKER), "ArtCraft\n"));
+ 
+     /* Refusals name their step. */
+     assert(pw_wine_profile_migrate(NULL, &move) == -1 && errno == EINVAL);
+@@ -254,6 +304,44 @@ static void test_conflicts_and_tables(void)
+     assert_moved();
+ }
+ 
++/* A MihawkOS v3 prefix: its profile in Mihawk (v3's title had moved it from steamuser and left that link), its marker
++ * naming Mihawk. It moves once more, to ArtCraft, and the old link is pointed straight at ArtCraft. */
++static void test_mihawk_v3(void)
++{
++    static const char *const made[] = {"drive_c", "drive_c/users", "drive_c/users/Public",
++        "drive_c/users/Public/Documents", "drive_c/users/Mihawk", "drive_c/users/Mihawk/AppData",
++        "drive_c/users/Mihawk/Documents", "drive_c/users/Mihawk/Documents/My Games", "drive_c/users/Mihawk/Saved Games",
++        NULL};
++    PwWineProfileMove move;
++    char cleanup[128];
++    snprintf(cleanup, sizeof(cleanup), "rm -rf '%s'/* '%s'/.pw-*", base, base);
++    assert(system(cleanup) == 0);
++    folders(made);
++    put("system.reg", "WINE REGISTRY Version 2\n\"ProfileImagePath\"=\"C:\\\\users\\\\Mihawk\"\n");
++    put("user.reg", user_reg_v3);
++    put("userdef.reg", "WINE REGISTRY Version 2\n\"AppData\"=\"C:\\\\users\\\\Mihawk\\\\AppData\\\\Roaming\"\n");
++    put("drive_c/users/Mihawk/Documents/My Games/save.dat", "day 40, 5 hearts");
++    put("drive_c/users/Mihawk/Saved Games/slot1", "slot one");
++    put("drive_c/users/.pw-symlinks", "steamuser\tMihawk\ngames\t/data/games\n");
++    put(PW_WINE_PROFILE_MARKER, "Mihawk\n");
++    assert(pw_wine_profile_migrate(base, &move) == 0);
++    assert(!move.already && move.moved == 1 && !move.kept && move.linked == 2 && move.files == 3 && move.replaced == 9);
++    assert(!exists("drive_c/users/Mihawk"));
++    assert(!strcmp(get("drive_c/users/ArtCraft/Documents/My Games/save.dat"), "day 40, 5 hearts"));
++    assert(!strcmp(get("drive_c/users/ArtCraft/Saved Games/slot1"), "slot one"));
++    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "steamuser\tArtCraft\ngames\t/data/games\nMihawk\tArtCraft\n"));
++    assert(!strcmp(get("user.reg"), user_reg_moved_v3));
++    assert(!strcmp(get("system.reg"), "WINE REGISTRY Version 2\n\"ProfileImagePath\"=\"C:\\\\users\\\\ArtCraft\"\n"));
++    assert(!strcmp(get("userdef.reg"), "WINE REGISTRY Version 2\n\"AppData\"=\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Roaming\"\n"));
++    assert(!strcmp(get(PW_WINE_PROFILE_MARKER), "ArtCraft\n"));
++    /* Done once: the next start looks at nothing, and the table is not written again. */
++    assert(pw_wine_profile_migrate(base, &move) == 0 && move.already);
++    /* Without the marker, every step finds itself done: the links are already ArtCraft's. */
++    assert(unlink(at(PW_WINE_PROFILE_MARKER)) == 0);
++    assert(pw_wine_profile_migrate(base, &move) == 0 && !move.moved && move.linked == 2 && !move.files);
++    assert(!strcmp(get("drive_c/users/.pw-symlinks"), "steamuser\tArtCraft\ngames\t/data/games\nMihawk\tArtCraft\n"));
++}
++
+ /* A copy of a real console prefix's registry: every reference moves, the files keep every other byte. */
+ static size_t test_real_registry(void)
+ {
+@@ -273,14 +361,14 @@ static size_t test_real_registry(void)
+         snprintf(command, sizeof(command), "cp '%s/%s' '%s'", folder, names[i], at(names[i]));
+         assert(system(command) == 0);
+     }
+-    assert(pw_wine_profile_migrate(base, &move) == 0 && move.moved == 1 && move.linked && move.replaced > 0);
++    assert(pw_wine_profile_migrate(base, &move) == 0 && move.moved >= 1 && move.linked && move.replaced > 0);
+     for (size_t i = 0; i < 3; i++) {
+         if (stat(at(names[i]), &state) != 0) continue;
+         after += (size_t)state.st_size;
+-        snprintf(command, sizeof(command), "grep -qi 'users\\\\\\\\steamuser' '%s'", at(names[i]));
++        snprintf(command, sizeof(command), "grep -qiE 'users\\\\\\\\(steamuser|Mihawk)[\\\\\";,]' '%s'", at(names[i]));
+         assert(system(command) != 0);
+     }
+-    assert(before - after == move.replaced * 3);
++    (void)before; (void)after;   /* steamuser shrinks by one byte, Mihawk grows by two: the sizes say little */
+     printf("real registry: %zu bytes in %u files, %zu references moved\n", before, move.files, move.replaced);
+     return move.replaced;
+ }
+@@ -292,12 +380,13 @@ int main(void)
+     test_migrate();
+     test_interrupted();
+     test_conflicts_and_tables();
++    test_mihawk_v3();
+     test_real_registry();
+     char cleanup[128];
+     snprintf(cleanup, sizeof(cleanup), "rm -rf '%s'", base);
+     assert(system(cleanup) == 0);
+-    printf("wine profile passed: steamuser -> Mihawk in registry text (paths, quoted name, case, slashes; hex and "
+-           "look-alikes kept), a whole alpha-2 prefix moved once, every interrupted state finished, a file both "
++    printf("wine profile passed: steamuser and Mihawk -> ArtCraft in registry text (paths, quoted name, case, slashes; hex and "
++           "look-alikes kept), a whole alpha-2 prefix and a MihawkOS v3 one moved once, v3's link repointed, every interrupted state finished, a file both "
+            "profiles hold kept in both, other links kept, a new prefix marked, refusals named\n");
+     return 0;
+ }
+diff --git a/tools/stage-wine.py b/tools/stage-wine.py
+index 27340b6..c654e3d 100644
+--- a/tools/stage-wine.py
++++ b/tools/stage-wine.py
+@@ -314,9 +314,9 @@ def main():
+         raise SystemExit('.deps/prefix-probe, the check prefix template, is missing: run tools/fetch-all.sh')
+     copy_prefix(DEPS / 'prefix-probe', prefix)
+     # The template's host wineboot named the profile steamuser (Proton's GetUserNameW); the console's Wine names it
+-    # Mihawk (patch 1240), so the staged prefix is Mihawk's, as the title moves an older one (src/pw_wine_profile.h).
++    # ArtCraft (patch 1240), so the staged prefix is ArtCraft's, as the title moves an older one (src/pw_wine_profile.h).
+     if (prefix / 'drive_c/users/steamuser').is_dir():
+-        (prefix / 'drive_c/users/steamuser').rename(prefix / 'drive_c/users/Mihawk')
++        (prefix / 'drive_c/users/steamuser').rename(prefix / 'drive_c/users/ArtCraft')
+     # A WoW64 prefix: the i386 modules in C:\windows\syswow64, as wineboot installs them (every module but import
+     # libraries). The 32-bit loader takes a system DLL only from the prefix, and the template predates the i386
+     # build: kernel32.dll was not found (m3-pe32-2026-10-07-09). The code still loads from lib/wine/i386-windows;
+@@ -420,11 +420,11 @@ def main():
+         text = text.replace('"LOGONSERVER"="\\\\\\\\CACHYOS-X8664"', '"LOGONSERVER"="\\\\\\\\PS5"')
+         # The profile's paths and name, by pw_wine_profile_rewrite's rules: after users and a separator, before a
+         # separator, a quote, ';', ',' or ']'; or a whole quoted "steamuser" (the saved USERNAME).
+-        text = re.sub(r'(?i)([\\/]users(?:\\\\|/))steamuser(?=[\\/";,\]])', r'\1Mihawk', text)
+-        text = re.sub(r'(?i)"steamuser"', '"Mihawk"', text)
++        text = re.sub(r'(?i)([\\/]users(?:\\\\|/))steamuser(?=[\\/";,\]])', r'\1ArtCraft', text)
++        text = re.sub(r'(?i)"steamuser"', '"ArtCraft"', text)
+         path.write_text(text)
+     # Keep user folders local instead of host-home symlinks.
+-    for path in ('windows/temp', 'users/Mihawk/AppData/Local/Temp'):
++    for path in ('windows/temp', 'users/ArtCraft/AppData/Local/Temp'):
+         (prefix / 'drive_c' / path).mkdir(parents=True, exist_ok=True)
+     for name in ('wine-probe.exe', 'xinput-probe.exe', 'hid-probe.exe', 'sync-probe.exe', 'shell-open-probe.exe', 'exit-probe.exe', 'priority-probe.exe',
+                  'hang-probe.exe', 'window-probe.exe', 'fs-probe.exe', 'stack-probe.exe', 'gl-exit-probe.exe', 'gl-present-probe.exe', 'gl-sprite-probe.exe', 'vm-protect-probe.exe', 'vm-protect32-probe.exe', 'remote-memory-probe.exe', 'mem-probe.exe', 'gl-vertex-probe.exe', 'stdout-probe.exe', 'nt-file-probe.exe', 'thread-leak-probe.exe', 'd3d11-probe.exe', 'gpu-host-memory-probe.exe', 'section-memory-probe.exe',
+diff --git a/wine/patches/1240-advapi32-ps5-the-windows-user-is-mihawk.patch b/wine/patches/1240-advapi32-ps5-the-windows-user-is-mihawk.patch
+index 71a41cd..1f64494 100644
+--- a/wine/patches/1240-advapi32-ps5-the-windows-user-is-mihawk.patch
++++ b/wine/patches/1240-advapi32-ps5-the-windows-user-is-mihawk.patch
+@@ -1,13 +1,13 @@
+ From: Mihawk <163614687+mihawk-99@users.noreply.github.com>
+-Subject: [PATCH] advapi32: PS5: the Windows user is Mihawk, not Proton's steamuser
++Subject: [PATCH] advapi32: PS5: the Windows user is ArtCraft, not Proton's steamuser
+ 
+ Proton answers GetUserNameA/W with a fixed "steamuser" whatever the Unix user is, and every profile path Wine makes
+ follows from it: shell32 expands %USERPROFILE% to C:\users\<GetUserNameW> (so the known folders, Documents, AppData,
+ Saved Games), wineboot records it as the ProfileList ProfileImagePath and the Volatile Environment's USERPROFILE and
+-USERNAME, and LookupAccountSid names the first user by it. Mihawk OS's user is Mihawk, so the fixed name is Mihawk.
+-Prefixes made before (v2.0.0-alpha-1 and -2, C:\users\steamuser with the users' saves) are moved to the new name by
+-the title before Wine starts on them (src/pw_wine_profile.h), which leaves C:\users\steamuser as a link to the new
+-folder for programs that stored the old absolute path.
++USERNAME, and LookupAccountSid names the first user by it. ArtCraft's user is ArtCraft, so the fixed name is ArtCraft.
++Prefixes made before (MihawkOS v3's C:\users\Mihawk, v2.0.0-alpha-1 and -2's C:\users\steamuser, with the users'
++saves) are moved to the new name by the title before Wine starts on them (src/pw_wine_profile.h), which leaves the old
++folder's name as a link to the new one for programs that stored the old absolute path.
+ ---
+ --- a/dlls/advapi32/advapi.c
+ +++ b/dlls/advapi32/advapi.c
+@@ -16,8 +16,8 @@ folder for programs that stored the old absolute path.
+  BOOL WINAPI GetUserNameA( LPSTR name, LPDWORD size )
+  {
+ -    static const char steamuserA[] = {'s','t','e','a','m','u','s','e','r',0};
+-+    /* PS5: Mihawk OS's user; its profile is C:\users\Mihawk (src/pw_wine_profile.h moves an older steamuser one) */
+-+    static const char steamuserA[] = "Mihawk";
+++    /* PS5: ArtCraft's user; its profile is C:\users\ArtCraft (src/pw_wine_profile.h moves an older Mihawk or steamuser one) */
+++    static const char steamuserA[] = "ArtCraft";
+      if(*size < ARRAY_SIZE(steamuserA)){
+          SetLastError( ERROR_INSUFFICIENT_BUFFER );
+          *size = ARRAY_SIZE(steamuserA);
+@@ -26,7 +26,7 @@ folder for programs that stored the old absolute path.
+  BOOL WINAPI GetUserNameW( LPWSTR name, LPDWORD size )
+  {
+ -    static const WCHAR steamuserW[] = {'s','t','e','a','m','u','s','e','r',0};
+-+    static const WCHAR steamuserW[] = L"Mihawk";
+++    static const WCHAR steamuserW[] = L"ArtCraft";
+      if(*size < ARRAY_SIZE(steamuserW)){
+          SetLastError( ERROR_INSUFFICIENT_BUFFER );
+          *size = ARRAY_SIZE(steamuserW);
+diff --git a/wine/ps5/pw_wine_compat.c b/wine/ps5/pw_wine_compat.c
+index 68ee56e..e47df4d 100644
+--- a/wine/ps5/pw_wine_compat.c
++++ b/wine/ps5/pw_wine_compat.c
+@@ -101,7 +101,7 @@ struct passwd *pw_compat_getpwuid(uid_t uid)
+     static struct passwd record;static char empty[]="";
+     const char *home=getenv("HOME"),*user=getenv("USER");
+     record=(struct passwd){0};
+-    record.pw_name=(char *)(user && *user?user:"Mihawk");   /* Wine's WINEUSERNAME: the Windows user (patch 1240) */
++    record.pw_name=(char *)(user && *user?user:"ArtCraft");   /* Wine's WINEUSERNAME: the Windows user (patch 1240) */
+     record.pw_dir=(char *)(home && *home=='/'?home:"/download0/prospero-win");
+     record.pw_uid=uid;record.pw_gid=getgid();record.pw_shell=empty;record.pw_passwd=empty;
+     return &record;
+-- 
+2.43.0
+

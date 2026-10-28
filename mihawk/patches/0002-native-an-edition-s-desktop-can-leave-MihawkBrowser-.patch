@@ -1,0 +1,56 @@
+From 44c3a46dad21aa04f5d7dee1fd252f00de2e0bae Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 03:47:49 +0000
+Subject: [PATCH 2/4] native: an edition's desktop can leave MihawkBrowser's
+ shortcut out
+
+The ArtCraft edition's desktop is for the Craft App Suite only. When the
+edition says browser_shortcut: false (proton_edition), the session start's
+shortcut sync leaves MihawkBrowser out of its entries; because the sync owns
+the shortcut through its manifest, a MihawkBrowser.lnk it wrote earlier is
+removed too. The log line counts the browser only when it is there. Without
+an edition nothing changes.
+
+Proven: nothing beyond reading; native/proton_wine.cpp needs the PS5 SDK's
+headers (ps5platform/memory.h), which this checkout does not carry. No
+console run.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
+---
+ native/proton_wine.cpp | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/native/proton_wine.cpp b/native/proton_wine.cpp
+index 6461767..4b6747f 100644
+--- a/native/proton_wine.cpp
++++ b/native/proton_wine.cpp
+@@ -447,7 +447,10 @@ void sync_desktop_shortcuts(const std::vector<ProtonGame> &catalog, const std::s
+     // follow themes/windows11/icons/manifest.json's order, and app-browser follows the fourteen original icons).
+     browser_entry.link.icon_index = -1014;
+     browser_entry.link.description = "Browse the web and get game launchers";
+-    entries.push_back(browser_entry);
++    // An edition may keep MihawkBrowser off its desktops (proton_edition, browser_shortcut); the sync then removes the
++    // shortcut it made before, as the manifest says it owns it.
++    const bool with_browser = proton_edition().browser_shortcut;
++    if (with_browser) entries.push_back(browser_entry);
+     // A folder with one program is a game; a library entry whose executable is in it covers it with its own shortcut.
+     unsigned shown = 0, several = 0, covered = 0;
+     const char *unchosen = nullptr;   // the first folder with several programs, named on screen (phase 3)
+@@ -487,9 +490,10 @@ void sync_desktop_shortcuts(const std::vector<ProtonGame> &catalog, const std::s
+     PwShellLinkSyncResult result{};
+     const std::string folder = prefix + "/drive_c/users/Public/Desktop", manifest = prefix + "/.mihawk-desktop-shortcuts";
+     const int error = pw_shell_link_sync(folder.c_str(), manifest.c_str(), entries.data(), entries.size(), &result);
+-    say("Mihawk: desktop shortcuts for %zu library games and MihawkBrowser: written %u, unchanged %u, removed %u, failed %u (%d%s%s)",
+-        entries.size() - 1, result.written, result.unchanged, result.removed, result.failed, error,
+-        error ? " at " : "", error && result.first_error_step ? result.first_error_step : "");
++    say("Mihawk: desktop shortcuts for %zu library games%s: written %u, unchanged %u, removed %u, failed %u (%d%s%s)",
++        entries.size() - (with_browser ? 1 : 0), with_browser ? " and MihawkBrowser" : "", result.written,
++        result.unchanged, result.removed, result.failed, error, error ? " at " : "",
++        error && result.first_error_step ? result.first_error_step : "");
+ }
+ 
+ uint64_t monotonic_ms()
+-- 
+2.43.0
+

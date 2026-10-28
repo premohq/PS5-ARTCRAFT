@@ -1,0 +1,119 @@
+{
+  "comment": "Written by `python3 -m artcraft_ps5 lock --refresh`; every asset is checked against this sha256.",
+  "arch": "x64",
+  "refreshed": "2026-10-28",
+  "pins": {
+    "artcraft-launcher": {
+      "version": "0.8.1",
+      "tag": "v0.8.1",
+      "asset": "artcraft-launcher-0.8.1-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/craft-launcher/releases/download/v0.8.1/artcraft-launcher-0.8.1-windows-x64-portable.zip",
+      "sha256": "73b3a65c3a76ec3686623c065445f4d75c4a95a9887995f19eda9cd7aa957346",
+      "size": 10463291
+    },
+    "photocraft": {
+      "version": "0.16.0",
+      "tag": "v0.16.0",
+      "asset": "photocraft-0.16.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/photocraft/releases/download/v0.16.0/photocraft-0.16.0-windows-x64-portable.zip",
+      "sha256": "3e634f7e3cc95476c369d59ef0cfed3d1dd6fafd3c351ad81a4ddf3bd792e99d",
+      "size": 90025164
+    },
+    "vectorcraft": {
+      "version": "0.17.0",
+      "tag": "v0.17.0",
+      "asset": "vectorcraft-0.17.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/vectorcraft/releases/download/v0.17.0/vectorcraft-0.17.0-windows-x64-portable.zip",
+      "sha256": "22004a760e8797b7b05f84446b34c0c12a2ae4e25a3244f7955305090c082304",
+      "size": 132356785
+    },
+    "filmcraft": {
+      "version": "0.13.0",
+      "tag": "v0.13.0",
+      "asset": "filmcraft-0.13.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/filmcraft/releases/download/v0.13.0/filmcraft-0.13.0-windows-x64-portable.zip",
+      "sha256": "43ef574058aceb5ab060521e12722ee8b5f021c2e66702c4495463d384e87930",
+      "size": 100415987
+    },
+    "lightcraft": {
+      "version": "0.14.0",
+      "tag": "v0.14.0",
+      "asset": "lightcraft-0.14.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/lightcraft/releases/download/v0.14.0/lightcraft-0.14.0-windows-x64-portable.zip",
+      "sha256": "e2c08776da6ab4c44c1aa4ed638b20f326bff3f8d94ab11dcf0b609e663443bb",
+      "size": 111358610
+    },
+    "pdfcraft": {
+      "version": "0.14.0",
+      "tag": "v0.14.0",
+      "asset": "pdfcraft-0.14.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/pdfcraft/releases/download/v0.14.0/pdfcraft-0.14.0-windows-x64-portable.zip",
+      "sha256": "eb077bcb60e0f05787a9f6cca7c5852939fd9c6063676c167d4f58640d21e6ef",
+      "size": 88897780
+    },
+    "effectcraft": {
+      "version": "0.17.0",
+      "tag": "v0.17.0",
+      "asset": "effectcraft-0.17.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/effectcraft/releases/download/v0.17.0/effectcraft-0.17.0-windows-x64-portable.zip",
+      "sha256": "fea0e56033f3e352b636c718fccab6abc0c06a6a973dc2112abb41270b229db5",
+      "size": 67888061
+    },
+    "designcraft": {
+      "version": "0.13.0",
+      "tag": "v0.13.0",
+      "asset": "designcraft-0.13.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/designcraft/releases/download/v0.13.0/designcraft-0.13.0-windows-x64-portable.zip",
+      "sha256": "475fa75068817d4b3f574582af8d90763970dd259bfd5a074d65f2ccc56690ef",
+      "size": 110936162
+    },
+    "figcraft": {
+      "version": "0.11.2",
+      "tag": "v0.11.2",
+      "asset": "figcraft-0.11.2-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/figcraft/releases/download/v0.11.2/figcraft-0.11.2-windows-x64-portable.zip",
+      "sha256": "2d87123b26d9e397516e5b5abb73253cd58cc74f1c8d1ec0bda7569ee0f8a527",
+      "size": 89097768
+    },
+    "wordcraft": {
+      "version": "0.11.0",
+      "tag": "v0.11.0",
+      "asset": "wordcraft-0.11.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/wordcraft/releases/download/v0.11.0/wordcraft-0.11.0-windows-x64-portable.zip",
+      "sha256": "761a832f91a4bedcfacc62126ac31f78d5172fa10932b55bb6a587c797e38bea",
+      "size": 102900685
+    },
+    "soundcraft": {
+      "version": "0.13.1",
+      "tag": "v0.13.1",
+      "asset": "soundcraft-0.13.1-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/soundcraft/releases/download/v0.13.1/soundcraft-0.13.1-windows-x64-portable.zip",
+      "sha256": "f1e518ae2114bd20346e4cf9ec295412a66f502f7b3962acf5f32afe09451660",
+      "size": 16292992
+    },
+    "deckcraft": {
+      "version": "0.11.1",
+      "tag": "v0.11.1",
+      "asset": "deckcraft-0.11.1-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/deckcraft/releases/download/v0.11.1/deckcraft-0.11.1-windows-x64-portable.zip",
+      "sha256": "8123f1eceb048b60f34b8cbe3ee49048c96b713c8354022a98485267a7f9a386",
+      "size": 81512631
+    },
+    "cadcraft": {
+      "version": "0.13.0",
+      "tag": "v0.13.0",
+      "asset": "cadcraft-0.13.0-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/cadcraft/releases/download/v0.13.0/cadcraft-0.13.0-windows-x64-portable.zip",
+      "sha256": "ae7be38d8a489626ca699a7acbe0a5c1735e90cfaaf22bad851bdcd1933385ad",
+      "size": 64648623
+    },
+    "gridcraft": {
+      "version": "0.12.1",
+      "tag": "v0.12.1",
+      "asset": "gridcraft-0.12.1-windows-x64-portable.zip",
+      "url": "https://github.com/storytold/gridcraft/releases/download/v0.12.1/gridcraft-0.12.1-windows-x64-portable.zip",
+      "sha256": "4e478a735736281704c8362d95964eaaa6071331851d609367d33245531ab7c8",
+      "size": 19665515
+    }
+  }
+}

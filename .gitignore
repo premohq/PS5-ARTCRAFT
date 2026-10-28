@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+/.deps/
+/dist/
+/session/artcraft-session.exe
+.env

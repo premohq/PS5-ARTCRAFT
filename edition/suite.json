@@ -1,0 +1,25 @@
+{
+  "comment": "The Craft App Suite as ArtCraft Launcher's own catalog names it (storytold/craft-launcher crates/core/src/catalog.rs, SUITE and LAUNCHER at d39702d). id is the release asset stem, the launcher's record key and the install folder name; color is the app's brand colour.",
+  "launcher": {
+    "id": "artcraft-launcher",
+    "name": "ArtCraft Launcher",
+    "tagline": "Installs and updates the Craft App Suite",
+    "repo": "storytold/craft-launcher",
+    "color": "#0b0b0c"
+  },
+  "apps": [
+    {"id": "photocraft", "name": "PhotoCraft", "tagline": "Image editing", "repo": "storytold/photocraft", "color": "#2f7bf5"},
+    {"id": "vectorcraft", "name": "VectorCraft", "tagline": "Vector illustration", "repo": "storytold/vectorcraft", "color": "#e8573f"},
+    {"id": "filmcraft", "name": "FilmCraft", "tagline": "Video editing, color and sound", "repo": "storytold/filmcraft", "color": "#8b5cf6"},
+    {"id": "lightcraft", "name": "LightCraft", "tagline": "Photo library and raw development", "repo": "storytold/lightcraft", "color": "#f2a516"},
+    {"id": "pdfcraft", "name": "PdfCraft", "tagline": "Reading, organizing and protecting PDFs", "repo": "storytold/pdfcraft", "color": "#12a58a"},
+    {"id": "effectcraft", "name": "EffectCraft", "tagline": "Motion graphics and visual effects", "repo": "storytold/effectcraft", "color": "#e0368f"},
+    {"id": "designcraft", "name": "DesignCraft", "tagline": "Page layout and publishing", "repo": "storytold/designcraft", "color": "#7bb51c"},
+    {"id": "figcraft", "name": "FigCraft", "tagline": "Interface design and prototyping", "repo": "storytold/figcraft", "color": "#02da96"},
+    {"id": "wordcraft", "name": "WordCraft", "tagline": "Writing and document design", "repo": "storytold/wordcraft", "color": "#3f5fe0"},
+    {"id": "soundcraft", "name": "SoundCraft", "tagline": "Recording, editing and mixing audio", "repo": "storytold/soundcraft", "color": "#1fa5c9"},
+    {"id": "deckcraft", "name": "DeckCraft", "tagline": "Presentations and slide shows", "repo": "storytold/deckcraft", "color": "#f07a1e"},
+    {"id": "cadcraft", "name": "CADCraft", "tagline": "Computer-aided design and drafting", "repo": "storytold/cadcraft", "color": "#3ea6e8"},
+    {"id": "gridcraft", "name": "GridCraft", "tagline": "Spreadsheets and data", "repo": "storytold/gridcraft", "color": "#1f9d55"}
+  ]
+}
