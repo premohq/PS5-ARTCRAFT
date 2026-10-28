@@ -1,0 +1,98 @@
+name: Root-access daemon
+
+# The title ships a Lapy root-access daemon built for its own title id, and tools/build-production.sh only takes one
+# matching its pinned SHA-256. Mihawk OS's pin is for PPSA99170, so ArtCraft (PPSA99278) needs a pin of its own. This
+# builds both from the same pinned inputs with the LLVM release the pin was made with. Mihawk OS's must reproduce
+# its pin, which proves the toolchain; ArtCraft's must match mihawk/mihawk.lock.json's, which patch 0007 puts into
+# build-production.sh.
+
+on:
+  push:
+    paths: ['mihawk/**', '.github/workflows/daemon.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daemon:
+    name: Daemon for PPSA99170 (reproduces Mihawk OS's pin) and PPSA99278 (ArtCraft's)
+    runs-on: ubuntu-24.04
+    env:
+      LLVM_CONFIG: ${{ github.workspace }}/llvm/LLVM-23.1.3-Linux-X64/bin/llvm-config
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: artcraft
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: LLVM 23.1.3, the release Mihawk OS's daemon pin was built with (compiler, linker and tools)
+        run: |
+          mkdir llvm
+          curl -sSfL https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/LLVM-23.1.3-Linux-X64.tar.xz |
+            tar -xJ -C llvm --exclude='*.a' --exclude='LLVM-23.1.3-Linux-X64/include' \
+              --exclude='LLVM-23.1.3-Linux-X64/share' --exclude='LLVM-23.1.3-Linux-X64/libexec'
+          "$LLVM_CONFIG" --version
+          "$("$LLVM_CONFIG" --bindir)/clang" --version | head -1
+      - name: The fork at its pin and with ArtCraft's patches, side by side, with the daemon's source beside them
+        run: |
+          lock=artcraft/mihawk/mihawk.lock.json
+          repo=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["repo"])' $lock)
+          commit=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["commit"])' $lock)
+          git clone -q --filter=blob:none "$repo" fork
+          git -C fork worktree add -q --detach ../pin "$commit"
+          git -C fork checkout -q -b artcraft "$commit"
+          git -C fork -c user.name=ci -c user.email=ci@example.invalid am -q "$PWD"/artcraft/mihawk/patches/*.patch
+          rev=$(sed -n "s/^REV = '\([0-9a-f]*\)'$/\1/p" fork/tools/build-lapy-validation.py)
+          git clone -q https://github.com/mpereiraesaa/PS5-Lapy-JB-Daemon.git
+          git -C PS5-Lapy-JB-Daemon cat-file -e "$rev^{commit}"
+      - name: The daemon's pinned inputs (payload SDK v0.42, the logger header), each checked by SHA-256
+        run: |
+          sdk_sha=$(sed -n "s/^SDK_SHA = '\([0-9a-f]*\)'$/\1/p" fork/tools/build-lapy-validation.py)
+          log_sha=$(sed -n "s/^LOG_SHA = '\([0-9a-f]*\)'$/\1/p" fork/tools/build-lapy-validation.py)
+          curl -sSfLo sdk.zip https://github.com/ps5-payload-dev/sdk/releases/download/v0.42/ps5-payload-sdk.zip
+          curl -sSfLo ps5log.h \
+            https://raw.githubusercontent.com/mpereiraesaa/prospero-win/e665a2c1f9168c911cf1f6131b832f89a5582fb4/native/ps5log/ps5log.h
+          echo "$sdk_sha  sdk.zip" | sha256sum -c
+          echo "$log_sha  ps5log.h" | sha256sum -c
+          for tree in fork pin; do
+            mkdir -p $tree/.deps/prospero-win-e665a2c/native/ps5log
+            cp ps5log.h $tree/.deps/prospero-win-e665a2c/native/ps5log/
+          done
+      - name: Mihawk OS's daemon (PPSA99170) from the pin reproduces its pinned SHA-256
+        run: |
+          python pin/tools/build-lapy-validation.py --resident --sdk-zip "$PWD/sdk.zip"
+          daemon=pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client
+          pinned=$(sed -n 's/^daemon_sha256=//p' pin/tools/build-production.sh)
+          sha256sum "$daemon/lapy-root-daemon.elf"
+          echo "$pinned  $daemon/lapy-root-daemon.elf" | sha256sum -c
+      - name: ArtCraft's daemon (PPSA99278) from the patched fork matches ArtCraft's pin
+        run: |
+          python fork/tools/build-lapy-validation.py --resident --sdk-zip "$PWD/sdk.zip"
+          daemon=fork/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client
+          python - "$daemon" artcraft/mihawk/mihawk.lock.json fork/tools/build-production.sh <<'EOF'
+          import hashlib, json, re, sys
+          from pathlib import Path
+          daemon, lock, production = Path(sys.argv[1]), json.loads(Path(sys.argv[2]).read_text()), Path(sys.argv[3]).read_text()
+          manifest = json.loads((daemon / 'manifest.json').read_text())
+          built = hashlib.sha256((daemon / 'lapy-root-daemon.elf').read_bytes()).hexdigest()
+          title = manifest['target_title']
+          print(f'built for {title}: {built}')
+          pinned = lock.get('lapy_daemon_sha256', {}).get(title)
+          in_fork = re.search(r'^daemon_sha256=([0-9a-f]{64})$', production, re.M)[1]
+          print(f'mihawk.lock.json pins {pinned}; the patched build-production.sh pins {in_fork}')
+          if built != pinned or built != in_fork:
+              sys.exit(f'::error::ArtCraft\'s daemon is {built}: pin it in mihawk/mihawk.lock.json lapy_daemon_sha256 '
+                       f'and regenerate patch 0007 (python3 -m artcraft_ps5 mihawk identity)')
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lapy-daemon
+          path: |
+            pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/lapy-root-daemon.elf
+            pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/manifest.json
+            fork/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/lapy-root-daemon.elf
+            fork/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/manifest.json
+          if-no-files-found: ignore
