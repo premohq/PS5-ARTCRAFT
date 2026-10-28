@@ -133,15 +133,14 @@ Then start the ArtCraft title: it opens the ArtCraft desktop, and ArtCraft Launc
 - **The suite's releases:** all 13 apps and the launcher ship `<app>-<version>-windows-x64-portable.zip` with a
   `SHA256SUMS.txt`; each ZIP holds `<app>.exe` and `<app>-cli.exe` in a version-named folder. All of them are eframe
   0.36 / wgpu 30 apps that honour `WGPU_BACKEND`.
-- **The launcher's self-update signature check** (`WinVerifyTrust`, as `verifysign` calls it): Wine 9.0 and Wine 11.0
-  both answer *trusted* for the launcher, even on a fresh prefix. The signer chain is not trusted there (status 0x21:
-  untrusted root, expired end certificate, since Wine reads no RFC 3161 timestamp), but `SoftpubAuthenticode` returns
-  S_FALSE without an error and `WinVerifyTrust` reports success. An unsigned or tampered file is still refused. The
-  edition also writes the `WTPF_IGNOREEXPIRATION` policy, which stays, and imports the Microsoft Identity Verification
-  Root 2020 (taken from the launcher's own signature, pinned by SHA-256), which does not: Wine 9.0's crypt32 removes
-  any root that is not the host's from the machine's Root store the first time a process opens it, so the root is gone
-  again after the first check. A copy in the user's Root store survives; whether Wine's chain engine trusts it is
-  open ([roadmap](docs/ROADMAP.md)).
+- **The launcher's self-update signature check** (`WinVerifyTrust`, as `verifysign` calls it), on the real launcher
+  under Wine 9.0 and GE-Proton 11-7's Wine 11.0: the edition's `trust.reg` puts the Microsoft Identity Verification
+  Root 2020 (taken from the launcher's own signature, pinned by SHA-256) in the user's Root store, where both keep it,
+  and the signer chain's root is trusted (status 0x1: only the end certificate's expiry, as Wine reads no RFC 3161
+  timestamp, and the `WTPF_IGNOREEXPIRATION` policy covers that). The machine's Root store would not do on Wine 9.0:
+  its crypt32 deletes a root there that the host lacks before the first chain is built. Without the root, Wine still
+  answers *trusted* (it fails open, status 0x21), so `artcraft-session.exe --check-signature` also logs the chain's
+  status. An unsigned or tampered file is refused either way.
 - **The tools:** 66 tests (`python3 -m unittest`) cover the edition's checks, pinning and downloads, the portable
   installs, the registry, launcher-state and signature formats, staging, the FTP deploy and the command line.
 - **The fork patches:** the title code compiles in the host-reference configuration; the shell changes compile with

@@ -64,6 +64,9 @@ class Stage(unittest.TestCase):
         text = (self.out / PREFIX / 'System' / 'trust.reg').read_bytes()[2:].decode('utf-16-le')
         thumbprint = hashlib.sha1(fixtures.ROOT_CERT).hexdigest().upper()
         self.assertIn(f'[{regfile.ROOT_STORE}\\{thumbprint}]', text)
+        # the user's Root store: Wine 9.0's crypt32 deletes a root it finds in the machine's
+        self.assertTrue(regfile.ROOT_STORE.startswith('HKEY_CURRENT_USER\\'))
+        self.assertNotIn('HKEY_LOCAL_MACHINE', text)
         self.assertIn(f'"State"=dword:{regfile.WTPF_DEFAULT | regfile.WTPF_IGNOREEXPIRATION:08x}', text)
 
     def test_session_ini(self):

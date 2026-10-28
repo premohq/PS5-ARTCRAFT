@@ -72,7 +72,9 @@ Nothing is staged under `drive_c/windows`: `wineboot` makes that folder, and one
 The registry files are UTF-16 `regedit` files (`regfile.py`):
 
 - `trust.reg` holds the code-signing root, taken out of the launcher's own Authenticode signature by `authenticode.py`
-  and checked against its pin, plus the `WTPF_IGNOREEXPIRATION` WinTrust policy.
+  and checked against its pin, plus the `WTPF_IGNOREEXPIRATION` WinTrust policy. The root goes in the user's Root store
+  (HKCU): Wine 9.0's crypt32 deletes a root in the machine's store that the host lacks, before any chain is built,
+  while Wine 9.0 and 11.0 both keep the user's copy and trust it.
 - `defaults.reg` holds the wallpaper, the Start pins (File Explorer, the launcher, then the seeded apps) and
   `BrowserPinned`, so MihawkBrowser is never pinned.
 

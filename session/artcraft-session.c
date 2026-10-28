@@ -286,6 +286,16 @@ static int start_launcher(void)
     return 0;
 }
 
+/* The error status of the signer chain WinVerifyTrust built, or (DWORD)-1 when it built none. Wine's Authenticode
+ * policy answers trusted even for a chain whose root it does not trust, so only this shows whether trust.reg's
+ * code-signing root is in effect: CERT_TRUST_IS_UNTRUSTED_ROOT is set when it is not. */
+static DWORD signer_chain_status(HANDLE state)
+{
+    CRYPT_PROVIDER_DATA *provider = WTHelperProvDataFromStateData(state);
+    CRYPT_PROVIDER_SGNR *signer = provider ? WTHelperGetProvSignerFromChain(provider, 0, FALSE, 0) : NULL;
+    return signer && signer->pChainContext ? signer->pChainContext->TrustStatus.dwErrorStatus : (DWORD)-1;
+}
+
 /* WinVerifyTrust as verifysign 1.0.1's default policy calls it for the launcher's self-update (craft-libs
  * crates/update self_update.rs signed_like): generic verify v2, no UI, no revocation, cached URLs only. */
 static int check_signature(const WCHAR *path)
@@ -294,6 +304,7 @@ static int check_signature(const WCHAR *path)
     WINTRUST_FILE_INFO file;
     WINTRUST_DATA data;
     LONG status;
+    DWORD chain;
     ZeroMemory(&file, sizeof(file));
     ZeroMemory(&data, sizeof(data));
     file.cbStruct = sizeof(file);
@@ -307,6 +318,7 @@ static int check_signature(const WCHAR *path)
     data.dwProvFlags = WTD_DISABLE_MD2_MD4 | WTD_CACHE_ONLY_URL_RETRIEVAL | WTD_NO_IE4_CHAIN_FLAG;
     data.dwUIContext = WTD_UICONTEXT_EXECUTE;
     status = WinVerifyTrust(INVALID_HANDLE_VALUE, &action, &data);
+    chain = signer_chain_status(data.hWVTStateData);
     data.dwStateAction = WTD_STATEACTION_CLOSE;
     WinVerifyTrust(INVALID_HANDLE_VALUE, &action, &data);
     const char *meaning = status == 0 ? "trusted" :
@@ -316,6 +328,9 @@ static int check_signature(const WCHAR *path)
         status == (LONG)TRUST_E_BAD_DIGEST ? "the file does not match its signature" :
         status == (LONG)CERT_E_CHAINING ? "the chain does not build" : "see winerror.h";
     say("signature: %s: 0x%08lx %s", u8(path), (unsigned long)status, meaning);
+    if (chain == (DWORD)-1) say("signature: no signer chain was built");
+    else say("signature: signer chain status 0x%08lx: %s", chain, chain & CERT_TRUST_IS_UNTRUSTED_ROOT
+             ? "the root is not trusted (trust.reg's root is not in effect)" : "the root is trusted");
     return status == 0 ? 0 : 1;
 }
 

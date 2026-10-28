@@ -21,23 +21,10 @@ Things to watch on that first run:
   `WGPU_BACKEND=vulkan`.
 - **USB keyboard and mouse** in the launcher and the apps.
 - **The launcher's first update check** from the console, and a self-update.
+- **The code-signing root:** `artcraft-session.exe --check-signature C:\ArtCraft\Launcher\artcraft-launcher.exe`
+  should log *the root is trusted* (signer chain status 0x1), as it does under Wine 9.0 and 11.0 on a PC.
 
-## 2. The code-signing root under Wine's crypt32
-
-`trust.reg` puts the Microsoft Identity Verification Root 2020 in the machine's Root store. Wine 9.0's crypt32
-removes any root there that is not the host's the first time a process opens the store, so the root is gone after
-the launcher's first check. Today this costs nothing, because Wine fails open: `WinVerifyTrust` still answers
-*trusted* for the launcher, and an unsigned or tampered file is still refused.
-
-A copy in the user's Root store (`HKEY_CURRENT_USER\Software\Microsoft\SystemCertificates\Root\Certificates`)
-survives. To do:
-
-- Find out whether Wine's chain engine trusts a root from that store (a chain status without
-  `CERT_TRUST_IS_UNTRUSTED_ROOT`).
-- If it does, import the root there instead.
-- Check the same on GE-Proton 11-7's Wine 11.0, the one the fork pins.
-
-## 3. A title of its own
+## 2. A title of its own
 
 The edition takes `PPSA99170`, Mihawk OS's slot, because the fork's tools (`console-setup.py`, `gate.py`,
 `pack-runtime.py`, `package-install.py`) and ShadowMountPlus all name it. ArtCraft as a tile of its own beside Mihawk
@@ -47,7 +34,7 @@ OS needs:
 - those tools taught to read the id from there;
 - the title's icon: `python3 -m artcraft_ps5 icon` already draws it, but nothing installs it yet.
 
-## 4. A release
+## 3. A release
 
 Once a console run works, a release should carry:
 
