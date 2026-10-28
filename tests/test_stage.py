@@ -13,7 +13,7 @@ from artcraft_ps5.edition import EditionError
 from conftest import minimal_pe, portable_zip
 
 ROOT = Path(__file__).resolve().parents[1]
-PREFIX = Path('data/ps5proton/prefixes/artcraft/drive_c/ArtCraft')
+PREFIX = Path('data/artcraft/prefixes/artcraft/drive_c/ArtCraft')
 
 
 @pytest.fixture
@@ -56,17 +56,17 @@ def test_the_console_paths(staged):
     assert not (out / PREFIX / 'Apps' / 'photocraft' / 'photocraft-cli.exe').exists()
     assert (out / PREFIX / 'System' / 'artcraft-session.exe').read_bytes() == b'MZsession'
     assert (out / PREFIX / 'Theme' / 'artcraft-wallpaper.bmp').read_bytes() == b'BMwallpaper'
-    assert not (out / 'data/ps5proton/prefixes/artcraft/drive_c/windows').exists()
+    assert not (out / 'data/artcraft/prefixes/artcraft/drive_c/windows').exists()
     assert result.apps == ('photocraft', 'gridcraft')
 
 
 def test_the_library_entry_starts_the_desktop_session_with_the_helper(staged):
     _, out, _, _ = staged
-    entry = json.loads((out / 'data/ps5proton/games/artcraft/game.json').read_text())
+    entry = json.loads((out / 'data/artcraft/games/artcraft/game.json').read_text())
     assert entry['executable'] == r'C:\windows\system32\mihawk.exe'
     assert entry['arguments'] == r'C:\ArtCraft\System\artcraft-session.exe' and ' ' not in entry['arguments']
     assert entry['prefix'] == 'artcraft' and entry['desktop'] is False and 'MIHAWK_DESKTOP=1' in entry['env']
-    title = json.loads((out / 'data/homebrew/PPSA99170/edition.json').read_text())
+    title = json.loads((out / 'data/homebrew/PPSA99278/edition.json').read_text())
     assert title == {'name': 'ArtCraft', 'profile': 'artcraft', 'hide_mihawk_desktop': True, 'browser_shortcut': False}
 
 
@@ -107,7 +107,7 @@ def test_the_manifest_lists_every_file_with_its_digest(staged):
     assert len(manifest['files']) == result.files
     for entry in manifest['files']:
         assert hashlib.sha256((out / entry['path'].lstrip('/')).read_bytes()).hexdigest() == entry['sha256']
-        under = entry['path'].removeprefix('/data/ps5proton/prefixes/artcraft/drive_c/ArtCraft/')
+        under = entry['path'].removeprefix('/data/artcraft/prefixes/artcraft/drive_c/ArtCraft/')
         assert entry.get('seed', False) == under.startswith(('Launcher/', 'Apps/')), entry['path']
     assert any(e.get('seed') for e in manifest['files']) and not all(e.get('seed') for e in manifest['files'])
 

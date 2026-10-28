@@ -15,7 +15,7 @@ from pyftpdlib.authorizers import DummyAuthorizer  # noqa: E402
 from pyftpdlib.handlers import FTPHandler  # noqa: E402
 from pyftpdlib.servers import FTPServer  # noqa: E402
 
-PREFIX = '/data/ps5proton/prefixes/artcraft'
+PREFIX = '/data/artcraft/prefixes/artcraft'
 
 
 SEED = (f'{PREFIX}/drive_c/ArtCraft/Launcher/', f'{PREFIX}/drive_c/ArtCraft/Apps/')
@@ -63,7 +63,7 @@ def console(tmp_path):
 def test_send_then_send_only_what_changed(tmp_path, console):
     root, address = console
     files = {f'{PREFIX}/drive_c/ArtCraft/a.txt': b'one', f'{PREFIX}/drive_c/ArtCraft/Apps/x/x.exe': b'MZ',
-             '/data/ps5proton/games/artcraft/game.json': b'{}'}
+             '/data/artcraft/games/artcraft/game.json': b'{}'}
     staged = write_staged(tmp_path / 'dist', files)
     sent = deploy.deploy(staged, address, say=lambda *a: None)
     assert len(sent) == 3
@@ -146,3 +146,10 @@ def test_a_cut_seed_resumes_and_apps_staged_later_are_the_launchers_to_install(t
     assert deploy.deploy(staged, address, say=lines.append) == []
     assert not on_console(root, later).exists()
     assert any('seeded without them: gridcraft' in line for line in lines)
+
+
+def test_mihawk_os_is_never_written(tmp_path):
+    for number, path in enumerate(('/data/ps5proton/games/artcraft/game.json', '/data/homebrew/PPSA99170/edition.json')):
+        staged = write_staged(tmp_path / str(number), {path: b'x'})
+        with pytest.raises(EditionError, match="Mihawk OS's"):
+            deploy.plan(staged, {})

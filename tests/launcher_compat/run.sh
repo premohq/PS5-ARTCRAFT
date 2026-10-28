@@ -6,7 +6,9 @@
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 launcher=$(cd "$1" && pwd)
-data=$(cd "$2/data/ps5proton/prefixes/artcraft/drive_c/ArtCraft/Launcher/ArtCraftLauncherData/data" && pwd)
+# The staged prefix's console path (manifest.json "prefix": the edition's data root and prefix id).
+prefix=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["prefix"])' "$2/manifest.json")
+data=$(cd "$2$prefix/drive_c/ArtCraft/Launcher/ArtCraftLauncherData/data" && pwd)
 apps=${3:-photocraft,vectorcraft,filmcraft,lightcraft,pdfcraft,effectcraft,designcraft,figcraft,wordcraft,soundcraft,deckcraft,cadcraft,gridcraft}
 # crates/native has no tests folder of its own (v0.8.1): one made here goes again with the tests.
 made=()

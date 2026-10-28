@@ -11,7 +11,8 @@
                                    The launcher and the apps go once: ArtCraft Launcher updates them from then on
   mihawk prepare [--dir DIR]       clone the Mihawk OS fork at its pin into DIR (../PS5_MihawkOS) and apply
                                    mihawk/patches with git am on a branch named artcraft
-  mihawk rebrand|mark [--dir DIR]  regenerate patch 0005 or 0006's changes in DIR (after a rebase; mihawk/README.md)
+  mihawk rebrand|mark|identity     regenerate patch 0005, 0006 or 0007's changes in DIR (after a rebase;
+         [--dir DIR]               mihawk/README.md)
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from pathlib import Path
 
 from . import ROOT
 from .edition import EditionError, load
+from .rebrand import RebrandError
 
 DOWNLOADS = ROOT / '.deps' / 'downloads'
 WALLPAPER = ROOT / '.deps' / 'artcraft-wallpaper.bmp'
@@ -123,6 +125,9 @@ def command_mihawk(args) -> None:
         from . import mark
         for path in mark.write(fork, [app.rgb for app in edition.apps]):
             print(path)
+    elif args.action == 'identity':
+        from . import identity
+        identity.identity(fork, edition.title_id, edition.data_root, edition.title_name)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -154,14 +159,14 @@ def main(argv: list[str] | None = None) -> int:
     deploy.add_argument('--force', action='store_true',
                         help='send every file, the launcher and the apps too, over whatever the console has (a repair)')
     deploy.set_defaults(run=command_deploy)
-    mihawk = commands.add_parser('mihawk', help='the Mihawk OS fork: prepare it, or regenerate patches 0005/0006')
-    mihawk.add_argument('action', choices=('prepare', 'rebrand', 'mark'))
+    mihawk = commands.add_parser('mihawk', help='the Mihawk OS fork: prepare it, or regenerate patches 0005 to 0007')
+    mihawk.add_argument('action', choices=('prepare', 'rebrand', 'mark', 'identity'))
     mihawk.add_argument('--dir', default=str(FORK))
     mihawk.set_defaults(run=command_mihawk)
     args = parser.parse_args(argv)
     try:
         args.run(args)
-    except (EditionError, OSError, subprocess.CalledProcessError) as error:
+    except (EditionError, RebrandError, OSError, subprocess.CalledProcessError) as error:
         print(f'error: {error}', file=sys.stderr)
         return 1
     return 0

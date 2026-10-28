@@ -10,14 +10,15 @@ out the pin on a branch named artcraft and applies them with `git am`, as CI doe
 | 0002 | `browser_shortcut: false` keeps MihawkBrowser off the edition's desktop | read only (needs the PS5 SDK) |
 | 0003 | Start and the taskbar keep only File Explorer and Settings | MinGW compile of the changed code in a mock |
 | 0004 | The Windows user is ArtCraft; a MihawkOS v3 (`Mihawk`) or alpha-2 (`steamuser`) profile moves to it with its saves, links and registry | the fork's profile host test, extended, under ASan and UBSan |
-| 0005 | Everything the user reads says ArtCraft (made by `artcraft_ps5/rebrand.py`); the USB folder is `artcraft/`; the log tag is `[ArtCraft]`; credits stay Mihawk's | setup (9 languages, every glyph drawable), detailed-logs and package host tests |
+| 0005 | Everything the user reads says ArtCraft (made by `artcraft_ps5/rebrand.py`); the USB folder is `artcraft/` (a Mihawk OS stick's `mihawkos/` is not read: it holds Mihawk OS's runtime); the log tag is `[ArtCraft]`; credits stay Mihawk's | setup (9 languages, every glyph drawable), detailed-logs and package host tests |
 | 0006 | ArtCraft's mark on the Start button and the PS5 tile (made by `artcraft_ps5/mark.py`) | the fork's logo and icon tests against librsvg |
+| 0007 | A title of its own beside Mihawk OS: PPSA99278 and `/data/artcraft` everywhere the fork named PPSA99170 and `/data/ps5proton` (title, runtime, root daemon log, install tools and their tests; made by `artcraft_ps5/identity.py`, which refuses a tree with an update feed) | 102 files, each reversing byte for byte when the values are swapped back; host tests as root and as a user; 148 Python tests, outcomes unchanged; host-reference compile as PPSA99278 |
 
 None has run on a console: the fork's commit gate (`tools/gate.py`) is still to pass on a build of them.
 
 ## After rebasing onto a newer Mihawk OS
 
-0005 and 0006 are generated, so regenerate them rather than resolving conflicts in them by hand: apply 0001 to 0004,
+0005 to 0007 are generated, so regenerate them rather than resolving conflicts in them by hand: apply 0001 to 0004,
 then
 
 ```sh
@@ -25,5 +26,7 @@ python3 -m artcraft_ps5 mihawk rebrand  # stops, naming the file, if a string mo
 git -C ../PS5_MihawkOS commit -a        # 0005
 python3 -m artcraft_ps5 mihawk mark
 git -C ../PS5_MihawkOS commit -a        # 0006 (fix up tests/test_taskbar_logo.py and test_title_icon.py as 0006 does)
+python3 -m artcraft_ps5 mihawk identity # stops if a string moved or the tree names an update feed
+git -C ../PS5_MihawkOS commit -a        # 0007
 git -C ../PS5_MihawkOS format-patch --binary --no-numbered <pin>..HEAD -o "$PWD"/mihawk/patches
 ```

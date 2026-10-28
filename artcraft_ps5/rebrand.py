@@ -2,12 +2,13 @@
 
 Everything the user reads: the title's name and its screens (the loading screen's footer among them), the guided
 setup in every language, the desktop's shortcut tips, the logging README, the browser's title, the runtime
-wallpaper's corner note, and the USB stick's folder of runtime pieces (artcraft/; the installer still takes a
-mihawkos/ one). The credits stay Mihawk's: the About page says the title is a modified version of MihawkOS (GPLv3
-section 5a), keeps "Copyright (C) 2026 Mihawk and the authors credited in NOTICE.md" and names both source
-repositories; the music is "by Mihawk". Identifiers nobody reads stay, so the fork's tools, formats and existing
-prefixes keep working: window classes, HKCU\\Software\\Mihawk keys, the mihawk prefix id, mihawk.exe, pack and release formats,
-MihawkBrowser.lnk.
+wallpaper's corner note, and the USB stick's folder of runtime pieces (artcraft/; a stick made for Mihawk OS
+holds Mihawk OS's runtime, not this title's, so its mihawkos/ folder is not read).
+
+The credits stay Mihawk's: the About page says the title is a modified version of MihawkOS (GPLv3 section 5a), keeps
+"Copyright (C) 2026 Mihawk and the authors credited in NOTICE.md" and names both source repositories; the music is
+"by Mihawk". Identifiers nobody reads stay, so the fork's tools, formats and existing prefixes keep working: window
+classes, HKCU\\Software\\Mihawk keys, the mihawk prefix id, mihawk.exe, pack and release formats, MihawkBrowser.lnk.
 
 The title's log lines are tagged with its name, so the fork's console tools and their tests now look for
 [ArtCraft]; this changes them too.
@@ -41,7 +42,6 @@ USB_FOLDER_FILES = (
     'tools/package-install.py', 'tests/test_package_install.py', 'tools/run-setup-unattended.py',
 )
 USB_FOLDER = re.compile(r'(?<![\w-])mihawkos(?![\w-])')
-OLD_STICK = 'a stick made for MihawkOS'
 # Tools and tests that read the title's log, tagged with its name.
 LOG_READERS = (
     'tools/run-launcher.py', 'tools/run-console.py', 'tools/run-setup-unattended.py',
@@ -59,8 +59,6 @@ def targeted(brand: str) -> list[tuple[str, str, str, int]]:
     folder = usb_folder(brand)
     a = 'an' if folder[:1] in tuple('aeiou') else 'a'
     return [
-        ('ps5/src/proton_install.cpp', 'folders.push_back(mount + "/mihawkos");',
-         f'folders.push_back(mount + "/{folder}");\n\t\tfolders.push_back(mount + "/mihawkos");   /* {OLD_STICK} */', 1),
         ('ps5/src/proton_install.cpp', 'or in a mihawkos folder on a USB stick.', f'or in {a} {folder} folder on a USB stick.', 1),
         ('examples/ps5proton/ps5proton.cpp', 'or in a mihawkos folder on a USB stick.',
          f'or in {a} {folder} folder on a USB stick.', 1),
@@ -150,9 +148,8 @@ def rebrand(fork: Path, brand: str, *, say=print) -> dict[str, int]:
         lines = text(name).split('\n')
         count = 0
         for i, line in enumerate(lines):
-            if OLD_STICK not in line:
-                lines[i], n = USB_FOLDER.subn(folder, line)
-                count += n
+            lines[i], n = USB_FOLDER.subn(folder, line)
+            count += n
         files[name] = '\n'.join(lines)
         changes[name] = changes.get(name, 0) + count
     readme = text('tools/package-install.py')

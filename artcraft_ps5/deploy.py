@@ -29,7 +29,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .edition import EditionError
+from .edition import MIHAWK_DATA_ROOT, MIHAWK_TITLE_ID, EditionError
 
 REMOTE_MANIFEST = '.artcraft-deploy.json'
 
@@ -83,6 +83,8 @@ def plan(staged: Path, remote: dict[str, str], *, seeded: bool = False, force: b
     for entry in manifest['files']:
         if '/drive_c/windows/' in entry['path'].lower():
             raise EditionError(f'{entry["path"]}: never written (wineboot makes C:\\windows)')
+        if entry['path'].startswith((MIHAWK_DATA_ROOT + '/', f'/data/homebrew/{MIHAWK_TITLE_ID}/')):
+            raise EditionError(f'{entry["path"]}: Mihawk OS\'s; the ArtCraft title never writes there')
         if force:
             result.send.append(entry)
         elif entry.get('seed') and seeded:

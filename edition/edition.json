@@ -1,11 +1,12 @@
 {
   "schema": 1,
   "version": "0.1.0",
-  "comment": "The ArtCraft edition of Mihawk OS. docs/ARCHITECTURE.md says what each field drives and why.",
+  "comment": "The ArtCraft edition of Mihawk OS: its own PS5 title beside Mihawk OS, sharing nothing with it.",
   "title": {
-    "id": "PPSA99170",
+    "id": "PPSA99278",
     "name": "ArtCraft",
-    "comment": "The fork's tools (console-setup.py, gate.py, pack-runtime.py, package-install.py) and ShadowMountPlus all name PPSA99170, so the edition takes that slot and replaces MihawkOS on the console. A tile of its own beside MihawkOS needs a new id here and those tools taught to read it (docs/ROADMAP.md)."
+    "data_root": "/data/artcraft",
+    "comment": "A tile and a data folder of ArtCraft's own: Mihawk OS keeps PPSA99170 and /data/ps5proton, untouched. 99278 is ART on a phone keypad, in the 99xxx range homebrew uses, apart from Mihawk's titles (99008, 99130, 99170). Patch 0007 (artcraft_ps5/identity.py) gives the fork's title, runtime and tools these values."
   },
   "profile": {
     "id": "artcraft",

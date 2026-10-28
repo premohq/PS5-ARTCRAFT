@@ -1,15 +1,18 @@
 """Everything the edition puts on the console, laid out under one folder whose paths are the console's own.
 
-  <out>/data/ps5proton/prefixes/<prefix>/drive_c/ArtCraft/   C:\\ArtCraft in the edition's prefix:
+  <out><data root>/prefixes/<prefix>/drive_c/ArtCraft/      C:\\ArtCraft in the edition's prefix:
       Launcher/   ArtCraft Launcher's portable copy, portable.txt beside its exe, and its data folder seeded with
                   installed.json (the apps below, as its own installs) and app.ron (its settings)
       Apps/<id>/  each app's portable ZIP, unpacked as the launcher unpacks one (artcraft_ps5/portable.py)
       System/     artcraft-session.exe, session.ini, trust.reg and defaults.reg
       Theme/      the wallpaper
-  <out>/data/ps5proton/games/<profile>/game.json          the library entry that starts the ArtCraft desktop
+  <out><data root>/games/<profile>/game.json              the library entry that starts the ArtCraft desktop
   <out>/data/homebrew/<title>/edition.json                 tells the (patched) title to start that entry itself
   <out>/manifest.json                                      every file: its console path, size and sha256, and
                                                            seed: true for the launcher's and the apps' files
+
+The data root and the title id are the edition's own (/data/artcraft, PPSA99278), never Mihawk OS's (/data/ps5proton,
+PPSA99170), so staging and deploying leave an installed Mihawk OS alone.
 
 The seed is what ArtCraft Launcher manages once it runs (it updates itself and the apps in place, as on a PC), so
 artcraft_ps5/deploy.py sends it to a console once; the rest is the edition's and stays as staged.
@@ -30,7 +33,6 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 from . import authenticode, launcher_state, portable, regfile
 from .edition import Edition, EditionError, windows_host_path
 
-DATA_ROOT = PurePosixPath('/data/ps5proton')
 PUBLIC_DESKTOP = PureWindowsPath(r'C:\users\Public\Desktop')
 SESSION_ENTRY = r'C:\windows\system32\mihawk.exe'      # the desktop session's entry (Mihawk src/pw_desktop_session.h)
 # The built-in Mihawk OS entry's environment (ps5/src/proton_launch.cpp proton_read_games): a desktop session.
@@ -49,8 +51,8 @@ class Staged:
 
 def console_paths(edition: Edition) -> dict[str, PurePosixPath]:
     return {
-        'prefix': DATA_ROOT / 'prefixes' / edition.prefix,
-        'entry': DATA_ROOT / 'games' / edition.profile_id / 'game.json',
+        'prefix': edition.data_root / 'prefixes' / edition.prefix,
+        'entry': edition.data_root / 'games' / edition.profile_id / 'game.json',
         'edition': PurePosixPath('/data/homebrew') / edition.title_id / 'edition.json',
     }
 

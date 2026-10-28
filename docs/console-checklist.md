@@ -1,14 +1,17 @@
 # Testing the ArtCraft edition on a console
 
-Nothing here has run on a PS5 yet. Work through this in order on a console that has the fork's title and runtime
-installed (the fork's README; its commit gate, `tools/gate.py`, should pass on the patched build first). Each step
-names what to look for and where to read what went wrong.
+Nothing here has run on a PS5 yet. Work through this in order on a console that has the patched fork's title and
+runtime installed: its `tools/console-setup.py` puts them in `/data/homebrew/PPSA99278` and `/data/artcraft` (the
+fork's README; its commit gate, `tools/gate.py`, should pass on the patched build first). If the console has Mihawk OS
+too, take the listing in section 9 before installing ArtCraft. Each step names what to look for and where to read what
+went wrong.
 
 Where to look:
 
-- The session helper's log: `/data/ps5proton/prefixes/artcraft/drive_c/ArtCraft/System/logs/session.log` (FTP),
+- The session helper's log: `/data/artcraft/prefixes/artcraft/drive_c/ArtCraft/System/logs/session.log` (FTP),
   one line per thing it did: `trust:`, `defaults:`, `wallpaper:`, `shortcuts:`, `environment:`, `launcher:`.
-- The title's log, whose lines are tagged `[ArtCraft]`: the fork's `tools/run-console.py` reads it.
+- The title's log, whose lines are tagged `[ArtCraft]`: the fork's `tools/run-console.py` reads it. ArtCraft's
+  logs are under `/data/artcraft/logs`.
 - The launcher's own state: `.../drive_c/ArtCraft/Launcher/ArtCraftLauncherData/` (`data/installed.json`,
   `data/app.ron`).
 
@@ -29,7 +32,8 @@ git checkout edition/suite.lock.json      # back to the current pins
 
 ## 2. The title
 
-- [ ] The tile says ArtCraft and shows ArtCraft's mark, not Mihawk OS's.
+- [ ] ArtCraft has a tile of its own, named ArtCraft with ArtCraft's mark. A Mihawk OS tile, if installed, is still
+      there beside it, unchanged.
 - [ ] A cold start of a fresh install runs the guided setup, which says ArtCraft in every language it offers.
 - [ ] After setup, or on any later cold start, the title goes straight to the ArtCraft desktop with no library first.
 - [ ] Quit the desktop: the title shows its library rather than reopening the desktop, so a failing session never
@@ -90,3 +94,19 @@ file to Documents and opens it again.
       (`shortcuts: ... removed`). Note what the launcher shows for it (missing, or offered to install again), and
       reinstall it from there.
 - [ ] `python3 -m artcraft_ps5 deploy --force` puts back the pinned launcher and apps, over whatever is there.
+
+## 9. Beside Mihawk OS
+
+Only on a console that also has Mihawk OS. ArtCraft never writes to Mihawk OS's title folder or data folder, and
+`deploy` refuses to.
+
+- [ ] Before installing ArtCraft, save a recursive listing, with sizes and times, of Mihawk OS's folders
+      `/data/homebrew/PPSA99170` and `/data/ps5proton`. Over FTP, e.g. `lftp -e 'find -l /data/ps5proton; bye'
+      ftp://<console>:2121`. Leave out `/data/ps5proton/logs`, which Mihawk OS's own services write.
+- [ ] After all of the sections above, list them again: nothing has changed.
+- [ ] Open Mihawk OS. It shows its own desktop and library (no ArtCraft entry), its own wallpaper, and Windows user
+      Mihawk. Quit it and open ArtCraft: the ArtCraft desktop, user ArtCraft. Switch back and forth a few times, once
+      after a full restart of the console. Both titles get root through the console's access daemon
+      (`/data/homebrew/dev.conf`, shared by all homebrew). If one of them is refused root after the other ran, note
+      which order and the title's message.
+- [ ] Delete ArtCraft (`/data/homebrew/PPSA99278` and `/data/artcraft`). Mihawk OS still starts and works.

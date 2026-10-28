@@ -6,6 +6,11 @@ manager, USB keyboard and mouse, a themed wallpaper, and ArtCraft Launcher start
 the apps as it does on a PC. Built on a fork of [Mihawk OS](https://github.com/premohq/PS5_MihawkOS), which runs
 Windows programs on the PS5 through Wine and Proton's stack.
 
+ArtCraft is a PS5 title of its own, **PPSA99278**, with everything it keeps in **`/data/artcraft`**. It installs
+beside Mihawk OS (PPSA99170, `/data/ps5proton`) and shares nothing with it: not the tile, the Wine runtime, the
+prefixes, the library or the logs. Both can be installed at once, and installing, updating or removing one leaves the
+other as it was. The cost is disk space: ArtCraft brings its own copy of the runtime (about 1.2 GB).
+
 > Status: work in progress, nothing here has run on a console yet. What has been checked, and how, is listed under
 > [What is proven](#what-is-proven).
 
@@ -13,8 +18,8 @@ Windows programs on the PS5 through Wine and Proton's stack.
 
 | Piece | Where | What it does |
 |---|---|---|
-| The title | `mihawk/patches/` on the fork at `mihawk/mihawk.lock.json` ([what each patch does](mihawk/README.md)) | Boots straight into the ArtCraft desktop on a cold start (a session that ends shows the library, so a failing one never loops); its Start and taskbar keep only File Explorer and Settings; no MihawkBrowser shortcut; the Windows user is ArtCraft (older Mihawk and steamuser profiles move to it with their saves); everything the user reads says ArtCraft, with ArtCraft's own mark on the Start button and the PS5 tile, while the credits stay Mihawk's |
-| The desktop | `artcraft_ps5/stage.py` | A prefix of its own (`artcraft`): `C:\ArtCraft\Launcher` (ArtCraft Launcher, portable), `C:\ArtCraft\Apps\<app>` (each app, installed exactly as the launcher installs a portable ZIP, so the launcher adopts and updates them), the wallpaper, and the library entry that starts it |
+| The title | `mihawk/patches/` on the fork at `mihawk/mihawk.lock.json` ([what each patch does](mihawk/README.md)) | Its own tile and data folder (PPSA99278, `/data/artcraft`), for the title, its runtime and the fork's install tools alike; boots straight into the ArtCraft desktop on a cold start (a session that ends shows the library, so a failing one never loops); its Start and taskbar keep only File Explorer and Settings; no MihawkBrowser shortcut; the Windows user is ArtCraft (older Mihawk and steamuser profiles move to it with their saves); everything the user reads says ArtCraft, with ArtCraft's own mark on the Start button and the PS5 tile, while the credits stay Mihawk's |
+| The desktop | `artcraft_ps5/stage.py` | A prefix in ArtCraft's data folder (`/data/artcraft/prefixes/artcraft`): `C:\ArtCraft\Launcher` (ArtCraft Launcher, portable), `C:\ArtCraft\Apps\<app>` (each app, installed exactly as the launcher installs a portable ZIP, so the launcher adopts and updates them), the wallpaper, and the library entry that starts it |
 | The session start | `session/artcraft-session.c` | Run by the desktop once it is up: installs the code-signing root and policy the launcher's self-update needs, applies the wallpaper and Start pins once, keeps a desktop shortcut per installed app, sets `WGPU_BACKEND=vulkan`, starts the launcher |
 | The pins | `edition/suite.lock.json` | Every release the edition installs, by version, URL, size and SHA-256 |
 
@@ -27,7 +32,8 @@ title and runtime.
 ```sh
 # 1. The fork at its pin with the edition's patches (branch artcraft in ../PS5_MihawkOS), then build and
 #    install the title and runtime as the fork's README says (tools/fetch-all.sh, tools/build-production.sh,
-#    tools/console-setup.py)
+#    tools/console-setup.py). With the patches its tools build and install ArtCraft as PPSA99278 into
+#    /data/artcraft; an installed Mihawk OS is not touched.
 python3 -m artcraft_ps5 mihawk prepare
 
 # 2. The session helper (or take artcraft-session.exe from the CI run's artcraft-session artifact)
@@ -63,8 +69,12 @@ On the console, test in the order of [docs/console-checklist.md](docs/console-ch
   S_FALSE without an error and `WinVerifyTrust` reports success. An unsigned or tampered file is still refused. The
   edition also installs the Microsoft Identity Verification Root 2020 (taken from the launcher's own signature, pinned
   by SHA-256) and the `WTPF_IGNOREEXPIRATION` policy, so the check keeps passing if Wine starts enforcing the chain.
+- ArtCraft's own title: patch 0007 changes only the title id and the data folder, in the 102 files that name them.
+  Each of them reverses byte for byte to the fork's own text when the two values are swapped back. The fork's
+  Python tests (148) and host tests have the same outcome as before it. `deploy` refuses to write anything under
+  Mihawk OS's title or data folder.
 - The fork patches (CI applies them at the pin and runs the fork's host tests on every push): the title code
-  compiles in the host-reference configuration; the shell changes compile with MinGW in a mock; the profile move
+  compiles in the host-reference configuration, as PPSA99278; the shell changes compile with MinGW in a mock; the profile move
   passes the fork's own host test, extended for MihawkOS v3 prefixes, under ASan and UBSan, as root and as a user.
   None has run on a console.
 

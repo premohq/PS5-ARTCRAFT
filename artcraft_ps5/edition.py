@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from pathlib import Path, PureWindowsPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from . import ROOT
 
@@ -18,6 +18,8 @@ ENV_WORD = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*=.*$')
 RESERVED_ENV = ('PROTON_', 'MIHAWK_', 'WINE_PS5_NTSYNC')
 CHECK_EVERY = ('Hour', 'FourHours', 'Day', 'Never')    # craft-launcher crates/ui-egui/src/settings.rs
 PACKAGE_KINDS = ('Msi', 'PortableZip')                 # the Windows ones (crates/core/src/platform.rs)
+# Mihawk OS's own title and data folder: the edition lives beside it and never takes either.
+MIHAWK_TITLE_ID, MIHAWK_DATA_ROOT = 'PPSA99170', '/data/ps5proton'
 
 
 class EditionError(ValueError):
@@ -54,6 +56,7 @@ class Edition:
     version: str
     title_id: str
     title_name: str
+    data_root: PurePosixPath           # the title's runtime, prefixes, library and logs on the console
     profile_id: str
     profile_name: str
     profile_detail: str
@@ -180,6 +183,7 @@ def load(directory: Path = EDITION_DIR, *, need_lock: bool = False) -> Edition:
         version=_need(edition, 'version', str, 'edition.json'),
         title_id=_need(title, 'id', str, 'edition.json title'),
         title_name=_need(title, 'name', str, 'edition.json title'),
+        data_root=PurePosixPath(_need(title, 'data_root', str, 'edition.json title')),
         profile_id=_need(profile, 'id', str, 'edition.json profile'),
         profile_name=_need(profile, 'name', str, 'edition.json profile'),
         profile_detail=_need(profile, 'detail', str, 'edition.json profile'),
@@ -197,8 +201,12 @@ def load(directory: Path = EDITION_DIR, *, need_lock: bool = False) -> Edition:
         launcher=launcher,
         apps=apps,
     )
-    if not re.fullmatch(r'[A-Z]{4}[0-9]{5}', result.title_id):
-        raise EditionError('edition.json: title id must look like PPSA99170')
+    if not re.fullmatch(r'PPSA[0-9]{5}', result.title_id):
+        raise EditionError('edition.json: title id must look like PPSA99278')
+    if not re.fullmatch(r'/data/[a-z0-9][a-z0-9_-]{0,31}', str(result.data_root)):
+        raise EditionError('edition.json: title data_root must be a folder directly under /data, like /data/artcraft')
+    if result.title_id == MIHAWK_TITLE_ID or str(result.data_root) == MIHAWK_DATA_ROOT:
+        raise EditionError(f'edition.json: {MIHAWK_TITLE_ID} and {MIHAWK_DATA_ROOT} are Mihawk OS\'s; the edition needs its own')
     if not ID.match(result.profile_id) or not PREFIX_ID.match(result.prefix):
         raise EditionError('edition.json: profile id and prefix must be folder IDs')
     if result.prefix == 'mihawk':

@@ -21,6 +21,7 @@ def test_the_checked_in_edition_loads_with_every_app_pinned():
         assert pin.url == f'https://github.com/{next(a.repo for a in (edition.launcher, *edition.apps) if a.id == pin.id)}' \
                           f'/releases/download/{pin.tag}/{pin.asset}'
     assert str(edition.launcher_exe) == r'C:\ArtCraft\Launcher\artcraft-launcher.exe'
+    assert (edition.title_id, str(edition.data_root)) == ('PPSA99278', '/data/artcraft')
 
 
 def variant(tmp_path, change) -> Path:
@@ -41,6 +42,10 @@ def variant(tmp_path, change) -> Path:
     (lambda c: c['seed'].update(apps=['nocraft']), 'no app'),
     (lambda c: c['launcher_settings'].update(preferred_kinds=['Dmg']), 'preferred_kinds'),
     (lambda c: c['title'].update(id='artcraft'), 'title id'),
+    (lambda c: c['title'].update(id='PPSA99170'), "Mihawk OS's"),
+    (lambda c: c['title'].update(data_root='/data/ps5proton'), "Mihawk OS's"),
+    (lambda c: c['title'].update(data_root='/data/art/craft'), 'directly under /data'),
+    (lambda c: c['title'].pop('data_root'), 'data_root'),
 ])
 def test_what_the_tools_cannot_use_is_refused(tmp_path, change, message):
     with pytest.raises(EditionError, match=message):

@@ -1,0 +1,2566 @@
+From 8194509f2af2ef39ed9f5d0cd6a7ab1e7f56a5b7 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 15:16:06 +0000
+Subject: [PATCH] ArtCraft: a title of its own (PPSA99278, /data/artcraft)
+ beside MihawkOS
+
+ArtCraft installs next to MihawkOS and shares nothing with it. MihawkOS
+is PPSA99170 and keeps its Wine runtime, prefixes, library, logs, setup
+record, update staging, shared sections, payload child and root daemon
+log under /data/ps5proton. A title with either value would replace it or
+share all of that with it. ArtCraft's runtime is not MihawkOS's: its
+Windows user, Start menu and wallpaper differ.
+
+So the title, the runtime and the root daemon's log, and the PC tools
+that install and test them (console-setup.py, deploy-wine.py,
+pack-runtime.py, package-install.py, sign-release.py, the gate's runners)
+with their tests, all name PPSA99278 and /data/artcraft. That includes
+Z:\data\artcraft in every escaping the probes use. param.json carries
+conceptId 99278 and contentId UP9000-PPSA99278_00-ARTCRAFT00000000. The
+service helper now loads gpu-client.prx from ArtCraft's own folder, not
+MihawkOS's. The publication check counts PPSA99278 as the title's own.
+
+MihawkOS's documents (*.md) and the records of its console runs
+(evidence/, docs/history/) are unchanged: they describe MihawkOS.
+
+Made by PS5-ARTCRAFT's artcraft_ps5/identity.py. It refuses to run if
+the tree names an update feed or a release key, since ArtCraft would
+then offer MihawkOS's releases as its own updates. Every one of the 102
+changed files reverses byte for byte to its committed text when the two
+values are swapped back, so nothing else changed.
+
+Proven on the host: the profile, launch, prefix, setup and detailed-logs
+tests, as root and as an unprivileged user; the logo, icon and package
+tests; all 148 Python tests with the same outcome as before; and
+proton_launch.cpp, proton_install.cpp and proton_update.cpp compiling
+in the host-reference configuration as PPSA99278.
+---
+ examples/ps5proton/ps5proton.cpp              |  4 +-
+ examples/ps5proton/setup_tour.hpp             |  2 +-
+ native/proton_channel_probe.cpp               |  4 +-
+ native/proton_gpu_server_probe.cpp            |  2 +-
+ native/proton_install_probe.cpp               |  6 +--
+ native/proton_limits_probe.h                  |  2 +-
+ native/proton_section_probe.c                 |  2 +-
+ native/proton_service_helper.c                |  4 +-
+ native/proton_wine.cpp                        |  4 +-
+ platform/lapy/resident-log.patch              |  2 +-
+ ps5/sce_sys/param.json                        |  6 +--
+ ps5/src/proton_install.h                      |  6 +--
+ ps5/src/proton_launch.cpp                     |  2 +-
+ ps5/src/proton_launch.h                       |  6 +--
+ ps5/src/proton_update.h                       |  2 +-
+ src/pw_detailed_logs.h                        |  2 +-
+ src/pw_first_run.h                            |  2 +-
+ src/pw_log_sessions.h                         |  2 +-
+ src/pw_memory_helper.c                        |  2 +-
+ src/pw_pack.h                                 |  2 +-
+ src/pw_setup.h                                |  6 +--
+ src/pw_start_failure.h                        |  2 +-
+ src/pw_update.h                               |  2 +-
+ tests/d3d11-probe.c                           |  6 +--
+ tests/fake_ftp.py                             |  2 +-
+ tests/fs-probe.c                              |  2 +-
+ tests/game-mode-probe.c                       |  2 +-
+ tests/gate-sequence-probe.c                   |  4 +-
+ tests/gpu-window-probe.c                      |  2 +-
+ tests/ps5-signal-probe.c                      |  2 +-
+ tests/shell-probe.c                           |  4 +-
+ tests/shell-scorecard-probe.c                 |  2 +-
+ tests/stdout-probe.c                          |  2 +-
+ tests/test_console_guard.py                   | 12 ++---
+ tests/test_console_setup.py                   | 18 ++++----
+ tests/test_deploy_folder.py                   | 16 +++----
+ tests/test_package_install.py                 |  4 +-
+ tests/test_publication_check.py               |  6 +--
+ tests/test_pw_payload_close.c                 |  2 +-
+ tests/test_pw_start_failure.c                 |  2 +-
+ tests/test_pw_wine_profile.c                  |  4 +-
+ tests/test_run_console_verdicts.py            |  2 +-
+ tests/test_stage_licences.py                  |  4 +-
+ tests/window-compose-probe.c                  |  2 +-
+ tests/window-effects-probe.c                  |  2 +-
+ tools/build-child-probe.py                    |  2 +-
+ tools/build-lapy-validation.py                |  2 +-
+ tools/carrier-image-probe.c                   |  4 +-
+ tools/console-iobench.c                       |  6 +--
+ tools/console-iobench.py                      |  4 +-
+ tools/console-setup.py                        |  4 +-
+ tools/deploy-d3d-probe.py                     |  2 +-
+ tools/deploy-folder.py                        |  4 +-
+ tools/deploy-wine.py                          |  2 +-
+ tools/dmem-share-probe.c                      | 10 ++---
+ tools/gate.py                                 |  2 +-
+ tools/helperhostprobe.c                       |  6 +--
+ tools/lapy-service-log.py                     |  4 +-
+ tools/measure-prefix.py                       |  4 +-
+ tools/pack-runtime.py                         |  6 +--
+ tools/package-install.py                      |  8 ++--
+ tools/prefix-forget-dualsense.py              |  2 +-
+ tools/publication-check.py                    |  6 +--
+ tools/recover-child-probe.py                  |  6 +--
+ tools/restore-process-probe.py                | 14 +++---
+ tools/run-appearance.py                       |  2 +-
+ tools/run-browser.py                          |  4 +-
+ tools/run-child-probe.py                      | 16 +++----
+ tools/run-console.py                          |  6 +--
+ tools/run-desktop-items.py                    |  2 +-
+ tools/run-desktop-session.py                  |  2 +-
+ tools/run-desktop-view.py                     |  2 +-
+ tools/run-detailed-logs.py                    |  2 +-
+ tools/run-dmem-share.py                       |  4 +-
+ tools/run-frame-pacing.py                     |  2 +-
+ tools/run-game-mode.py                        |  2 +-
+ tools/run-game-routes.py                      |  4 +-
+ tools/run-games-autodetect.py                 |  2 +-
+ tools/run-install-rehearsal.py                | 12 ++---
+ tools/run-launcher-ended.py                   |  2 +-
+ tools/run-launcher.py                         | 34 +++++++-------
+ tools/run-mesa-zink-probe.py                  |  2 +-
+ tools/run-mouse-controls.py                   |  2 +-
+ tools/run-payload-direct-memory-probe.py      |  2 +-
+ tools/run-payload-start-test.py               |  6 +--
+ tools/run-prefix-baseline.py                  |  4 +-
+ tools/run-prefix-test.py                      |  6 +--
+ tools/run-process-probe.py                    | 44 +++++++++----------
+ tools/run-registry-flush.py                   |  2 +-
+ tools/run-setup-unattended.py                 | 44 +++++++++----------
+ tools/run-shell-scorecard.py                  |  2 +-
+ tools/run-shell-surfaces.py                   |  2 +-
+ tools/run-tls-fixture.py                      |  6 +--
+ tools/run-wine-probe.py                       | 14 +++---
+ tools/sign-release.py                         |  4 +-
+ tools/space-probe.c                           |  2 +-
+ tools/stage-wine.py                           |  4 +-
+ tools/start-lapy-service.py                   |  6 +--
+ tools/validate-lapy.py                        |  2 +-
+ tools/verify-title.py                         |  6 +--
+ ...-ntdll-ps5-standard-output-to-a-file.patch |  2 +-
+ wine/ps5/pw_payload_spawn.h                   |  4 +-
+ 102 files changed, 269 insertions(+), 269 deletions(-)
+
+diff --git a/examples/ps5proton/ps5proton.cpp b/examples/ps5proton/ps5proton.cpp
+index e3ddf40..e454b92 100644
+--- a/examples/ps5proton/ps5proton.cpp
++++ b/examples/ps5proton/ps5proton.cpp
+@@ -140,7 +140,7 @@ class VulkanExample : public ps5ui::KitExample
+ 		const char *badges[] = { "", "READY", "CHECKING", "INSTALLING", "DONE", "FAILED" };
+ 		settingsList.item(3).badge = badges[install.phase];
+ 		settingsList.item(3).subtitle = install.phase == ProtonInstall::running ? "Installing" :
+-			install.phase == ProtonInstall::done ? "Installed" : "From /data/ps5proton/install or a USB stick";
++			install.phase == ProtonInstall::done ? "Installed" : "From /data/artcraft/install or a USB stick";
+ 	}
+ 
+ 	void syncControls()
+@@ -388,7 +388,7 @@ class VulkanExample : public ps5ui::KitExample
+ 			paragraph(paint, "This program is free software under the GNU General Public License, version 3 or later. It comes "
+ 				"with ABSOLUTELY NO WARRANTY. You may share and change it under that licence's terms.", 1240, y, 22, look.text_muted);
+ 			y += 22;
+-			paragraph(paint, "Licence texts: /data/homebrew/PPSA99170/licenses (this title) and " PROTON_DATA_ROOT
++			paragraph(paint, "Licence texts: /data/homebrew/PPSA99278/licenses (this title) and " PROTON_DATA_ROOT
+ 				"/runtime/ge11-7/share/licenses (the Windows runtime).", 1240, y, 22, look.text_muted);
+ 			y += 22;
+ 			paragraph(paint, "Source: github.com/premohq/PS5_MihawkOS, a fork of github.com/mihawk-99/PS5_MihawkOS", 1240, y, 22, look.text_muted);
+diff --git a/examples/ps5proton/setup_tour.hpp b/examples/ps5proton/setup_tour.hpp
+index 96d5e6e..afe0f21 100644
+--- a/examples/ps5proton/setup_tour.hpp
++++ b/examples/ps5proton/setup_tour.hpp
+@@ -269,7 +269,7 @@ public:
+ 	SetupSky sky;
+ 	Outcome outcome{ Outcome::none };
+ 
+-	// Where the record and the markers are (/data/ps5proton), and the title's assets folder (the flags, the QR code)
++	// Where the record and the markers are (/data/artcraft), and the title's assets folder (the flags, the QR code)
+ 	static constexpr const char *recordPath = PROTON_DATA_ROOT "/setup.txt";
+ 	static constexpr const char *firstRunMarker = PROTON_DATA_ROOT "/setup-first-run";
+ 	static constexpr const char *preparingMarker = PROTON_DATA_ROOT "/setup-preparing";
+diff --git a/native/proton_channel_probe.cpp b/native/proton_channel_probe.cpp
+index 9e4dad5..0e42b8c 100644
+--- a/native/proton_channel_probe.cpp
++++ b/native/proton_channel_probe.cpp
+@@ -26,7 +26,7 @@ extern "C" int sceNetInit(void);
+ namespace {
+ 
+ // /data cannot hold a socket; the payload binds one where it can and writes its path into this file.
+-const char channel_note[] = "/data/ps5proton/run/helper-channel.path";
++const char channel_note[] = "/data/artcraft/run/helper-channel.path";
+ const char shm_pattern[] = "ps5-proton channel shared memory";
+ 
+ unsigned long long monotonic_ms()
+@@ -178,7 +178,7 @@ int proton_channel_probe(FILE *out, const char *identity)
+ int proton_payload_start_probe(FILE *out, const char *identity)
+ {
+     fprintf(out, "service-native identity=%s revision=1 parent=%d mode=payload-start\n", identity, int(getpid()));
+-    static const char image_path[] = "/data/ps5proton/run/helperhostprobe.elf";
++    static const char image_path[] = "/data/artcraft/run/helperhostprobe.elf";
+     FILE *image = fopen(image_path, "rb");
+     std::string elf;
+     if (image) {
+diff --git a/native/proton_gpu_server_probe.cpp b/native/proton_gpu_server_probe.cpp
+index 8006e4f..2bb013b 100644
+--- a/native/proton_gpu_server_probe.cpp
++++ b/native/proton_gpu_server_probe.cpp
+@@ -231,7 +231,7 @@ int proton_gpu_server_probe(FILE *out,const char *identity,bool draw,bool presen
+                     uint64_t hash=1469598103934665603ull;
+                     for(unsigned n=0;n<4096;++n)hash=(hash^((uint32_t *)message.address)[n])*1099511628211ull;
+                     if(hash==expected_hash(i,(unsigned)message.argument[3])) {
+-                        char path[160];snprintf(path,sizeof(path),"/data/homebrew/PPSA99170/gpu-present-%u-%llu.ppm",i,(unsigned long long)message.argument[3]);
++                        char path[160];snprintf(path,sizeof(path),"/data/homebrew/PPSA99278/gpu-present-%u-%llu.ppm",i,(unsigned long long)message.argument[3]);
+                         const uint64_t present_start=radv_ps5_now_ns();
+                         message.status=display.present((void *)message.address,64,64,256,serve_log,nullptr);
+                         const uint64_t presented=radv_ps5_now_ns();
+diff --git a/native/proton_install_probe.cpp b/native/proton_install_probe.cpp
+index afceb79..b57bf2d 100644
+--- a/native/proton_install_probe.cpp
++++ b/native/proton_install_probe.cpp
+@@ -14,7 +14,7 @@
+ //   post <port> <path>               an HTTP POST of "{}" to 127.0.0.1:<port> (probe 7: ShadowMountPlus's rescan)
+ //   usb                              which of /mnt/usb0-7 and /mnt/ext0-1 exist, how many entries (never their names),
+ //                                    and the read speed of the largest file in a mihawkos/ folder there (probe 6)
+-//   writes <mib> <seconds> <file>    buffered write() of <mib> MiB in files of <file> MiB under /data/ps5proton,
++//   writes <mib> <seconds> <file>    buffered write() of <mib> MiB in files of <file> MiB under /data/artcraft,
+ //                                    1 MiB a call, fsync() and close() each, stopped after <seconds> (probe 1)
+ //   small <count> <kib>              <count> files of <kib> KiB: write, fsync, rename into place, as an install does
+ //   loadexec                         replace this process with the title again; the steps after it run in the new one,
+@@ -25,7 +25,7 @@
+ //
+ // Every step writes one line or more to install-probe-results.txt in the title folder, with as_expected=0/1 where
+ // the plan names an expectation; the last line is result=PASS when every expectation held. Nothing outside
+-// /data/ps5proton/install-probe is written, and that folder is removed at the start and at the end.
++// /data/artcraft/install-probe is written, and that folder is removed at the start and at the end.
+ #include "proton_install_probe.h"
+ #include "../ps5/src/platform.h"
+ #include "../ps5/src/proton_launch.h"
+@@ -435,7 +435,7 @@ void proton_install_probe_preroot()
+ 	auto exists = [&](const char *path) { return error_of(stat(path, &st)); };
+ 	const int data = exists("/data"), homebrew = exists("/data/homebrew"), root = exists(PROTON_DATA_ROOT);
+ 	const int devconf = exists("/data/homebrew/dev.conf");
+-	// Probe names only: the real /data/ps5proton decides how the title asks for root (proton_launch.cpp request_root).
++	// Probe names only: the real /data/artcraft decides how the title asks for root (proton_launch.cpp request_root).
+ 	const char *folder = "/data/mihawkos-preroot-probe", *file = "/data/homebrew/mihawkos-preroot-probe.conf";
+ 	const int made = error_of(mkdir(folder, 0755));
+ 	if (!made) rmdir(folder);
+diff --git a/native/proton_limits_probe.h b/native/proton_limits_probe.h
+index 4113693..9beb680 100644
+--- a/native/proton_limits_probe.h
++++ b/native/proton_limits_probe.h
+@@ -2,7 +2,7 @@
+ #ifndef PROTON_LIMITS_PROBE_H
+ #define PROTON_LIMITS_PROBE_H
+ // Measures, in the title's own process, the page size and whether a 4 KiB protection inside a
+-// 16 KiB page holds. "limits:" lines, also in /data/ps5proton/logs/limits-probe.txt.
++// 16 KiB page holds. "limits:" lines, also in /data/artcraft/logs/limits-probe.txt.
+ //
+ // What the console allows a title, measured on firmware 10.01 (2026-10-04):
+ //  - pages: 16 KiB; a 4 KiB mprotect inside one returns 0 and protects the whole 16 KiB page
+diff --git a/native/proton_section_probe.c b/native/proton_section_probe.c
+index 0a1b54a..c894d16 100644
+--- a/native/proton_section_probe.c
++++ b/native/proton_section_probe.c
+@@ -109,7 +109,7 @@ int main(void)
+         arena_reserved = 0;
+     struct sigaction act = {0}, old_bus = {0}, old_segv = {0};
+     char path[100];
+-    snprintf(path, sizeof(path), "/data/ps5proton/run/section-pager-probe-%d", getpid());
++    snprintf(path, sizeof(path), "/data/artcraft/run/section-pager-probe-%d", getpid());
+     size_t n = (size_t)13824 << 20, arena_n = (size_t)64 << 30;
+     void *arena = (void *)UINT64_C(0x8000000000);
+     CHECK(!pw_wine_section_init(&pager, &ops, pages, 4));
+diff --git a/native/proton_service_helper.c b/native/proton_service_helper.c
+index 41c241c..17db1a8 100644
+--- a/native/proton_service_helper.c
++++ b/native/proton_service_helper.c
+@@ -39,7 +39,7 @@ static int vulkan_helper(unsigned client)
+     // As the Wine child loader does: the owner's host ranges, reserved before the client module maps anything.
+     if(pw_gpu_reserve_host_ranges(sceKernelReserveVirtualRange,sceKernelMunmap))setenv("WINE_PS5_GPU_RESERVED","1",1);
+     int result=0;
+-    int module=sceKernelLoadStartModule("/data/homebrew/PPSA99170/gpu-client.prx",0,0,0,0,&result);
++    int module=sceKernelLoadStartModule("/data/homebrew/PPSA99278/gpu-client.prx",0,0,0,0,&result);
+     if(module<0)return bootstrap_failure(2,module);
+     union { uint64_t alignment;char bytes[PW_PRX_MODULE_INFO_BYTES]; } info={0};
+     *(uint64_t *)info.bytes=sizeof(info.bytes);
+@@ -335,7 +335,7 @@ static void memory_helper(void)
+ extern int *__error(void);
+ static const char *budget_path(void)
+ {
+-    static const char *const paths[] = {"/app0/sce_sys/param.json", "/mnt/sandbox/PPSA99170_000/app0/sce_sys/param.json"};
++    static const char *const paths[] = {"/app0/sce_sys/param.json", "/mnt/sandbox/PPSA99278_000/app0/sce_sys/param.json"};
+     for (unsigned i = 0; i < 2; ++i) {
+         const int fd = open(paths[i], O_RDONLY);
+         if (fd >= 0) { close(fd); return paths[i]; }
+diff --git a/native/proton_wine.cpp b/native/proton_wine.cpp
+index 9ad5ff2..9c4509e 100644
+--- a/native/proton_wine.cpp
++++ b/native/proton_wine.cpp
+@@ -99,7 +99,7 @@ PwWineStart wine;
+ PwAudioPs5Ops audio;
+ int audio_port = -1;
+ int log_fd = -1;
+-int title_log_fd = -1;   // /data/ps5proton/logs/title-last.log, the say() mirror (ps5/src/platform.c)
++int title_log_fd = -1;   // /data/artcraft/logs/title-last.log, the say() mirror (ps5/src/platform.c)
+ void log_line(const std::string &line);
+ 
+ int (*flush_registry)(unsigned) = nullptr;
+@@ -1993,7 +1993,7 @@ void proton_run_wine()
+         // descriptor EOF must reap the payloads.
+         const char *owner_close=getenv("PROTON_PAYLOAD_TEST_OWNER_CLOSE");
+         if(owner_bootstrap && !owner_broker_running && owner_close && !strcmp(owner_close,"1") && tick%120==0) {
+-            const char *marker="/data/ps5proton/prefixes/probe/drive_c/payload-owner-ready";
++            const char *marker="/data/artcraft/prefixes/probe/drive_c/payload-owner-ready";
+             if(access(marker,F_OK)==0) {
+                 unlink(marker);
+                 say("PS5_PROTON_PAYLOAD_OWNER_CLOSE PASS children_ready=8");
+diff --git a/platform/lapy/resident-log.patch b/platform/lapy/resident-log.patch
+index 2f7e011..9b6f08d 100644
+--- a/platform/lapy/resident-log.patch
++++ b/platform/lapy/resident-log.patch
+@@ -6,7 +6,7 @@
+      const char *stage = "preflight";
+ +#if LAPY_SERVICE && !LAPY_MAX_REQUESTS
+ +    /* Normal use must retain diagnostics without a PC holding stdout open. */
+-+    int log_fd = open("/data/ps5proton/logs/lapy-service.log",
+++    int log_fd = open("/data/artcraft/logs/lapy-service.log",
+ +                      O_WRONLY | O_CREAT | O_APPEND, 0666);
+ +    if (log_fd < 0) return 2;
+ +    ps5log_set_mirror_fd(log_fd);
+diff --git a/ps5/sce_sys/param.json b/ps5/sce_sys/param.json
+index 9bf3a57..19e4f37 100644
+--- a/ps5/sce_sys/param.json
++++ b/ps5/sce_sys/param.json
+@@ -7,9 +7,9 @@
+   "attribute": 0,
+   "attribute2": 0,
+   "attribute3": 64,
+-  "conceptId": "99170",
++  "conceptId": "99278",
+   "contentBadgeType": 1,
+-  "contentId": "UP9000-PPSA99170_00-PS5PROTON0000000",
++  "contentId": "UP9000-PPSA99278_00-ARTCRAFT00000000",
+   "contentVersion": "01.000.000",
+   "downloadDataSize": 256,
+   "gameIntent": {
+@@ -36,6 +36,6 @@
+   },
+   "requiredSystemSoftwareVersion": "0x0000000000000000",
+   "sdkVersion": "0x0000000000000000",
+-  "titleId": "PPSA99170",
++  "titleId": "PPSA99278",
+   "versionFileUri": ""
+ }
+diff --git a/ps5/src/proton_install.h b/ps5/src/proton_install.h
+index 83e56cc..60a869a 100644
+--- a/ps5/src/proton_install.h
++++ b/ps5/src/proton_install.h
+@@ -2,8 +2,8 @@
+  * MihawkOS - "Install runtime from storage" (docs/SELF_INSTALL.md, phase 5).
+  *
+  * The title folder pins the runtime's manifest (runtime-pack.txt, tools/pack-runtime.py). Its pieces are looked for
+- * in /data/ps5proton/install, then in artcraft/ on each USB stick, and src/pw_pack.h installs them into
+- * /data/ps5proton on a thread of its own while the launcher draws its progress. Every failure is a sentence for the
++ * in /data/artcraft/install, then in artcraft/ on each USB stick, and src/pw_pack.h installs them into
++ * /data/artcraft on a thread of its own while the launcher draws its progress. Every failure is a sentence for the
+  * screen; the log gets the same line with the code and errno.
+  *
+  * Copyright (C) 2026 Mihawk
+@@ -49,7 +49,7 @@ struct ProtonInstall {
+ };
+ 
+ /* Look again for the pieces and the free space (not while an install runs). Needs /data. `only` "usb": the sticks'
+- * artcraft folders alone, not /data/ps5proton/install. */
++ * artcraft folders alone, not /data/artcraft/install. */
+ ProtonInstall proton_install_find(const char *only = nullptr);
+ /* Start the install proton_install_find found ready; returns at once. */
+ void proton_install_start();
+diff --git a/ps5/src/proton_launch.cpp b/ps5/src/proton_launch.cpp
+index 28cd672..fd2dfc3 100644
+--- a/ps5/src/proton_launch.cpp
++++ b/ps5/src/proton_launch.cpp
+@@ -356,7 +356,7 @@ bool proton_data_grant(bool retry)
+ #else
+ 	/* Seeing /data is not enough: a loader can mount it into the sandbox (ShadowMountPlus 1.7beta4 does), and
+ 	 * the process still runs as the title's own user, which owns none of the files the elevated title made there
+-	 * (2026-10-06, record removed from the tree: Wine refused "/data/ps5proton/prefixes/1 is not owned by you"). Only a
++	 * (2026-10-06, record removed from the tree: Wine refused "/data/artcraft/prefixes/1 is not owned by you"). Only a
+ 	 * process the daemon has elevated, which makes it root, skips the request. */
+ 	if (path_exists(PROTON_DATA_ROOT) && getuid() == 0) {
+ 		gDataGranted = true;
+diff --git a/ps5/src/proton_launch.h b/ps5/src/proton_launch.h
+index 543e715..8f78c9a 100644
+--- a/ps5/src/proton_launch.h
++++ b/ps5/src/proton_launch.h
+@@ -8,7 +8,7 @@
+  *
+  * Arguments are "key=value" words, as prospero-win's launcher uses them
+  * (docs/ARCHITECTURE.md):
+- *   profile=<id>   a game from the catalog under /data/ps5proton/games;
++ *   profile=<id>   a game from the catalog under /data/artcraft/games;
+  *   path=<exe>     an absolute Windows path, run directly (overrides the
+  *                  profile's executable);
+  *   cycle=<n>      launcher/game round trips completed, for unattended runs;
+@@ -93,11 +93,11 @@ const ProtonEdition &proton_edition();
+  * A title starts able to see only its own sandbox: /data is absent until the
+  * Lapy daemon grants it (the platform layer's elevation client). So there are two places a game may be, and the
+  * catalog reads both:
+- *   /data/ps5proton/games            once /data is granted (the library)
++ *   /data/artcraft/games            once /data is granted (the library)
+  *   <title folder>/games             always, over FTP, with no daemon
+  * After a grant the title's own folder is no longer at /app0 but in the
+  * sandbox, so proton_app_root() and proton_title_path() resolve it. */
+-#define PROTON_DATA_ROOT "/data/ps5proton"
++#define PROTON_DATA_ROOT "/data/artcraft"
+ #define PROTON_SANDBOX_APP0 "/mnt/sandbox/" PS5_TITLE_ID "_000/app0"
+ 
+ /* Ask for /data, before any other thread exists, through the platform layer's
+diff --git a/ps5/src/proton_update.h b/ps5/src/proton_update.h
+index 39f742e..3412670 100644
+--- a/ps5/src/proton_update.h
++++ b/ps5/src/proton_update.h
+@@ -3,7 +3,7 @@
+  *
+  * On request only. A small signed manifest (src/pw_release.h, the owner's Ed25519 key; this build carries the public
+  * half) names the release's title pack and runtime manifest by SHA-256. The title pack is downloaded over the title's
+- * own TLS (proton_fetch.h) into /data/ps5proton/update/stage, every file checked, and switched in at the next start,
++ * own TLS (proton_fetch.h) into /data/artcraft/update/stage, every file checked, and switched in at the next start,
+  * before anything else runs, followed by a restart into the new title (src/pw_update.h; rule 2). The previous title's
+  * files stay until the new one has drawn its launcher once. The runtime the new title pins is then installed by
+  * "Install runtime" (proton_install.h): only the pieces that changed, its stamp last.
+diff --git a/src/pw_detailed_logs.h b/src/pw_detailed_logs.h
+index defbf27..aee1997 100644
+--- a/src/pw_detailed_logs.h
++++ b/src/pw_detailed_logs.h
+@@ -24,7 +24,7 @@
+ #include <stddef.h>
+ #include <time.h>
+ 
+-#define PW_DETAILED_LOGS_ROOT "/data/ps5proton/logs/detailed"
++#define PW_DETAILED_LOGS_ROOT "/data/artcraft/logs/detailed"
+ #define PW_DETAILED_LOGS_KEEP 5u
+ #define PW_DETAILED_LOGS_FOLDER_BYTES (96ull << 20)
+ #define PW_DETAILED_LOGS_FILE_BYTES (32ull << 20)
+diff --git a/src/pw_first_run.h b/src/pw_first_run.h
+index 4821f64..f72850f 100644
+--- a/src/pw_first_run.h
++++ b/src/pw_first_run.h
+@@ -9,7 +9,7 @@
+  * - /data/homebrew/dev.conf, by tools/console-setup.py S6's rule: written only when it is missing, since without it the
+  *   Lapy daemon the title starts exits 2 and /data is never granted (a format removes it). One that holds anything
+  *   else is the owner's (it may point at tools/ps5log-sink.py on purpose) and is kept as it is;
+- * - /data/ps5proton, whose presence decides how the title asks for root (ps5/src/proton_launch.cpp request_root), and
++ * - /data/artcraft, whose presence decides how the title asks for root (ps5/src/proton_launch.cpp request_root), and
+  *   its logs/, where the daemon opens its log before anything else (it exits 2 when it cannot), by mkdir in
+  *   ps5/src/main.cpp. The other folders inside it are made after the grant, as root (phase 1).
+  * Nothing stays open: the daemon refuses a process with an extra reference to its credential.
+diff --git a/src/pw_log_sessions.h b/src/pw_log_sessions.h
+index ddfbd91..f08080f 100644
+--- a/src/pw_log_sessions.h
++++ b/src/pw_log_sessions.h
+@@ -22,7 +22,7 @@
+  * keep outside 2..PW_LOG_SESSIONS_MAX_KEEP; ENAMETOOLONG for a root longer than PW_LOG_SESSIONS_PATH - 16; ENOTDIR when
+  * <root>/<keep-1> is not a folder and ENOTEMPTY when it holds anything but regular files (nothing in it is removed);
+  * otherwise the errno of the call that failed. Symbolic links are never followed. */
+-#define PW_LOG_SESSIONS_ROOT "/data/ps5proton/logs/sessions"
++#define PW_LOG_SESSIONS_ROOT "/data/artcraft/logs/sessions"
+ #define PW_LOG_SESSIONS_KEEP 3u
+ #define PW_LOG_SESSIONS_MAX_KEEP 9u
+ #define PW_LOG_SESSIONS_PATH 256u
+diff --git a/src/pw_memory_helper.c b/src/pw_memory_helper.c
+index 24183b8..a9e14a1 100644
+--- a/src/pw_memory_helper.c
++++ b/src/pw_memory_helper.c
+@@ -2,7 +2,7 @@
+ #include "pw_memory_helper.h"
+ #ifdef PW_MEMORY_HELPER_CENSUS
+ #include "pw_memory_file.h"
+-#define PW_MEMORY_SECTION_DIRECTORY "/data/ps5proton/run/shared-sections"
++#define PW_MEMORY_SECTION_DIRECTORY "/data/artcraft/run/shared-sections"
+ #endif
+ #include <errno.h>
+ #include <fcntl.h>
+diff --git a/src/pw_pack.h b/src/pw_pack.h
+index 7be35df..85d88c2 100644
+--- a/src/pw_pack.h
++++ b/src/pw_pack.h
+@@ -3,7 +3,7 @@
+ #define PW_PACK_H
+ 
+ /* The runtime's install from its chunks (docs/SELF_INSTALL.md, phase 5): what tools/pack-runtime.py made, from a
+- * folder or a download, into /data/ps5proton. The manifest the title folder pins (runtime-pack.txt, the format is in
++ * folder or a download, into /data/artcraft. The manifest the title folder pins (runtime-pack.txt, the format is in
+  * tools/pack-runtime.py) is the only authority: a chunk carries file bytes and nothing else, so no path, link,
+  * device or size comes from the chunk itself.
+  *
+diff --git a/src/pw_setup.h b/src/pw_setup.h
+index e4d2f8b..f55b5fe 100644
+--- a/src/pw_setup.h
++++ b/src/pw_setup.h
+@@ -3,7 +3,7 @@
+ #define PW_SETUP_H
+ 
+ /* The first-launch guided setup's portable part (docs/GUIDED_SETUP.md): its steps, when it shows, its languages and
+- * their text, and the record it keeps (/data/ps5proton/setup.txt). The launcher draws it
++ * their text, and the record it keeps (/data/artcraft/setup.txt). The launcher draws it
+  * (examples/ps5proton/kit/setup_tour.cpp); tests/test_pw_setup.c checks every rule here.
+  *
+  * - It shows when the record has no done=1 (the first launch), when the runtime or the mihawk prefix is missing, or
+@@ -138,7 +138,7 @@ size_t pw_setup_fill(char *out, size_t size, const char *text, const char *const
+ /* bytes as the language writes gigabytes, to two decimals: "1.19 GB", "1,19 Go". */
+ size_t pw_setup_gigabytes(const PwSetupLanguage *language, unsigned long long bytes, char *out, size_t size);
+ 
+-/* The record, /data/ps5proton/setup.txt: "language=<tag>" and "done=1" lines; any other line is ignored. */
++/* The record, /data/artcraft/setup.txt: "language=<tag>" and "done=1" lines; any other line is ignored. */
+ typedef struct PwSetupRecord {
+     char language[16];
+     int done;
+@@ -155,7 +155,7 @@ int pw_setup_prefix_made(char *stamp);
+ 
+ /* The first session's cover (docs/GUIDED_SETUP.md, "Preparing"): what the user sees instead of a black desktop while
+  * wineboot makes the prefix. The launcher draws its words when Start is pressed and keeps that frame
+- * (PW_SETUP_COVER_NAME, in /data/ps5proton); the title shows it through the GPU broker until the session ends, with a mark for each
++ * (PW_SETUP_COVER_NAME, in /data/artcraft); the title shows it through the GPU broker until the session ends, with a mark for each
+  * stage and the time since the start at the places below (1920x1080, the frame's own pixels). The stages follow the
+  * processes wineboot starts; first-install-unattended-2026-10-19-04 took 75 s: wine.inf's settings from the start, Wine
+  * Mono from about 15 s (control.exe appwiz.cpl install_mono, then msiexec and its helpers, each command line naming
+diff --git a/src/pw_start_failure.h b/src/pw_start_failure.h
+index 51f6bef..5825b74 100644
+--- a/src/pw_start_failure.h
++++ b/src/pw_start_failure.h
+@@ -6,7 +6,7 @@
+  *
+  * A helper can die inside the kernel's module loader (the pager error at a fake-signed module's text; errno 92,
+  * EPROTO, at the title) before Wine can report anything. It still leaves its log,
+- * /data/ps5proton/logs/sessions/0/wine-child-<pid>.log (native/proton_wine_child.c):
++ * /data/artcraft/logs/sessions/0/wine-child-<pid>.log (native/proton_wine_child.c):
+  *   "wine-child: firmware status=N version=0x13400000"   once, first
+  *   "wine-child: loading ntdll path=..."                 before ntdll's load, then "wine-child: ntdll loaded" (or
+  *                                                        "ntdll load failed") after it
+diff --git a/src/pw_update.h b/src/pw_update.h
+index 368405d..6110d30 100644
+--- a/src/pw_update.h
++++ b/src/pw_update.h
+@@ -5,7 +5,7 @@
+ /* The switch to a new MihawkOS title (docs/SELF_INSTALL.md, phase 8). The running eboot.bin is never written: the new
+  * title is installed whole into a staging folder first, every file checked by its SHA-256 (src/pw_pack.h, a title
+  * pack), and moved into the title folder at the next start, before anything else runs, followed by a restart into it
+- * through sceSystemServiceLoadExec (rule 2). Under the update folder (/data/ps5proton/update):
++ * through sceSystemServiceLoadExec (rule 2). Under the update folder (/data/artcraft/update):
+  *
+  *   stage/       the new title, with its record title-pack.txt (the manifest it was installed from)
+  *   ready        written once the stage is whole: the new version; the next start switches
+diff --git a/tests/d3d11-probe.c b/tests/d3d11-probe.c
+index 825b0dd..1b52b1e 100644
+--- a/tests/d3d11-probe.c
++++ b/tests/d3d11-probe.c
+@@ -53,7 +53,7 @@ void mainCRTStartup(void)
+     char broker_value[8];const int broker=GetEnvironmentVariableA("PS5_GRAPHICS_BROKER",broker_value,sizeof(broker_value)) && broker_value[0]=='1';
+     const unsigned depth=env_number("PS5_GRAPHICS_DEPTH",0);
+     if(broker && !GetEnvironmentVariableW(L"PS5_PROTON_PROBE_CAPTURE", NULL, 0)) {
+-        WCHAR capture[160];wsprintfW(capture,L"Z:\\data\\ps5proton\\logs\\graphics-broker-%u.ppm",pid);
++        WCHAR capture[160];wsprintfW(capture,L"Z:\\data\\artcraft\\logs\\graphics-broker-%u.ppm",pid);
+         SetEnvironmentVariableW(L"PS5_PROTON_PROBE_CAPTURE",capture);
+     }
+     OutputDebugStringA("PS5_PROTON_GRAPHICS_CHILD PASS: Windows parent and inherited pipe\n");
+@@ -171,9 +171,9 @@ void mainCRTStartup(void)
+             for (unsigned y = 0; y < height; ++y) for (unsigned x = 0; x < width; ++x)
+                 for (unsigned c = 0; c < 3; ++c) pixels[(y*width+x)*3+c] = ((BYTE *)mapped.pData)[y*mapped.RowPitch+x*4+c];
+ #ifdef PS5_GRAPHICS_CHILD_PROBE
+-            WCHAR capture[1024]=L"Z:\\data\\ps5proton\\logs\\graphics-child-probe.ppm";
++            WCHAR capture[1024]=L"Z:\\data\\artcraft\\logs\\graphics-child-probe.ppm";
+ #else
+-            WCHAR capture[1024]=L"Z:\\data\\ps5proton\\logs\\d3d-probe.ppm";
++            WCHAR capture[1024]=L"Z:\\data\\artcraft\\logs\\d3d-probe.ppm";
+ #endif
+             GetEnvironmentVariableW(L"PS5_PROTON_PROBE_CAPTURE",capture,sizeof(capture)/sizeof(capture[0]));
+             HANDLE file = CreateFileW(capture, GENERIC_WRITE, 0, NULL,
+diff --git a/tests/fake_ftp.py b/tests/fake_ftp.py
+index ed70f32..2f958d4 100644
+--- a/tests/fake_ftp.py
++++ b/tests/fake_ftp.py
+@@ -7,7 +7,7 @@ Only what those tools call, with the console's behaviour where it differs from a
+          '226 SELF transfer mode disabled'.
+   MKD    refuses an existing folder and a missing parent with 550 (the 2026-10-14 hand upload needed every parent).
+   DELE   completes with 226: sendcmd returns it, ftplib's delete() would call it an error.
+-  LIST   9 fields, '.' and '..' first ('drwxrwxrwx 2 0 0 65536 Oct 14 16:15 PPSA99170', 2026-10-14).
++  LIST   9 fields, '.' and '..' first ('drwxrwxrwx 2 0 0 65536 Oct 14 16:15 PPSA99278', 2026-10-14).
+   STOR   to a missing folder is refused with 550.
+ FakeServer.writes records every STOR, MKD, DELE and RNFR as (command, path); reads records every RETR path.
+ """
+diff --git a/tests/fs-probe.c b/tests/fs-probe.c
+index 0bea2d0..9b43f03 100644
+--- a/tests/fs-probe.c
++++ b/tests/fs-probe.c
+@@ -201,7 +201,7 @@ void mainCRTStartup(void)
+     static WCHAR root[2048], flag[8];
+     char text[96], a[12], b[12], c[12], d[12];
+ 
+-    if (!GetEnvironmentVariableW(L"FS_PROBE_ROOT", root, 2048)) lstrcpyW(root, L"Z:\\data\\ps5proton\\games\\7\\instances\\26.3\\game\\saves");
++    if (!GetEnvironmentVariableW(L"FS_PROBE_ROOT", root, 2048)) lstrcpyW(root, L"Z:\\data\\artcraft\\games\\7\\instances\\26.3\\game\\saves");
+     walk(root);
+     number(a, dirs); number(b, files); number(c, bytes_read); number(d, errors);
+     lstrcpyA(text, errors ? "PS5_PROTON_FS_PROBE FAIL: dirs=" : "PS5_PROTON_FS_PROBE PASS: dirs=");
+diff --git a/tests/game-mode-probe.c b/tests/game-mode-probe.c
+index e7a987b..e633c7c 100644
+--- a/tests/game-mode-probe.c
++++ b/tests/game-mode-probe.c
+@@ -161,7 +161,7 @@ struct sample { int x, y; COLORREF colour; };
+ /* The next presented frame, through the broker's numbered capture request, against samples and the pointer. */
+ static BOOL capture(const struct sample *samples, unsigned count)
+ {
+-    const char *base = "Z:\\data\\ps5proton\\logs\\game-frame";
++    const char *base = "Z:\\data\\artcraft\\logs\\game-frame";
+     char request[MAX_PATH], path[MAX_PATH], header[32] = {0};
+     DWORD start = GetTickCount(), read = 0;
+     HANDLE f;
+diff --git a/tests/gate-sequence-probe.c b/tests/gate-sequence-probe.c
+index 9b0b085..f2390b6 100644
+--- a/tests/gate-sequence-probe.c
++++ b/tests/gate-sequence-probe.c
+@@ -5,7 +5,7 @@
+  * for. Around each, OutputDebugString says "begin case=<case>" and "end case=<case> status=<exit code>"; the Wine
+  * timestamps of those lines are the window the battery reads that probe's own verdict in. A probe still running
+  * after its budget ends the sequence through the title's own stop request (Z: is the console's root, so this is the
+- * runner's /data/ps5proton/stop-game): the title asks the game to close and, 10 s later, ends its helpers, as the
++ * runner's /data/artcraft/stop-game): the title asks the game to close and, 10 s later, ends its helpers, as the
+  * runner's watchdog would for that probe alone. The last line is PASS when every probe was started and waited for,
+  * whatever each one's verdict, which is the battery's to judge; FAIL when the list could not be read, a probe could
+  * not be started, or one ran out of its budget. */
+@@ -63,7 +63,7 @@ void mainCRTStartup(void)
+         }
+         DWORD status = ~0u;
+         if (WaitForSingleObject(process.hProcess, budget * 1000) == WAIT_TIMEOUT) {
+-            HANDLE stop = CreateFileA("Z:\\data\\ps5proton\\stop-game", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
++            HANDLE stop = CreateFileA("Z:\\data\\artcraft\\stop-game", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+             wsprintfA(line, "PS5_PROTON_GATE_SEQUENCE end case=%.100s status=timeout budget=%lu stop_requested=%d\n", name,
+                       budget, stop != INVALID_HANDLE_VALUE);
+             say(line);
+diff --git a/tests/gpu-window-probe.c b/tests/gpu-window-probe.c
+index fa398e4..2e9dc9a 100644
+--- a/tests/gpu-window-probe.c
++++ b/tests/gpu-window-probe.c
+@@ -138,7 +138,7 @@ static BOOL click(HWND hwnd,int x,int y)
+ struct Sample {int x,y;COLORREF color;};
+ static BOOL capture(const char *phase,const struct Sample *samples,unsigned count)
+ {
+-    const char *base="Z:\\data\\ps5proton\\logs\\game-frame";char request[MAX_PATH],path[MAX_PATH];
++    const char *base="Z:\\data\\artcraft\\logs\\game-frame";char request[MAX_PATH],path[MAX_PATH];
+     DWORD start=GetTickCount();HANDLE file=INVALID_HANDLE_VALUE;char header[32]={0};DWORD read=0;
+     wsprintfA(request,"%s.ppm.broker-request",base);wsprintfA(path,"%s-%02u.ppm",base,++captures);
+     /* Keep the real cursor outside sampled rectangles after input checks. */
+diff --git a/tests/ps5-signal-probe.c b/tests/ps5-signal-probe.c
+index 049a1b8..4d4f48b 100644
+--- a/tests/ps5-signal-probe.c
++++ b/tests/ps5-signal-probe.c
+@@ -40,7 +40,7 @@ int main(void)
+                      : "rax", "xmm0", "xmm15", "memory");
+     sysarch(129, &fs);
+     sigaction(SIGSEGV, &old, NULL);
+-    FILE *out = fopen("/data/ps5proton/logs/signal-probe.log", "w");
++    FILE *out = fopen("/data/artcraft/logs/signal-probe.log", "w");
+     if (!out) return 1;
+     fprintf(out, "mc=%zu fp=%zu mxcsr=%x/%x matches=%u\n",
+             offsetof(ucontext_t, uc_mcontext), offsetof(ucontext_t, uc_mcontext.mc_fpstate),
+diff --git a/tests/shell-probe.c b/tests/shell-probe.c
+index 5ab0dff..e205cf8 100644
+--- a/tests/shell-probe.c
++++ b/tests/shell-probe.c
+@@ -93,8 +93,8 @@ static BOOL capture_shell_ex(HWND target, const char *phase, COLORREF expected,
+     }
+     else if (GetEnvironmentVariableW(L"MIHAWK_SHELL_CAPTURE", host, MAX_PATH))
+     {
+-        wsprintfA(path, "Z:\\data\\ps5proton\\logs\\game-frame-%02u.ppm", captures);
+-        lstrcpyA(request, "Z:\\data\\ps5proton\\logs\\game-frame.ppm.broker-request"); DeleteFileA(path);
++        wsprintfA(path, "Z:\\data\\artcraft\\logs\\game-frame-%02u.ppm", captures);
++        lstrcpyA(request, "Z:\\data\\artcraft\\logs\\game-frame.ppm.broker-request"); DeleteFileA(path);
+         file = CreateFileA(request, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, 0, NULL);
+         if (file == INVALID_HANDLE_VALUE) return FALSE; CloseHandle(file);
+         DWORD start = GetTickCount();
+diff --git a/tests/shell-scorecard-probe.c b/tests/shell-scorecard-probe.c
+index 6d1192f..0239954 100644
+--- a/tests/shell-scorecard-probe.c
++++ b/tests/shell-scorecard-probe.c
+@@ -11,7 +11,7 @@
+  * cell for it, and a shortcut in TEMP), shows Start's default pins, and puts the user's pins, icon cells, the fixtures
+  * and the theme back at the end.
+  *
+- *   shell-scorecard64-probe --capture=Z:\data\ps5proton\logs\game-frame.ppm
++ *   shell-scorecard64-probe --capture=Z:\data\artcraft\logs\game-frame.ppm
+  *
+  * Prints PS5_PROTON_SHELL_SCORECARD done captures=N missing=M. */
+ #define COBJMACROS
+diff --git a/tests/stdout-probe.c b/tests/stdout-probe.c
+index baf226b..0823b17 100644
+--- a/tests/stdout-probe.c
++++ b/tests/stdout-probe.c
+@@ -107,7 +107,7 @@ void mainCRTStartup(void)
+     line("WriteFile(error) result", ok);
+     line("  error", GetLastError());
+     SetLastError(0);
+-    file = CreateFileW(L"\\??\\unix\\data\\ps5proton\\logs\\stdout-probe.txt", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
++    file = CreateFileW(L"\\??\\unix\\data\\artcraft\\logs\\stdout-probe.txt", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                        CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+     line("CreateFile(unix path) handle", (ULONG_PTR)file);
+     line("  error", GetLastError());
+diff --git a/tests/test_console_guard.py b/tests/test_console_guard.py
+index c7a0b6e..e50221c 100644
+--- a/tests/test_console_guard.py
++++ b/tests/test_console_guard.py
+@@ -47,7 +47,7 @@ PROF_08 = [
+     '[IOD] process_completion: conv error: 0x71 -> 0x5',
+     'bfs_device_nsid1_read_ [sid=0x5460007b] -> errno=5, a53error=0x5, val=0x0000',
+     '<118>[PS][fserr] 0x80020005,0x00000001,ssd0.user,/user,SceShellCore,sceBgDailyChckerJobQueue',
+-    '<118>[PlayGoCore][ReportCorruptPackageError] begin (PPSA99170)',
++    '<118>[PlayGoCore][ReportCorruptPackageError] begin (PPSA99278)',
+     '[KERNEL] WARNING: Decrypt error in SELF block.  Retrying...(1)',
+ ]
+ # A klog of 2026-10-14, four lines (2 h before reinstall #2).
+@@ -60,8 +60,8 @@ NOAMD_01 = [
+ # Routine lines that must not block, from klogs of 2026-10-13 and 2026-10-14: a repaired fsck, a conversion line that
+ # always follows an error line, and a boot log's memory line.
+ BENIGN = [
+-    '<118>[PS][fserr] ClearSlotInfoCache() [PPSA99170] is not registered',
+-    '<118>need fsck [**************/PPSA99170/download0.dat]',
++    '<118>[PS][fserr] ClearSlotInfoCache() [PPSA99278] is not registered',
++    '<118>need fsck [**************/PPSA99278/download0.dat]',
+     '<118>sceFsUfsFsck_ckfini: ***** FILE SYSTEM MARKED CLEAN *****',
+     '[IOD] process_completion: conv error: 0x71 -> 0x5',
+     '<118>[SceShellCore] FMEM  26.5/ 144.9 582.9/3525.6 NPXS40087 SceShellUI',
+@@ -340,7 +340,7 @@ class DeployTests(GuardCase):
+         with self.assertRaisesRegex(SystemExit, 'probe-01'): guard.check_launch_allowed()
+ 
+     def test_a_running_title_refuses_before_anything_is_marked(self):
+-        self.procs.return_value = 'ok procs app=5 title=PPSA99170 count=1 pids=5'
++        self.procs.return_value = 'ok procs app=5 title=PPSA99278 count=1 pids=5'
+         with self.assertRaisesRegex(SystemExit, 'running an application'): guard.begin_write('runtime')
+         self.assertNotIn('deploys', guard.load())
+         self.assertNotIn('last_write', guard.load())
+@@ -598,11 +598,11 @@ class VerifyTitleTests(unittest.TestCase):
+ 
+     def test_every_file_is_compared_by_hash(self):
+         with tempfile.TemporaryDirectory() as directory:
+-            folder = Path(directory) / 'PPSA99170'
++            folder = Path(directory) / 'PPSA99278'
+             (folder / 'sce_module').mkdir(parents=True)
+             for name, data in (('eboot.bin', b'eboot'), ('sce_module/libc.prx', b'libc'), ('wine-child.bin', b'w')):
+                 (folder / name).write_bytes(data)
+-            base = '/data/homebrew/PPSA99170'
++            base = '/data/homebrew/PPSA99278'
+             ftp = FakeFTP({f'{base}/eboot.bin': b'eboot', f'{base}/sce_module/libc.prx': b'libc, one block lost'})
+             bad, digest = verify_title.title_mismatches(ftp, folder)
+             self.assertEqual(bad, ['sce_module/libc.prx', 'wine-child.bin'])
+diff --git a/tests/test_console_setup.py b/tests/test_console_setup.py
+index 9012b81..db7044e 100644
+--- a/tests/test_console_setup.py
++++ b/tests/test_console_setup.py
+@@ -34,15 +34,15 @@ HOST = '192.0.2.7'
+ SETTINGS = {'host': HOST, 'ftp_port': 2121, 'klog_port': 3232, 'ctl_port': 9111, 'ftp_user': 'anonymous',
+             'ftp_password': ''}
+ SIGNED = bytes.fromhex('4f153d1d')
+-DATA = '/data/ps5proton'
++DATA = '/data/artcraft'
+ ELEVATION = '[ArtCraft] elevation: ok (filesystem access)'          # klog/mihawk-setup-2026-10-14-01.log:328
+ BASELINE = 'PS5 prefix baseline ready: 118 files updated'              # ...-01-wine-child-118.log:134
+ ONION = ('<118>[onion_daemon.elf] [587.887] [OnionHEN] info: [lifecycle] Big App started pid=111 appid=8216 '
+-         'tid=PPSA99170 via=exec source=exec')                         # klog/mihawk-setup-2026-10-14-01.log:94
++         'tid=PPSA99278 via=exec source=exec')                         # klog/mihawk-setup-2026-10-14-01.log:94
+ DAMAGE = 'bfs_device_nsid1_read_ [sid=0x46f00197] -> errno=5, a53error=0x5, val=0x0000'  # a klog of 2026-10-14
+ # klog/salvage-2026-10-14/resume/lapy-service.log:1
+ LAPY = ('1\t591240849025\tMARK\tdaemon_start build=7f67784682e58d0d0401bf5508ec9c15cf8f938152b4c2d41997d0c4bccb1478 '
+-        'firmware=10010000 title=PPSA99170 service=1 require_client_result=1 max_requests=0')
++        'firmware=10010000 title=PPSA99278 service=1 require_client_result=1 max_requests=0')
+ 
+ 
+ def sha(data):
+@@ -150,7 +150,7 @@ class Case(unittest.TestCase):
+         world = self.world = World()
+         FakeKlog.world = world
+         (self.tmp / '.deps').mkdir()
+-        self.dist = write_tree(self.tmp / 'dist/PPSA99170', {
++        self.dist = write_tree(self.tmp / 'dist/PPSA99278', {
+             'eboot.bin': SIGNED + b'title', 'sce_module/libc.prx': SIGNED + b'libc', 'sce_sys/param.json': b'{}',
+             'assets/a.png': b'png'})
+         staged = {'runtime/ge11-7/lib/a.so': b'so', 'run/proton-payload-child.elf': b'\x7fELF child',
+@@ -243,12 +243,12 @@ class Apply(Case):
+         self.assertEqual(len(world.tools), 2)
+         stores = [path for op, path in server.writes if op in ('STOR', 'RNFR')]
+         self.assertLess(stores.index('/data/homebrew/dev.conf'),
+-                        stores.index('/data/homebrew/PPSA99170/sce_module/.libc.prx.upload'))
++                        stores.index('/data/homebrew/PPSA99278/sce_module/.libc.prx.upload'))
+         renamed = [path for op, path in server.writes if op == 'RNFR']   # eboot.bin and param.json are published last
+-        self.assertEqual(renamed[-2:], ['/data/homebrew/PPSA99170/.eboot.bin.upload',
+-                                        '/data/homebrew/PPSA99170/sce_sys/.param.json.upload'])
++        self.assertEqual(renamed[-2:], ['/data/homebrew/PPSA99278/.eboot.bin.upload',
++                                        '/data/homebrew/PPSA99278/sce_sys/.param.json.upload'])
+         for name, data in {'eboot.bin': SIGNED + b'title', 'sce_module/libc.prx': SIGNED + b'libc'}.items():
+-            self.assertEqual(server.files[f'/data/homebrew/PPSA99170/{name}'], data)
++            self.assertEqual(server.files[f'/data/homebrew/PPSA99278/{name}'], data)
+         evidence = self.evidence()
+         self.assertEqual({k: evidence[k] for k in ('result', 'firmware', 'title_files')},
+                          {'result': 'ready', 'firmware': '10010000', 'title_files': 4})
+@@ -352,7 +352,7 @@ class Stops(Case):
+         self.assertNotIn('192.0.2.50', self.output)
+ 
+     def test_a_title_that_still_differs(self):
+-        self.world.server.corrupt.add('/data/homebrew/PPSA99170/.eboot.bin.upload')
++        self.world.server.corrupt.add('/data/homebrew/PPSA99278/.eboot.bin.upload')
+         self.stops_at('S7', '1 title files still differ')
+         self.assertFalse(self.guard_state()['deploys']['title']['verified'])
+ 
+diff --git a/tests/test_deploy_folder.py b/tests/test_deploy_folder.py
+index e238594..339fcc2 100644
+--- a/tests/test_deploy_folder.py
++++ b/tests/test_deploy_folder.py
+@@ -25,7 +25,7 @@ spec.loader.exec_module(folder_tool)
+ 
+ SETTINGS = {'host': '192.0.2.7', 'ftp_port': 2121, 'klog_port': 3232, 'ctl_port': 9111,
+             'ftp_user': 'anonymous', 'ftp_password': ''}
+-GAMES = '/data/ps5proton/prefixes/mihawk/drive_c/Games'
++GAMES = '/data/artcraft/prefixes/mihawk/drive_c/Games'
+ SIGNED = bytes.fromhex('4f153d1d')
+ 
+ 
+@@ -131,7 +131,7 @@ class Options(Case):
+         source, entry = self.tree({'program.exe': b'p'}), self.entry_file()
+         self.assertEqual(self.source(source, 'Tools/games/T1', entry), 0, self.output)
+         self.assertEqual(self.server.files[f'{GAMES}/Tools/games/T1/program.exe'], b'p')
+-        self.assertEqual(self.server.files['/data/ps5proton/games/g1/game.json'], entry.read_bytes())
++        self.assertEqual(self.server.files['/data/artcraft/games/g1/game.json'], entry.read_bytes())
+ 
+     def test_rejected(self):
+         source, entry = self.tree({'a': b'a'}), self.entry_file()
+@@ -149,12 +149,12 @@ class Resume(Case):
+         self.server.fail_stor[f'{GAMES}/K/zz/z.bin'] = folder_tool.ATTEMPTS
+         self.assertEqual(self.source(source, 'K', entry), 1)
+         self.assertEqual(set(json.loads(self.console_manifest('K'))), {'a.bin', 'sub/b.bin'})
+-        self.assertNotIn('/data/ps5proton/games/g1/game.json', self.server.files)
++        self.assertNotIn('/data/artcraft/games/g1/game.json', self.server.files)
+         self.server.writes.clear()
+         self.assertEqual(self.source(source, 'K', entry), 0, self.output)
+         stored = [path for op, path in self.server.writes if op == 'STOR' and not path.endswith(folder_tool.MANIFEST)]
+-        self.assertEqual(stored, [f'{GAMES}/K/zz/z.bin', '/data/ps5proton/games/g1/game.json'])
+-        self.assertEqual(self.server.files['/data/ps5proton/games/g1/game.json'], entry.read_bytes())
++        self.assertEqual(stored, [f'{GAMES}/K/zz/z.bin', '/data/artcraft/games/g1/game.json'])
++        self.assertEqual(self.server.files['/data/artcraft/games/g1/game.json'], entry.read_bytes())
+         expected = {name: hashlib.sha256(data).hexdigest() for name, data in files.items()}
+         self.assertEqual(hashlib.sha256(self.console_manifest('K')).hexdigest(), pin(expected))
+ 
+@@ -191,10 +191,10 @@ class Entry(Case):
+         self.assertEqual(self.server.writes, [])
+         self.assertEqual(self.source(source, 'K', entry), 0, self.output)
+         self.assertEqual([op for op, path in self.server.writes if op == 'STOR'], ['STOR'])
+-        self.assertEqual(self.server.files['/data/ps5proton/games/g1/game.json'], entry.read_bytes())
+-        self.server.files['/data/ps5proton/games/g1/game.json'] = b'{"name": "old"}'
++        self.assertEqual(self.server.files['/data/artcraft/games/g1/game.json'], entry.read_bytes())
++        self.server.files['/data/artcraft/games/g1/game.json'] = b'{"name": "old"}'
+         self.assertEqual(self.source(source, 'K', entry), 0)
+-        self.assertEqual(self.server.files['/data/ps5proton/games/g1/game.json'], entry.read_bytes())
++        self.assertEqual(self.server.files['/data/artcraft/games/g1/game.json'], entry.read_bytes())
+         self.server.writes.clear()
+         self.assertEqual(self.source(source, 'K', entry), 0)
+         self.assertEqual(self.server.writes, [])
+diff --git a/tests/test_package_install.py b/tests/test_package_install.py
+index 00f1bd9..17899f2 100644
+--- a/tests/test_package_install.py
++++ b/tests/test_package_install.py
+@@ -16,7 +16,7 @@ class PackageInstall(unittest.TestCase):
+     def test_package(self):
+         with tempfile.TemporaryDirectory() as temporary:
+             work = Path(temporary)
+-            title, runtime, out = work / 'PPSA99170', work / 'runtime', work / 'package'
++            title, runtime, out = work / 'PPSA99278', work / 'runtime', work / 'package'
+             runtime.mkdir()
+             piece = b'(not really zstd)' * 100
+             digest = hashlib.sha256(piece).hexdigest()
+@@ -30,7 +30,7 @@ class PackageInstall(unittest.TestCase):
+             made = subprocess.run(run, capture_output=True, text=True)
+             self.assertEqual(made.returncode, 0, made.stderr)
+             self.assertEqual((out / 'usb/artcraft' / f'{digest}.zst').read_bytes(), piece)
+-            self.assertTrue((out / 'PPSA99170/eboot.bin').is_file() and (out / 'README.txt').is_file())
++            self.assertTrue((out / 'PPSA99278/eboot.bin').is_file() and (out / 'README.txt').is_file())
+             checked = subprocess.run(['sha256sum', '-c', '--quiet', 'SHA256SUMS'], cwd=out, capture_output=True, text=True)
+             self.assertEqual(checked.returncode, 0, checked.stdout)
+             self.assertEqual(len((out / 'SHA256SUMS').read_text().splitlines()), 6)
+diff --git a/tests/test_publication_check.py b/tests/test_publication_check.py
+index ff32200..d5625da 100644
+--- a/tests/test_publication_check.py
++++ b/tests/test_publication_check.py
+@@ -82,7 +82,7 @@ class PublicationCheck(unittest.TestCase):
+         self.assertIn('named game or launcher: 2 in 1 places: notes2.md', output)
+ 
+     def test_names_that_are_not_games_and_the_trademark_notice_pass(self):
+-        (self.repo / 'prefix.txt').write_text('C:\\users\\Mihawk\\Documents, C:\\users\\steamuser\\Documents, a steaming bowl, PPSA99170\n')
++        (self.repo / 'prefix.txt').write_text('C:\\users\\Mihawk\\Documents, C:\\users\\steamuser\\Documents, a steaming bowl, PPSA99278\n')
+         (self.repo / 'LEGAL.md').write_text('| St' + 'eam, Proton | Valve Corporation |\n')
+         code, output = self.run_tool('tree')
+         self.assertEqual(code, 0, output)
+@@ -90,8 +90,8 @@ class PublicationCheck(unittest.TestCase):
+ 
+     def test_a_build_must_not_carry_what_never_ships(self):
+         (self.repo / '.gitignore').write_text('.deps/\ndist/\n')  # build output is ignored, as in this repository
+-        (self.repo / 'dist/PPSA99170').mkdir(parents=True)  # a title folder without licenses/
+-        (self.repo / 'dist/PPSA99170/eboot.bin').write_bytes(b'\0')
++        (self.repo / 'dist/PPSA99278').mkdir(parents=True)  # a title folder without licenses/
++        (self.repo / 'dist/PPSA99278/eboot.bin').write_bytes(b'\0')
+         runtime = self.repo / '.deps/staged/runtime/ge11-7'
+         (runtime / 'share/licenses').mkdir(parents=True)
+         wallpaper = runtime / 'lib/wine/prefix/drive_c/windows/web/wallpaper'
+diff --git a/tests/test_pw_payload_close.c b/tests/test_pw_payload_close.c
+index 9e135a8..ec7fac3 100644
+--- a/tests/test_pw_payload_close.c
++++ b/tests/test_pw_payload_close.c
+@@ -18,7 +18,7 @@ static char trace[4096];
+ static int trace_open;
+ static int test_open(const char *path,int flags,...)
+ {
+-    assert(!strcmp(path,"/data/homebrew/PPSA99170/payload-lifecycle.log"));
++    assert(!strcmp(path,"/data/homebrew/PPSA99278/payload-lifecycle.log"));
+     assert(flags==(O_WRONLY|O_CREAT|O_APPEND) && !trace_open);
+     trace_open=1;errno=EDOM;return 38;
+ }
+diff --git a/tests/test_pw_start_failure.c b/tests/test_pw_start_failure.c
+index f65a2f6..3c3d707 100644
+--- a/tests/test_pw_start_failure.c
++++ b/tests/test_pw_start_failure.c
+@@ -21,7 +21,7 @@ int main(void)
+         "wine-child: entry\n"
+         "wine-child: firmware status=0 version=0x12400000\n"
+         "wine-child: GPU broker host ranges reserved\n"
+-        "wine-child: loading ntdll path=/data/ps5proton/runtime/ge11-7/lib/wine/x86_64-unix/ntdll.prx\n";
++        "wine-child: loading ntdll path=/data/artcraft/runtime/ge11-7/lib/wine/x86_64-unix/ntdll.prx\n";
+     assert(!pw_start_failure_parse(tester, sizeof(tester) - 1, &failure));
+     assert(!strcmp(failure.module, "ntdll.prx") && failure.firmware == 0x12400000u);
+     pw_start_failure_describe(&failure, 92, text, sizeof(text));
+diff --git a/tests/test_pw_wine_profile.c b/tests/test_pw_wine_profile.c
+index e2daa49..1e36de4 100644
+--- a/tests/test_pw_wine_profile.c
++++ b/tests/test_pw_wine_profile.c
+@@ -31,7 +31,7 @@ static const char user_reg[] =
+     "\"C:\\\\Users\\\\SteamUser\\\\Desktop\\\\Game.exe\"=\"Game\"\n\n"
+     "[Software\\\\Game] 1791520605\n"
+     "\"Launch\"=\"\\\"C:\\\\users\\\\steamuser\\\\AppData\\\\Game\\\\run.exe\\\" -x\"\n"
+-    "\"Unix\"=\"Z:\\\\data\\\\ps5proton\\\\prefixes\\\\mihawk\\\\drive_c\\\\users\\\\steamuser\\\\AppData\"\n"
++    "\"Unix\"=\"Z:\\\\data\\\\artcraft\\\\prefixes\\\\mihawk\\\\drive_c\\\\users\\\\steamuser\\\\AppData\"\n"
+     "\"Slashes\"=\"C:/users/steamuser/Documents/My Games\"\n"
+     "\"List\"=\"C:\\\\users\\\\steamuser;C:\\\\users\\\\steamuser,D:\\\\\"\n"
+     "\"Other\"=\"C:\\\\users\\\\steamuserdata\\\\x C:\\\\steamuser\\\\x myusers\\\\steamuser\\\\x steamuser2\"\n"
+@@ -54,7 +54,7 @@ static const char user_reg_moved[] =
+     "\"C:\\\\Users\\\\ArtCraft\\\\Desktop\\\\Game.exe\"=\"Game\"\n\n"
+     "[Software\\\\Game] 1791520605\n"
+     "\"Launch\"=\"\\\"C:\\\\users\\\\ArtCraft\\\\AppData\\\\Game\\\\run.exe\\\" -x\"\n"
+-    "\"Unix\"=\"Z:\\\\data\\\\ps5proton\\\\prefixes\\\\mihawk\\\\drive_c\\\\users\\\\ArtCraft\\\\AppData\"\n"
++    "\"Unix\"=\"Z:\\\\data\\\\artcraft\\\\prefixes\\\\mihawk\\\\drive_c\\\\users\\\\ArtCraft\\\\AppData\"\n"
+     "\"Slashes\"=\"C:/users/ArtCraft/Documents/My Games\"\n"
+     "\"List\"=\"C:\\\\users\\\\ArtCraft;C:\\\\users\\\\ArtCraft,D:\\\\\"\n"
+     "\"Other\"=\"C:\\\\users\\\\steamuserdata\\\\x C:\\\\steamuser\\\\x myusers\\\\steamuser\\\\x steamuser2\"\n"
+diff --git a/tests/test_run_console_verdicts.py b/tests/test_run_console_verdicts.py
+index 4bab3f5..93e9c4b 100644
+--- a/tests/test_run_console_verdicts.py
++++ b/tests/test_run_console_verdicts.py
+@@ -357,7 +357,7 @@ class WineRobustness(unittest.TestCase):
+ # A launcher-layout probe's klog, abridged from gate-hang-final-2026-10-16-01-virtual-query64, with the host seconds
+ # each line arrived at.
+ STAGE_KLOG = [
+-    (1.2, '<118>[SceLncService] launchApp(PPSA99170)'),
++    (1.2, '<118>[SceLncService] launchApp(PPSA99278)'),
+     (2.1, '[ArtCraft] starts (standard error to klog: yes)'),
+     (2.3, '[ArtCraft] elevation: ok (filesystem access)'),
+     (3.0, '[ArtCraft] Wine: load status=0 stage=6 module=24803'),
+diff --git a/tests/test_stage_licences.py b/tests/test_stage_licences.py
+index efa1ea0..673753d 100644
+--- a/tests/test_stage_licences.py
++++ b/tests/test_stage_licences.py
+@@ -3,7 +3,7 @@
+ """Every licence text a shipped binary needs: the list below is what the staged runtime's share/licenses and the title
+ folder's licenses/ must hold (tools/stage-wine.py, tools/stage-licences.py), the tool's tables must say exactly that,
+ its downloads must be pinned, and a missing source must stop the staging. With a production build present, the staged
+-runtime and dist/PPSA99170 are checked too."""
++runtime and dist/PPSA99278 are checked too."""
+ import importlib.util
+ import subprocess
+ import tempfile
+@@ -63,7 +63,7 @@ class StageLicences(unittest.TestCase):
+             self.assertEqual(list(Path(folder).iterdir()), [])
+ 
+     def test_a_production_build_staged_them(self):
+-        licences, title = ROOT / '.deps/staged/runtime/ge11-7/share/licenses', ROOT / 'dist/PPSA99170/licenses'
++        licences, title = ROOT / '.deps/staged/runtime/ge11-7/share/licenses', ROOT / 'dist/PPSA99278/licenses'
+         if not licences.is_dir() or not title.is_dir():
+             self.skipTest('no production build here')
+         for name in STAGE_WINE + RUNTIME:
+diff --git a/tests/window-compose-probe.c b/tests/window-compose-probe.c
+index 3bd38d8..cb89e28 100644
+--- a/tests/window-compose-probe.c
++++ b/tests/window-compose-probe.c
+@@ -57,7 +57,7 @@ static BOOL click(HWND hwnd,int x,int y)
+ struct Sample {int x,y;COLORREF color;};
+ static BOOL capture(const char *phase,const struct Sample *samples,unsigned count)
+ {
+-    const char *base="Z:\\data\\ps5proton\\logs\\game-frame";char request[MAX_PATH],path[MAX_PATH];
++    const char *base="Z:\\data\\artcraft\\logs\\game-frame";char request[MAX_PATH],path[MAX_PATH];
+     DWORD start=GetTickCount();HANDLE file=INVALID_HANDLE_VALUE;char header[32]={0};DWORD read=0;
+     wsprintfA(request,"%s.ppm.broker-request",base);wsprintfA(path,"%s-%02u.ppm",base,++captures);
+     /* Keep the real cursor outside sampled rectangles after input checks. */
+diff --git a/tests/window-effects-probe.c b/tests/window-effects-probe.c
+index 518aaa9..0070305 100644
+--- a/tests/window-effects-probe.c
++++ b/tests/window-effects-probe.c
+@@ -150,7 +150,7 @@ static char last_capture[MAX_PATH];
+ /* Ask the broker for the next displayed frame; the host fetches and judges it. */
+ static BOOL capture(const char *phase)
+ {
+-    const char *base="Z:\\data\\ps5proton\\logs\\game-frame";char request[MAX_PATH],*path=last_capture,line[160];
++    const char *base="Z:\\data\\artcraft\\logs\\game-frame";char request[MAX_PATH],*path=last_capture,line[160];
+     DWORD start=GetTickCount();
+     wsprintfA(request,"%s.ppm.broker-request",base);wsprintfA(path,"%s-%02u.ppm",base,++captures);
+     SetCursorPos(1880+(captures&1),1060); /* a pointer that moves gives the broker a frame to show and save */
+diff --git a/tools/build-child-probe.py b/tools/build-child-probe.py
+index 74442b3..bada11b 100644
+--- a/tools/build-child-probe.py
++++ b/tools/build-child-probe.py
+@@ -155,7 +155,7 @@ def main():
+             raise RuntimeError('Headless helper dependencies differ from the explicit kernel/libc policy')
+         manifest['helper_needed'] = actual
+     manifest.update(identity=identity, eboot_sha256=hashlib.sha256(
+-        (source / 'dist/PPSA99170/eboot.bin').read_bytes()).hexdigest())
++        (source / 'dist/PPSA99278/eboot.bin').read_bytes()).hexdigest())
+     (work / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+     print('Child probe build: ' + str(work), flush=True)
+ 
+diff --git a/tools/build-lapy-validation.py b/tools/build-lapy-validation.py
+index 32677fb..1112e34 100644
+--- a/tools/build-lapy-validation.py
++++ b/tools/build-lapy-validation.py
+@@ -51,7 +51,7 @@ def main():
+                 (sdk / entry.filename).chmod(mode)
+     sdk_root = next(sdk.rglob('bin/prospero-clang')).parent.parent
+     subprocess.run(['python3', str(source / 'tools/build_owned_daemon.py'), '--sdk', str(sdk_root),
+-                    '--logging-client', str(logger), '--title', 'PPSA99170'] +
++                    '--logging-client', str(logger), '--title', 'PPSA99278'] +
+                    (['--service', '--require-client-result', '--max-requests', str(a.service_requests)]
+                     if a.service_requests or a.resident else []), check=True)
+ 
+diff --git a/tools/carrier-image-probe.c b/tools/carrier-image-probe.c
+index 4befef5..aa2929e 100644
+--- a/tools/carrier-image-probe.c
++++ b/tools/carrier-image-probe.c
+@@ -271,7 +271,7 @@ static void xo_anon(uintptr_t at)
+ 
+ static void xo_file(uintptr_t at)
+ {
+-    const int fd = open("/data/ps5proton/runtime/ge11-7/share/wine/wine.inf", O_RDONLY);
++    const int fd = open("/data/artcraft/runtime/ge11-7/share/wine/wine.inf", O_RDONLY);
+     if (fd < 0) { say("CARRIER xo file open errno=%d\n", errno); return; }
+     unsigned char *page = page_at(at, PROT_READ, MAP_PRIVATE, fd, "file");
+     close(fd);
+@@ -448,7 +448,7 @@ static void stop(pid_t pid)
+ 
+ int main(int argc, char **argv)
+ {
+-    const char *mode = "list", *module = "/data/ps5proton/runtime/ge11-7/lib/wine/x86_64-unix/ntdll.prx";
++    const char *mode = "list", *module = "/data/artcraft/runtime/ge11-7/lib/wine/x86_64-unix/ntdll.prx";
+     for (int i = 0; i < argc; i++) {
+         if (!strncmp(argv[i], "mode=", 5)) mode = argv[i] + 5;
+         if (!strncmp(argv[i], "module=", 7)) module = argv[i] + 7;
+diff --git a/tools/console-iobench.c b/tools/console-iobench.c
+index b11f947..0362572 100644
+--- a/tools/console-iobench.c
++++ b/tools/console-iobench.c
+@@ -7,7 +7,7 @@
+  *   console-iobench HOST PORT [DIR]
+  *
+  * It receives from a sender at HOST:PORT (tools/run-net-throughput.py's, which sends zeros) for 4 s with 64 KiB and
+- * with 1 MiB reads, then writes 128 MiB to DIR (default /data/ps5proton) with 64 KiB, 1 MiB and 8 MiB writes, each
++ * with 1 MiB reads, then writes 128 MiB to DIR (default /data/artcraft) with 64 KiB, 1 MiB and 8 MiB writes, each
+  * followed by fsync, and reads it back. MB/s are decimal megabytes. */
+ #include <errno.h>
+ #include <fcntl.h>
+@@ -521,7 +521,7 @@ int main(int argc, char **argv)
+ {
+     char host[64] = "";
+     int port = 0;
+-    const char *directory = "/data/ps5proton";
++    const char *directory = "/data/artcraft";
+     /* websrv may pass the send's args as the whole argv, unsplit and with no program name first: take every word of
+      * every argument, the host being the one with three dots, then the port, then the directory. */
+     int stage = 0;
+@@ -549,7 +549,7 @@ int main(int argc, char **argv)
+         receive(host, port, 65536, 4.0);
+         receive(host, port, 1u << 20, 4.0);
+     }
+-    if (want("fs")) { filesystem("/data/ps5proton"); filesystem("/data"); filesystem("/user/data"); filesystem("/"); }
++    if (want("fs")) { filesystem("/data/artcraft"); filesystem("/data"); filesystem("/user/data"); filesystem("/"); }
+     if (want("flags")) {
+         flags(directory, 0, "default");
+         flags(directory, O_APPEND, "O_APPEND");
+diff --git a/tools/console-iobench.py b/tools/console-iobench.py
+index 142de24..b93e417 100755
+--- a/tools/console-iobench.py
++++ b/tools/console-iobench.py
+@@ -2,7 +2,7 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ """Native network and disk speeds on the console (tools/console-iobench.c), for comparing with the Wine probe.
+ 
+-  tools/console-iobench.py [--port 1749] [--dir /data/ps5proton]
++  tools/console-iobench.py [--port 1749] [--dir /data/artcraft]
+ 
+ Serves zeros on --port from this machine, sends the payload through websrv's launcher (as tools/console-memory.py
+ does) and prints what it measured. Only while no title runs: a payload during a title's run jams elfldr.
+@@ -47,7 +47,7 @@ def serve(listener, stop):
+ def main():
+     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     parser.add_argument('--port', type=int, default=1749)
+-    parser.add_argument('--dir', default='/data/ps5proton')
++    parser.add_argument('--dir', default='/data/artcraft')
+     parser.add_argument('--only', default='', help='comma list of fs, flags, sizes, mapped, parallel (default: all)')
+     args = parser.parse_args()
+     if not OUTPUT.exists() or OUTPUT.stat().st_mtime < SOURCE.stat().st_mtime:
+diff --git a/tools/console-setup.py b/tools/console-setup.py
+index 8b7c314..66aa9a5 100644
+--- a/tools/console-setup.py
++++ b/tools/console-setup.py
+@@ -88,8 +88,8 @@ deploy_folder = load(ROOT / 'tools/deploy-folder.py', 'deploy_folder')
+ verify = load(ROOT / 'tools/verify-title.py', 'verify_title')
+ title_folder = load(ROOT.parent / 'PS5_Vulkan/tools/deploy-title-folder.py', 'deploy_title_folder')  # read only
+ 
+-TITLE = 'PPSA99170'
+-DATA = '/data/ps5proton'
++TITLE = 'PPSA99278'
++DATA = '/data/artcraft'
+ DEV_CONF_PATH = '/data/homebrew/dev.conf'
+ DEV_CONF = b'DEV_SERVER=127.0.0.1\nDEV_PORT=8080\n'
+ FIRMWARE = '10010000'
+diff --git a/tools/deploy-d3d-probe.py b/tools/deploy-d3d-probe.py
+index 1505d59..c309a75 100644
+--- a/tools/deploy-d3d-probe.py
++++ b/tools/deploy-d3d-probe.py
+@@ -22,7 +22,7 @@ try:
+         ftp.connect(settings['host'], settings['ftp_port'], timeout=30)
+         ftp.login(settings['ftp_user'], settings['ftp_password'])
+         for relative, local in uploads.items():
+-            remote = '/data/ps5proton/prefixes/probe/drive_c/' + relative
++            remote = '/data/artcraft/prefixes/probe/drive_c/' + relative
+             with local.open('rb') as data:
+                 ftp.storbinary('STOR ' + remote, data, blocksize=262144)
+             digest = hashlib.sha256()
+diff --git a/tools/deploy-folder.py b/tools/deploy-folder.py
+index 350c0e2..1f1e6d9 100644
+--- a/tools/deploy-folder.py
++++ b/tools/deploy-folder.py
+@@ -2,7 +2,7 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ """Put a host folder (a Windows program and its files) on the console, as C:\\Games\\<folder> of Mihawk OS.
+ 
+---source DIR is sent as it is, with --id and --game-json for its library entry (/data/ps5proton/games/<id>/game.json);
++--source DIR is sent as it is, with --id and --game-json for its library entry (/data/artcraft/games/<id>/game.json);
+ --folder may be nested with /. The library entry is kept current even when no file needs sending.
+ 
+ The upload is resumable. A manifest of verified sha256 digests is kept on the console (.folder-deploy-manifest.json)
+@@ -34,7 +34,7 @@ import ps5_console
+ sys.path.insert(0, str(ROOT / 'tools'))
+ import console_guard
+ 
+-DATA_ROOT = '/data/ps5proton'
++DATA_ROOT = '/data/artcraft'
+ MANIFEST = '.folder-deploy-manifest.json'
+ BLOCK = 262144
+ ATTEMPTS = 3
+diff --git a/tools/deploy-wine.py b/tools/deploy-wine.py
+index df7ade8..b101fa0 100644
+--- a/tools/deploy-wine.py
++++ b/tools/deploy-wine.py
+@@ -100,7 +100,7 @@ def main():
+         for _ in range(2):
+             if 'disabled' in ftp.sendcmd('SELF').lower():
+                 break
+-        base = '/data/ps5proton'
++        base = '/data/artcraft'
+         try:
+             ftp.cwd(f'{base}/prefixes/{args.prefix}')
+             prefix_exists = True
+diff --git a/tools/dmem-share-probe.c b/tools/dmem-share-probe.c
+index 2613aac..515766c 100644
+--- a/tools/dmem-share-probe.c
++++ b/tools/dmem-share-probe.c
+@@ -8,7 +8,7 @@
+  * can map another's direct memory by its offset, shared buffers can come from the pool.
+  *
+  *   dmem-share-probe hold MIB     allocate MIB from the application pool (ForApp), map it, write a pattern, publish the
+- *                                 offset in /data/ps5proton/dmem-share.txt, then wait for the other side and check its mark
++ *                                 offset in /data/artcraft/dmem-share.txt, then wait for the other side and check its mark
+  *   dmem-share-probe map [exec]   read the offset, map the same range in this process, check the pattern, write a mark;
+  *                                 with exec, also ask the kernel for read+execute on the granted range (type granted-rx)
+  *   dmem-share-probe exec PRX     one payload: does the kernel's own mprotect (sceKernelMprotect, system call 74) give
+@@ -80,10 +80,10 @@ extern int32_t kernel_set_ucred_authid(pid_t, uint64_t);
+ extern int32_t kernel_get_ucred_caps(pid_t, uint8_t[16]);
+ extern int32_t kernel_set_ucred_caps(pid_t, const uint8_t[16]);
+ 
+-#define OFFER "/data/ps5proton/dmem-share.txt"
+-#define DONE "/data/ps5proton/dmem-share-done.txt"
+-#define PIDFILE "/data/ps5proton/dmem-share-pid.txt"
+-#define EXEC_FILE "/data/ps5proton/exec-grant.bin"
++#define OFFER "/data/artcraft/dmem-share.txt"
++#define DONE "/data/artcraft/dmem-share-done.txt"
++#define PIDFILE "/data/artcraft/dmem-share-pid.txt"
++#define EXEC_FILE "/data/artcraft/exec-grant.bin"
+ #define EXEC "PS5_PROTON_EXEC_GRANT"
+ #define PAGE 16384u
+ 
+diff --git a/tools/gate.py b/tools/gate.py
+index 93f754e..1319e07 100755
+--- a/tools/gate.py
++++ b/tools/gate.py
+@@ -99,7 +99,7 @@ def run(args):
+     spec.loader.exec_module(verify)
+     settings = verify.ps5_console.load_settings()
+     try:
+-        problems, digest = verify.check(settings, ROOT / 'dist/PPSA99170', ROOT / '.deps/staged/manifest.json')
++        problems, digest = verify.check(settings, ROOT / 'dist/PPSA99278', ROOT / '.deps/staged/manifest.json')
+     except (OSError, verify.ftplib.Error) as error:
+         sys.exit('gate: the deployed build could not be read back: ' +
+                  verify.redact(str(error).replace(settings['host'], '<console>')))
+diff --git a/tools/helperhostprobe.c b/tools/helperhostprobe.c
+index 026573b..ef7c4c8 100644
+--- a/tools/helperhostprobe.c
++++ b/tools/helperhostprobe.c
+@@ -47,7 +47,7 @@ extern int sceKernelMunmap(void *, size_t);
+ extern int sceKernelLoadStartModule(const char *, size_t, const void *, unsigned, const void *, int *);
+ extern int sceKernelStopUnloadModule(int, size_t, const void *, unsigned, const void *, int *);
+ 
+-#define RUNTIME "/data/ps5proton/runtime/ge11-7/lib/wine/x86_64-unix"
++#define RUNTIME "/data/artcraft/runtime/ge11-7/lib/wine/x86_64-unix"
+ #define MIB (1024ull * 1024ull)
+ 
+ static void line(const char *format, ...)
+@@ -150,7 +150,7 @@ static void load_module(void)
+ }
+ 
+ 
+-#define CHANNEL_DIR "/data/ps5proton/run"
++#define CHANNEL_DIR "/data/artcraft/run"
+ /* /data cannot hold a socket (bind: EOPNOTSUPP, channel-01): the socket goes where one can be bound, and its path
+  * into this plain file under /data, which the title reads. */
+ #define CHANNEL_NOTE CHANNEL_DIR "/helper-channel.path"
+@@ -173,7 +173,7 @@ static void channel(void)
+     for (int i = 0; i < mounted && i < 64; ++i)
+         line("channel: mount %s type %s", mounts[i].f_mntonname, mounts[i].f_fstypename);
+     static const char *const candidates[] = {"/system_tmp", "/tmp", "/var/run", "/user/temp", "/dev/shm",
+-                                             "/data/ps5proton/run"};
++                                             "/data/artcraft/run"};
+     int listener = -1;
+     for (unsigned i = 0; i < sizeof(candidates) / sizeof(candidates[0]) && listener < 0; ++i) {
+         snprintf(channel_path, sizeof(channel_path), "%s/ps5proton-helper.sock", candidates[i]);
+diff --git a/tools/lapy-service-log.py b/tools/lapy-service-log.py
+index 996d271..43252e1 100644
+--- a/tools/lapy-service-log.py
++++ b/tools/lapy-service-log.py
+@@ -3,7 +3,7 @@
+ """Read the resident Lapy daemon's log on the console and judge the grants it made.
+ 
+ The resident service (tools/start-lapy-service.py) writes numbered records to
+-/data/ps5proton/logs/lapy-service.log. This reads the records of its latest start, or those after a
++/data/artcraft/logs/lapy-service.log. This reads the records of its latest start, or those after a
+ record number, and checks each request: completed with error 0 and acknowledged, the client's /data
+ proof (data_rw=1), and the root counters at the service baseline before it (so the title before it gave
+ its references back). Addresses are redacted; nothing here names the console.
+@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
+ import ps5_console  # noqa: E402
+ from console_log import redact  # noqa: E402
+ 
+-LOG = '/data/ps5proton/logs/lapy-service.log'
++LOG = '/data/artcraft/logs/lapy-service.log'
+ 
+ 
+ def fields(message):
+diff --git a/tools/measure-prefix.py b/tools/measure-prefix.py
+index c82209b..5e1830c 100644
+--- a/tools/measure-prefix.py
++++ b/tools/measure-prefix.py
+@@ -4,7 +4,7 @@
+ 
+   tools/measure-prefix.py --name RUN [--prefix mihawk]
+ 
+-Sums /data/ps5proton/prefixes/<prefix> by part: what wineboot makes in a new prefix (drive_c/windows, the
++Sums /data/artcraft/prefixes/<prefix> by part: what wineboot makes in a new prefix (drive_c/windows, the
+ Program Files folders Mono and Gecko install into, the registry files, the users' folders) and what a session adds
+ later (drive_c/Games and anything else), so the first prefix's share of an install's free-space check can be read off
+ a prefix that has been used. Writes evidence/<RUN>.json; names inside drive_c/Games are counted, never recorded.
+@@ -54,7 +54,7 @@ def main():
+     if evidence.exists():
+         raise SystemExit('evidence already exists; use a new run name')
+     settings = ps5_console.load_settings()
+-    base = f'/data/ps5proton/prefixes/{args.prefix}'
++    base = f'/data/artcraft/prefixes/{args.prefix}'
+     started = time.monotonic()
+     with ftplib.FTP() as ftp:
+         ftp.connect(settings['host'], settings['ftp_port'], timeout=30)
+diff --git a/tools/pack-runtime.py b/tools/pack-runtime.py
+index a9596d3..182b1e2 100644
+--- a/tools/pack-runtime.py
++++ b/tools/pack-runtime.py
+@@ -2,8 +2,8 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ """Pack the staged runtime into the chunks the title installs from (docs/SELF_INSTALL.md, phase 5).
+ 
+-  tools/pack-runtime.py [--stage .deps/staged] [--out dist/runtime] [--title dist/PPSA99170]
+-  tools/pack-runtime.py --title-pack dist/PPSA99170 --out DIR      the title folder itself, for an update
++  tools/pack-runtime.py [--stage .deps/staged] [--out dist/runtime] [--title dist/PPSA99278]
++  tools/pack-runtime.py --title-pack dist/PPSA99278 --out DIR      the title folder itself, for an update
+ 
+ What a user install holds (runtime/ge11-7/ and run/proton-payload-child.elf, as tools/deploy-wine.py uploads), in
+ path order with the runtime's stamp last, cut into chunks at file boundaries. A chunk is one zstd -19 frame of its
+@@ -142,7 +142,7 @@ def main():
+     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     parser.add_argument('--stage', type=Path, default=ROOT / '.deps/staged')
+     parser.add_argument('--out', type=Path, default=ROOT / 'dist/runtime')
+-    parser.add_argument('--title', type=Path, default=ROOT / 'dist/PPSA99170')
++    parser.add_argument('--title', type=Path, default=ROOT / 'dist/PPSA99278')
+     parser.add_argument('--cache', type=Path, default=ROOT / '.deps/runtime-pack')
+     parser.add_argument('--jobs', type=int, default=os.cpu_count())
+     parser.add_argument('--title-pack', type=Path, help='pack this title folder instead (for an update)')
+diff --git a/tools/package-install.py b/tools/package-install.py
+index 5aa6f0a..cd3dd81 100644
+--- a/tools/package-install.py
++++ b/tools/package-install.py
+@@ -3,9 +3,9 @@
+ """The first-install package: what a user copies to install ArtCraft (docs/SELF_INSTALL.md, phase 7's route; phase 9
+ publishes it beside the signed update, tools/sign-release.py).
+ 
+-  tools/package-install.py [--title dist/PPSA99170] [--runtime dist/runtime] [--out dist/package]
++  tools/package-install.py [--title dist/PPSA99278] [--runtime dist/runtime] [--out dist/package]
+ 
+-  OUT/PPSA99170/       the title folder: copy it into /data/homebrew (FTP from a phone or a PC, or a file manager)
++  OUT/PPSA99278/       the title folder: copy it into /data/homebrew (FTP from a phone or a PC, or a file manager)
+   OUT/usb/artcraft/    the runtime's pieces: copy usb/'s contents to the root of a USB stick (MBR, exFAT or FAT32)
+   OUT/SHA256SUMS       every file's SHA-256, to check a copy (sha256sum -c, from OUT)
+   OUT/README.txt       those steps
+@@ -26,7 +26,7 @@ LEFTOVERS = {'install-source.txt', 'update-source.txt', 'test-run.txt', 'wine-ru
+ NEEDED = ('eboot.bin', 'sce_sys/param.json', 'runtime-pack.txt', 'runtime-stamp')
+ README = """ArtCraft: install it on a jailbroken PS5 (tested on firmware 10.01 and 13.40; supported up to 13.60)
+ 
+-1. Copy PPSA99170 into /data/homebrew on the console: over FTP from a phone or a PC, or with a file manager from a USB
++1. Copy PPSA99278 into /data/homebrew on the console: over FTP from a phone or a PC, or with a file manager from a USB
+    stick. ShadowMountPlus shows its tile on the home screen within about 45 seconds.
+ 2. Copy the contents of usb/ (the artcraft folder) to the root of a USB stick formatted exFAT or FAT32 with an MBR
+    partition table (the PS5 does not mount a GPT stick), and plug it into the console.
+@@ -48,7 +48,7 @@ def sha256(path):
+ 
+ def main():
+     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+-    parser.add_argument('--title', type=Path, default=ROOT / 'dist/PPSA99170')
++    parser.add_argument('--title', type=Path, default=ROOT / 'dist/PPSA99278')
+     parser.add_argument('--runtime', type=Path, default=ROOT / 'dist/runtime')
+     parser.add_argument('--out', type=Path, default=ROOT / 'dist/package')
+     args = parser.parse_args()
+diff --git a/tools/prefix-forget-dualsense.py b/tools/prefix-forget-dualsense.py
+index 63c071f..1c2bbf4 100644
+--- a/tools/prefix-forget-dualsense.py
++++ b/tools/prefix-forget-dualsense.py
+@@ -52,7 +52,7 @@ def main():
+     settings = ps5_console.load_settings()
+     if ' count=0 ' not in ps5_console.ps5vkctl_command(settings, 'procs', 15) + ' ':
+         raise SystemExit('a title is running: the registry is written back when its session ends')
+-    base = f'/data/ps5proton/prefixes/{args.prefix}'
++    base = f'/data/artcraft/prefixes/{args.prefix}'
+     with console_guard.writing('probe', settings), ftplib.FTP() as ftp:
+         ftp.connect(settings['host'], settings['ftp_port'], timeout=30)
+         ftp.login(settings['ftp_user'], settings['ftp_password'])
+diff --git a/tools/publication-check.py b/tools/publication-check.py
+index 6abe094..b0e0528 100644
+--- a/tools/publication-check.py
++++ b/tools/publication-check.py
+@@ -92,12 +92,12 @@ TREE = ('tracked under klog/ or .claude/', 'binary that could hold game data, fi
+         'source file without SPDX', 'licence text missing beside a build', 'file that must never ship in a build',
+         'named game or launcher')
+ # The tree names no game, game launcher or the earlier PS5-emulator experiment, and no PS5 title id but the project's
+-# own (PPSA99170, and PPSA99130 and PPSA99008 of its sibling titles); history keeps the old names. Not names:
++# own (PPSA99278, and PPSA99130 and PPSA99008 of its sibling titles); history keeps the old names. Not names:
+ # 'steamuser' (Proton's fixed prefix user) and emoji names ('face with steam from nose', 'steaming bowl').
+ NAMES = re.compile(rb'(?i)kyty|hollow ?knight|dead ?cells|stardew|binding of isaac|\bisaac\b|celeste|\bhades\b|hearthstone|'
+                    rb'battle\.net|battlenet|\bbnet\b|resident evil|\bre3\b|moonstone|ikemen|minecraft|\bprism\b|'
+                    rb'prismlauncher|persona ?3|\bp3r\b|vrchat|\bsteam(?!user|ing| from nose)|'
+-                   rb'PPSA(?!99170|99130|99008)[0-9]{5}')
++                   rb'PPSA(?!99278|99170|99130|99008)[0-9]{5}')
+ # (path, a line it allows, why): the trademark notices name their marks (LEGAL.md, NOTICE.md, LICENSING.md), and NOTICE.md
+ # records the upstream boilerplate's own default title id.
+ NAMED_LINES = [
+@@ -256,7 +256,7 @@ def check_tree(repo, findings):
+                         findings.allowed['named game or launcher'][f'{path} ({why})'] += 1
+                     else:
+                         findings.add('named game or launcher', path, path)
+-    runtime, title, run = repo / '.deps/staged/runtime/ge11-7', repo / 'dist/PPSA99170', repo / '.deps/staged/run'
++    runtime, title, run = repo / '.deps/staged/runtime/ge11-7', repo / 'dist/PPSA99278', repo / '.deps/staged/run'
+     for root, folder, names in ((title, 'licenses', list(licences.TITLE)),
+                                 (runtime, 'share/licenses', licences.STAGE_WINE + list(licences.RUNTIME))):
+         if root.is_dir():
+diff --git a/tools/recover-child-probe.py b/tools/recover-child-probe.py
+index ce6ba45..9a59179 100644
+--- a/tools/recover-child-probe.py
++++ b/tools/recover-child-probe.py
+@@ -38,7 +38,7 @@ def main():
+     if (hashlib.sha256(production).hexdigest() != record['production_sha256'] or
+             production[:4] != bytes.fromhex('4f153d1d')):
+         raise RuntimeError('Signed production backup does not match the run record')
+-    if (ROOT / 'dist/PPSA99170/eboot.bin').read_bytes() != production:
++    if (ROOT / 'dist/PPSA99278/eboot.bin').read_bytes() != production:
+         raise RuntimeError('Current production build differs from the saved backup; recover its matching ELF first')
+     expected = runner.executable_sha((ROOT / 'build/ps5/eboot.elf').read_bytes())
+     settings = ps5_console.load_settings()
+@@ -50,7 +50,7 @@ def main():
+         raise RuntimeError('Console is running an application; no restoration performed')
+     output = run / 'recovery'
+     output.mkdir(parents=True, exist_ok=False)
+-    base = '/data/homebrew/PPSA99170/'
++    base = '/data/homebrew/PPSA99278/'
+     with console_guard.writing('probe', settings), FTP() as ftp:
+         ftp.connect(settings['host'], settings['ftp_port'], timeout=30)
+         ftp.login(settings['ftp_user'], settings['ftp_password'] or 'codex')
+@@ -74,7 +74,7 @@ def main():
+             if fresh:
+                 record['observations'] = trace.splitlines()
+                 print(trace, end='' if trace.endswith('\n') else '\n', flush=True)
+-        daemon = download('/data/ps5proton/logs/lapy-service.log')
++        daemon = download('/data/artcraft/logs/lapy-service.log')
+         if daemon is not None:
+             (output / 'daemon.log').write_text(redact(daemon.decode(errors='replace')))
+         # Archive and clear every one-shot startup hook before ordinary launches.
+diff --git a/tools/restore-process-probe.py b/tools/restore-process-probe.py
+index 786b2b3..3fa84af 100644
+--- a/tools/restore-process-probe.py
++++ b/tools/restore-process-probe.py
+@@ -28,10 +28,10 @@ from console_log import redact
+ spec = importlib.util.spec_from_file_location('child_runner', ROOT / 'tools/run-child-probe.py')
+ child_runner = importlib.util.module_from_spec(spec)
+ spec.loader.exec_module(child_runner)
+-BASE = '/data/homebrew/PPSA99170/'
+-RUNTIME = '/data/ps5proton/runtime/ge11-7/lib/wine/x86_64-unix/'
+-PREFIX_DRIVE = '/data/ps5proton/prefixes/probe/drive_c/'
+-LOGS = '/data/ps5proton/logs/'
++BASE = '/data/homebrew/PPSA99278/'
++RUNTIME = '/data/artcraft/runtime/ge11-7/lib/wine/x86_64-unix/'
++PREFIX_DRIVE = '/data/artcraft/prefixes/probe/drive_c/'
++LOGS = '/data/artcraft/logs/'
+ 
+ 
+ def verified(readback, signed, elf):
+@@ -52,7 +52,7 @@ def main():
+     if ' count=0 ' not in ps5_console.ps5vkctl_command(settings, 'procs', timeout=15) + ' ':
+         raise RuntimeError('Console busy; nothing restored')
+     backup = Path(record.get('production_backup',ROOT / '.deps/wine-child-production'))
+-    production_image = (ROOT / 'dist/PPSA99170/eboot.bin').read_bytes()
++    production_image = (ROOT / 'dist/PPSA99278/eboot.bin').read_bytes()
+     production_elf = (ROOT / 'build/ps5/eboot.elf').read_bytes()
+     if production_image[:4] != bytes.fromhex('4f153d1d'):
+         raise RuntimeError('Production title backup must be signed')
+@@ -95,7 +95,7 @@ def main():
+     restoration['modules_restored'] = modules
+     removed = {}
+     # Production ships the helper loader and these probes (tools/build-production.sh): its copies go back.
+-    shipped = {BASE + 'wine-child.bin': backup / 'wine-child.bin' if (backup/'wine-child.bin').exists() else ROOT / 'dist/PPSA99170/wine-child.bin',
++    shipped = {BASE + 'wine-child.bin': backup / 'wine-child.bin' if (backup/'wine-child.bin').exists() else ROOT / 'dist/PPSA99278/wine-child.bin',
+                PREFIX_DRIVE + 'process-probe.exe': ROOT / '.deps/staged/prefixes/probe/drive_c/process-probe.exe',
+                PREFIX_DRIVE + 'graphics-render-probe.exe': ROOT / '.deps/staged/prefixes/probe/drive_c/graphics-render-probe.exe'}
+     for path in (BASE + 'wine-child.bin', PREFIX_DRIVE + 'process-probe.exe', PREFIX_DRIVE + 'graphics-render-probe.exe',
+@@ -134,7 +134,7 @@ def main():
+     restoration['prior_files_restored']=prior_files_restored
+     if record.get('payload_uploaded'):
+         removed['payload-owner-ready']=remove(PREFIX_DRIVE+'payload-owner-ready')
+-        path='/data/ps5proton/run/proton-payload-child.elf'
++        path='/data/artcraft/run/proton-payload-child.elf'
+         removed['payload_image']=prior_files_restored[path] if path in prior_files_restored else remove(path)
+     ftp.quit()
+     restoration['removed'] = removed
+diff --git a/tools/run-appearance.py b/tools/run-appearance.py
+index 93a8a0e..7a85b96 100644
+--- a/tools/run-appearance.py
++++ b/tools/run-appearance.py
+@@ -99,7 +99,7 @@ def main():
+     parser.add_argument('--name',required=True);parser.add_argument('--arch',choices=('32','64'),required=True)
+     args=parser.parse_args()
+     result=subprocess.run([sys.executable,str(ROOT/'tools/run-console.py'),'--name',args.name,
+-        '--exe',f'appearance{args.arch}-probe.exe',r'--args=--probe --capture=Z:\data\ps5proton\logs\game-frame.ppm','--marker','PS5_PROTON_APPEARANCE_PROBE',
++        '--exe',f'appearance{args.arch}-probe.exe',r'--args=--probe --capture=Z:\data\artcraft\logs\game-frame.ppm','--marker','PS5_PROTON_APPEARANCE_PROBE',
+         '--pad-script',str(ROOT/'tests/pad-scripts/appearance.txt')],cwd=ROOT)
+     path=ROOT/'evidence'/(args.name+'.json')
+     if not path.exists():return result.returncode or 1
+diff --git a/tools/run-browser.py b/tools/run-browser.py
+index 111e0f4..574abde 100644
+--- a/tools/run-browser.py
++++ b/tools/run-browser.py
+@@ -3,7 +3,7 @@
+ """MihawkBrowser on the console (docs/MIHAWK_BROWSER.md C1-C5): one scripted run through tools/run-console.py that
+ ends in a verdict.
+ 
+-Starts the runtime's one copy, Z:\\data\\ps5proton\\runtime\\ge11-7\\lib\\mihawk-browser\\MihawkBrowser.exe, on the
++Starts the runtime's one copy, Z:\\data\\artcraft\\runtime\\ge11-7\\lib\\mihawk-browser\\MihawkBrowser.exe, on the
+ window-surfaces route the desktop uses, drives it with MIHAWK_BROWSER_SCRIPT, takes pictures with
+ tests/pad-scripts/browser.txt, and adds to run-console's evidence/<name>.json a "browser" record: its own lines (the
+ program's output, klog/<name>-stdout.txt; they carry no query, path or address), each step's outcome, the download,
+@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
+ import browser_lines  # noqa: E402
+ from console_log import redact  # noqa: E402
+ 
+-PATH = 'Z:\\data\\ps5proton\\runtime\\ge11-7\\lib\\mihawk-browser\\MihawkBrowser.exe'
++PATH = 'Z:\\data\\artcraft\\runtime\\ge11-7\\lib\\mihawk-browser\\MihawkBrowser.exe'
+ DEFAULT_SCRIPT = 'load https://example.com/; wait 10000; load wine download; wait 10000; exit'
+ 
+ 
+diff --git a/tools/run-child-probe.py b/tools/run-child-probe.py
+index 5bdbb23..d72b619 100644
+--- a/tools/run-child-probe.py
++++ b/tools/run-child-probe.py
+@@ -20,7 +20,7 @@ import ps5_console
+ import console_guard
+ from console_log import LineLog, redact
+ 
+-BASE = '/data/homebrew/PPSA99170/'
++BASE = '/data/homebrew/PPSA99278/'
+ FAULT = re.compile(r'A user thread receives a fatal signal|mDBG: Sending signal|GPU_FAULT|gpu fault', re.I)
+ ACTIVE_EVIDENCE = None
+ 
+@@ -122,7 +122,7 @@ def main():
+     if manifest.get('kind', 'direct') != args.kind:
+         raise RuntimeError('Requested probe kind does not match its build manifest')
+     probe_name = 'child-probe' if args.kind == 'direct' else args.kind
+-    executable = (build / 'source/dist/PPSA99170/eboot.bin').read_bytes()
++    executable = (build / 'source/dist/PPSA99278/eboot.bin').read_bytes()
+     expected_elf = (build / 'build/eboot.elf').read_bytes()
+     if sha(executable) != manifest['eboot_sha256']:
+         raise RuntimeError('Probe executable does not match the isolated build manifest')
+@@ -145,7 +145,7 @@ def main():
+         if helper_preload(helper_elf) != int(manifest['helper_preload_mask'], 16):
+             raise RuntimeError('Headless helper preload metadata differs from its manifest')
+     root = args.production_root or ROOT
+-    production = (root / 'dist/PPSA99170/eboot.bin').read_bytes() if args.production_root else None
++    production = (root / 'dist/PPSA99278/eboot.bin').read_bytes() if args.production_root else None
+     production_elf = (root / 'build/ps5/eboot.elf').read_bytes() if args.production_root else None
+     if production and production[:4] != bytes.fromhex('4f153d1d'):
+         raise RuntimeError('Local production backup is not a signed SELF')
+@@ -204,7 +204,7 @@ def main():
+     run.mkdir(parents=True, exist_ok=False)
+     (run / 'production-eboot.bin').write_bytes(production)
+     identity = uuid.uuid4().hex
+-    record = {'title': 'PPSA99170', 'identity': identity, 'kind': args.kind, 'build': manifest,
++    record = {'title': 'PPSA99278', 'identity': identity, 'kind': args.kind, 'build': manifest,
+               'capture': str(run.relative_to(ROOT)), 'expected_missing_image': args.missing_image, 'mode': args.mode, 'passed': False, 'status': 'incomplete',
+                 'production_sha256': sha(production), 'production_restored': False,
+                 'production_backup': 'local build' if args.production_root else 'the installed eboot.bin, read back raw',
+@@ -244,7 +244,7 @@ def main():
+                     (run / ('prior-' + hook)).write_bytes(old)
+                     remove(ftp, BASE + hook)
+             (run / 'daemon-before.log').write_text(redact(download(
+-                ftp, '/data/ps5proton/logs/lapy-service.log', optional=True).decode(errors='replace')))
++                ftp, '/data/artcraft/logs/lapy-service.log', optional=True).decode(errors='replace')))
+         with socket.create_connection((settings['host'], settings['klog_port']), timeout=10) as sock:
+             sock.settimeout(0.5)
+             replay = bytearray()
+@@ -287,7 +287,7 @@ def main():
+                 if args.param_kernel:
+                     # Only over the production param.json, byte for byte, so the original is known.
+                     original_param=download(ftp,BASE+'sce_sys/param.json')
+-                    if original_param!=(ROOT/'dist/PPSA99170/sce_sys/param.json').read_bytes():
++                    if original_param!=(ROOT/'dist/PPSA99278/sce_sys/param.json').read_bytes():
+                         raise RuntimeError('Deployed param.json differs from the production build; not changed')
+                     (run/'param-original.json').write_bytes(original_param)
+                     param=json.loads(original_param)
+@@ -309,7 +309,7 @@ def main():
+                     record.update(plan=plan.splitlines(), host_clock_at_launch=int(time.time()))
+             save() # Persist deployment and verification before any spawn can run.
+             console_guard.after_launch()
+-            ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
++            ps5_console.ps5vkctl_command(settings, 'launch PPSA99278', timeout=120)
+             print(args.kind + ' probe launched; capturing the native result.', flush=True)
+             started = time.monotonic()
+             next_poll = started
+@@ -348,7 +348,7 @@ def main():
+             with connect() as ftp:
+                 observations = redact(download(ftp, BASE + probe_name + '-results.txt').decode(errors='replace'))
+                 (run / 'daemon-after.log').write_text(redact(download(
+-                    ftp, '/data/ps5proton/logs/lapy-service.log', optional=True).decode(errors='replace')))
++                    ftp, '/data/artcraft/logs/lapy-service.log', optional=True).decode(errors='replace')))
+             (run / 'results.txt').write_text(observations)
+             record['observations'] = observations.splitlines()
+             record['fresh_identity_seen'] = (probe_name + ' identity=' + identity + ' ') in observations
+diff --git a/tools/run-console.py b/tools/run-console.py
+index ea21f5b..7add130 100755
+--- a/tools/run-console.py
++++ b/tools/run-console.py
+@@ -71,9 +71,9 @@ spec = importlib.util.spec_from_file_location('run_title', TOOLS / 'run-title.py
+ runner = importlib.util.module_from_spec(spec)
+ spec.loader.exec_module(runner)
+ 
+-TITLE = 'PPSA99170'
++TITLE = 'PPSA99278'
+ BASE = f'/data/homebrew/{TITLE}'
+-DATA = '/data/ps5proton'
++DATA = '/data/artcraft'
+ # Equals PW_LOG_SESSIONS_ROOT (src/pw_log_sessions.h): <SESSIONS>/0 holds this run's helper logs.
+ SESSIONS = f'{DATA}/logs/sessions'
+ # tests/gate-sequence-probe.c reads its list here, in the probe prefix every --exe runs in (C:\\).
+@@ -729,7 +729,7 @@ def main():
+     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     what = parser.add_mutually_exclusive_group(required=True)
+     what.add_argument('--exe', help='a probe in the probe prefix (C:\\NAME)')
+-    what.add_argument('--profile', help='an installed game: /data/ps5proton/games/<id>')
++    what.add_argument('--profile', help='an installed game: /data/artcraft/games/<id>')
+     what.add_argument('--path', help='a Windows path to run as a game (Z:\\data\\...), with --env for its environment; '
+                                      'the game.json files are left as they are')
+     parser.add_argument('--program', help="with --profile: a Windows path run instead of the game's executable, in "
+diff --git a/tools/run-desktop-items.py b/tools/run-desktop-items.py
+index 0bee666..502b782 100644
+--- a/tools/run-desktop-items.py
++++ b/tools/run-desktop-items.py
+@@ -16,7 +16,7 @@ def main():
+     parser.add_argument('--launch', nargs='?', const='', default=None, help='double click the game shortcuts and see which open a window')
+     parser.add_argument('--env', action='append', default=[], help='NAME=VALUE for the launch')
+     args = parser.parse_args()
+-    probe = 'Z:\\data\\ps5proton\\prefixes\\probe\\drive_c\\desktop-items64-probe.exe --capture=Z:\\data\\ps5proton\\logs\\game-frame.ppm'
++    probe = 'Z:\\data\\artcraft\\prefixes\\probe\\drive_c\\desktop-items64-probe.exe --capture=Z:\\data\\artcraft\\logs\\game-frame.ppm'
+     if args.soak:
+         probe += f' --soak={args.soak}'
+     if args.launch is not None:
+diff --git a/tools/run-desktop-session.py b/tools/run-desktop-session.py
+index 99948b8..4e254a7 100644
+--- a/tools/run-desktop-session.py
++++ b/tools/run-desktop-session.py
+@@ -81,7 +81,7 @@ def main():
+     args = parser.parse_args()
+     result = subprocess.run([sys.executable, str(ROOT / 'tools/run-console.py'), '--name', args.name,
+         '--profile', 'mihawk-os',
+-        '--args=Z:\\data\\ps5proton\\prefixes\\probe\\drive_c\\desktop-session64-probe.exe --capture=Z:\\data\\ps5proton\\logs\\game-frame.ppm'
++        '--args=Z:\\data\\artcraft\\prefixes\\probe\\drive_c\\desktop-session64-probe.exe --capture=Z:\\data\\artcraft\\logs\\game-frame.ppm'
+         + (' --dark' if args.theme == 'dark' else ''),
+         '--marker', 'PS5_PROTON_DESKTOP_SESSION_PROBE', '--seconds', '600', '--watchdog', '660',
+         '--pad-script', str(ROOT / 'tests/pad-scripts/desktop-session.txt')], cwd=ROOT)
+diff --git a/tools/run-desktop-view.py b/tools/run-desktop-view.py
+index 580953f..4da08a5 100755
+--- a/tools/run-desktop-view.py
++++ b/tools/run-desktop-view.py
+@@ -46,7 +46,7 @@ def main():
+     args = parser.parse_args()
+     result = subprocess.run([sys.executable, str(ROOT / 'tools/run-console.py'), '--name', args.name,
+         '--profile', 'mihawk-os',
+-        '--args=Z:\\data\\ps5proton\\prefixes\\probe\\drive_c\\desktop-view64-probe.exe --capture=Z:\\data\\ps5proton\\logs\\game-frame.ppm',
++        '--args=Z:\\data\\artcraft\\prefixes\\probe\\drive_c\\desktop-view64-probe.exe --capture=Z:\\data\\artcraft\\logs\\game-frame.ppm',
+         '--marker', 'PS5_PROTON_DESKTOP_VIEW', '--seconds', '240', '--watchdog', '300'], cwd=ROOT)
+     path = ROOT / 'evidence' / (args.name + '.json')
+     if not path.exists():
+diff --git a/tools/run-detailed-logs.py b/tools/run-detailed-logs.py
+index 3e50d07..3340bbb 100644
+--- a/tools/run-detailed-logs.py
++++ b/tools/run-detailed-logs.py
+@@ -28,7 +28,7 @@ from pathlib import Path
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ sys.path.insert(0, str(ROOT.parent / 'PS5_Vulkan/tools'))
+-DATA = '/data/ps5proton'
++DATA = '/data/artcraft'
+ SETTING = f'{DATA}/logging.txt'
+ DETAILED = f'{DATA}/logs/detailed'   # PW_DETAILED_LOGS_ROOT
+ FOLDER_BYTES = 96 << 20              # PW_DETAILED_LOGS_FOLDER_BYTES
+diff --git a/tools/run-dmem-share.py b/tools/run-dmem-share.py
+index 95e52c5..4f93c9c 100755
+--- a/tools/run-dmem-share.py
++++ b/tools/run-dmem-share.py
+@@ -47,7 +47,7 @@ def main():
+     parser.add_argument('--exec3', action='store_true', help='JIT shared memory limits: in-place execute, RWX, pool, count')
+     parser.add_argument('--exec4', action='store_true', help='the kernel\'s own answers only (K1-K9), built with the SDK\'s '
+                         'kernel write wrapped to refuse; refused to send if the disassembly still calls it')
+-    parser.add_argument('--prx', default='/data/ps5proton/runtime/ge11-7/lib/wine/x86_64-unix/libfreetype.prx',
++    parser.add_argument('--prx', default='/data/artcraft/runtime/ge11-7/lib/wine/x86_64-unix/libfreetype.prx',
+                         help='a staged PRX for --exec (libfreetype needs only libc)')
+     args = parser.parse_args()
+     if not re.fullmatch(r'[a-zA-Z0-9_-]+', args.name):
+@@ -65,7 +65,7 @@ def main():
+         parser.error('use a new run name')
+     settings = ps5_console.load_settings()
+     state = ps5_console.ps5vkctl_command(settings, 'procs', timeout=5)
+-    if 'title=PPSA99170 ' not in state:
++    if 'title=PPSA99278 ' not in state:
+         raise SystemExit('The application title is not running')
+     elf = ROOT / 'build/dmem-share-probe.elf'
+     # The SDK's libc mmap and mprotect with PROT_EXEC write the kernel's map entry; no mode asks them for execute, the
+diff --git a/tools/run-frame-pacing.py b/tools/run-frame-pacing.py
+index ef4403e..035456a 100644
+--- a/tools/run-frame-pacing.py
++++ b/tools/run-frame-pacing.py
+@@ -107,7 +107,7 @@ def main():
+     args = parser.parse_args()
+     result = subprocess.run([sys.executable, str(ROOT / 'tools/run-console.py'), '--name', args.name,
+         '--profile', 'mihawk-os',
+-        '--args=Z:\\data\\ps5proton\\prefixes\\probe\\drive_c\\frame-pacing64-probe.exe --capture=Z:\\data\\ps5proton\\logs\\game-frame.ppm',
++        '--args=Z:\\data\\artcraft\\prefixes\\probe\\drive_c\\frame-pacing64-probe.exe --capture=Z:\\data\\artcraft\\logs\\game-frame.ppm',
+         '--marker', 'PS5_PROTON_FRAME_PACING_PROBE', '--seconds', '240', '--watchdog', '300'], cwd=ROOT)
+     path = ROOT / 'evidence' / (args.name + '.json')
+     if not path.exists():
+diff --git a/tools/run-game-mode.py b/tools/run-game-mode.py
+index 0602ae0..5d2aa9e 100644
+--- a/tools/run-game-mode.py
++++ b/tools/run-game-mode.py
+@@ -21,7 +21,7 @@ from pathlib import Path
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ sys.path.insert(0, str(ROOT.parent / 'PS5_Vulkan/tools'))
+-SETTING = '/data/ps5proton/game-mode.txt'
++SETTING = '/data/artcraft/game-mode.txt'
+ 
+ 
+ class GameModeOn:
+diff --git a/tools/run-game-routes.py b/tools/run-game-routes.py
+index a554c9f..c798803 100644
+--- a/tools/run-game-routes.py
++++ b/tools/run-game-routes.py
+@@ -45,7 +45,7 @@ def catalog_entry(profile):
+     """The entry's game.json, read from the console (never stored)."""
+     with console.connect(ps5_console.load_settings()) as ftp:
+         raw = io.BytesIO()
+-        ftp.retrbinary(f'RETR /data/ps5proton/games/{profile}/game.json', raw.write)
++        ftp.retrbinary(f'RETR /data/artcraft/games/{profile}/game.json', raw.write)
+     return json.loads(raw.getvalue())
+ 
+ 
+@@ -132,7 +132,7 @@ def compare(launcher, desktop):
+ def main():
+     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     parser.add_argument('--name', required=True)
+-    parser.add_argument('--profile', required=True, help='catalog id under /data/ps5proton/games')
++    parser.add_argument('--profile', required=True, help='catalog id under /data/artcraft/games')
+     parser.add_argument('--seconds', type=int, default=90)
+     parser.add_argument('--start-exe', action='store_true',
+                         help='start the executable directly, with the entry environment as overrides (no shortcut)')
+diff --git a/tools/run-games-autodetect.py b/tools/run-games-autodetect.py
+index bddd9a0..ea5f929 100755
+--- a/tools/run-games-autodetect.py
++++ b/tools/run-games-autodetect.py
+@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
+ sys.path.insert(0, str(ROOT.parent / 'PS5_Vulkan/tools'))
+ import ps5_console  # noqa: E402
+ 
+-PREFIX = '/data/ps5proton/prefixes/probe/drive_c'
++PREFIX = '/data/artcraft/prefixes/probe/drive_c'
+ # The game: tests/games-autodetect-probe.c, which ends its session; the others are never run.
+ GAME = ROOT / '.deps/staged/prefixes/probe/drive_c/games-autodetect-probe.exe'
+ PROGRAM = ROOT / '.deps/staged/prefixes/probe/drive_c/exit-probe.exe'
+diff --git a/tools/run-install-rehearsal.py b/tools/run-install-rehearsal.py
+index 68688d0..7969ff4 100644
+--- a/tools/run-install-rehearsal.py
++++ b/tools/run-install-rehearsal.py
+@@ -7,8 +7,8 @@
+   tools/run-install-rehearsal.py --name RUN --restore ASIDE          put a renamed-aside runtime back
+ 
+ The deployed title must be this checkout's production build (its runtime-pack.txt is compared). Nothing is deleted:
+-  1. /data/ps5proton/runtime/ge11-7 and run/proton-payload-child.elf are renamed aside (<name>.aside-<time>);
+-  2. dist/runtime's pieces go to /data/ps5proton/install over FTP, as a USB stick's would be found; or, with
++  1. /data/artcraft/runtime/ge11-7 and run/proton-payload-child.elf are renamed aside (<name>.aside-<time>);
++  2. dist/runtime's pieces go to /data/artcraft/install over FTP, as a USB stick's would be found; or, with
+      --route http, this PC serves them (the LAN fixture), the title folder's install-source.txt names it for this run
+      only, and a pieces folder already on the console is renamed aside so the title downloads;
+   3. the title is started; the owner opens Settings, Install runtime, and presses CROSS;
+@@ -37,8 +37,8 @@ sys.path.insert(0, str(ROOT / 'tools'))
+ import console_guard  # noqa: E402
+ from console_log import LineLog, redact  # noqa: E402
+ 
+-DATA = '/data/ps5proton'
+-TITLE = '/data/homebrew/PPSA99170'
++DATA = '/data/artcraft'
++TITLE = '/data/homebrew/PPSA99278'
+ MOVED = ('runtime/ge11-7', 'run/proton-payload-child.elf')
+ PIECE = re.compile(r'install: piece (\d+) status=(-?\d+) written=(\d+) of (\d+) at ([\d.]+) s')
+ 
+@@ -85,7 +85,7 @@ def restore(args, settings, record):
+ 
+ 
+ def rehearse(args, settings, record):
+-    text = (ROOT / 'dist/PPSA99170/runtime-pack.txt').read_text()
++    text = (ROOT / 'dist/PPSA99278/runtime-pack.txt').read_text()
+     files = manifest_files(text)
+     chunks = [line.split()[1] + '.zst' for line in text.splitlines() if line.startswith('chunk ')]
+     with connect(settings) as ftp:
+@@ -130,7 +130,7 @@ def rehearse(args, settings, record):
+         klog.settimeout(0.5)
+         log = LineLog(output, lines.append)
+         console_guard.after_launch()
+-        ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
++        ps5_console.ps5vkctl_command(settings, 'launch PPSA99278', timeout=120)
+         print('MihawkOS started: open Settings, Install runtime, and press CROSS', flush=True)
+         deadline = time.monotonic() + args.wait
+         end = None
+diff --git a/tools/run-launcher-ended.py b/tools/run-launcher-ended.py
+index 1d98ea7..3e17ca9 100755
+--- a/tools/run-launcher-ended.py
++++ b/tools/run-launcher-ended.py
+@@ -25,7 +25,7 @@ LEGS = {
+               f'Last session ended: Wine: requested profile {MISSING} is not in the library'),
+     'marker': (['--plant-marker', 'Gate marker'],
+                'The last session (Gate marker) did not end normally: it crashed, froze or lost power. '
+-               'Its log: /data/ps5proton/logs/title-last.log'),
++               'Its log: /data/artcraft/logs/title-last.log'),
+ }
+ 
+ 
+diff --git a/tools/run-launcher.py b/tools/run-launcher.py
+index 3776dfc..8a60561 100644
+--- a/tools/run-launcher.py
++++ b/tools/run-launcher.py
+@@ -116,26 +116,26 @@ def main():
+                     raise RuntimeError('Klog replay never became quiet; no launch performed')
+             (run / 'replay.log').write_text(redact(backlog.decode(errors='replace')))
+             with ftp_connect() as ftp:
+-                remove(ftp, '/data/homebrew/PPSA99170/wine-run.txt')
++                remove(ftp, '/data/homebrew/PPSA99278/wine-run.txt')
+                 if args.probe:
+-                    remove(ftp, '/data/ps5proton/logs/wine-last.log')
+-                    remove(ftp, '/data/ps5proton/stop-game')
++                    remove(ftp, '/data/artcraft/logs/wine-last.log')
++                    remove(ftp, '/data/artcraft/stop-game')
+                     if args.probe == 'd3d11-probe.exe':
+-                        remove(ftp, '/data/ps5proton/logs/d3d-probe.ppm')
+-                    ftp.storbinary('STOR /data/homebrew/PPSA99170/wine-run.txt',
++                        remove(ftp, '/data/artcraft/logs/d3d-probe.ppm')
++                    ftp.storbinary('STOR /data/homebrew/PPSA99278/wine-run.txt',
+                                    io.BytesIO(('path=C:\\' + args.probe + '\n').encode()))
+                 if args.profile or args.path:
+-                    ftp.storbinary('STOR /data/homebrew/PPSA99170/wine-run.txt', io.BytesIO(
++                    ftp.storbinary('STOR /data/homebrew/PPSA99278/wine-run.txt', io.BytesIO(
+                         (f'profile={args.profile}\n' if args.profile else f'path={args.path}\n').encode()))
+                 if args.plant_marker:
+-                    ftp.storbinary('STOR /data/homebrew/PPSA99170/session-running',
++                    ftp.storbinary('STOR /data/homebrew/PPSA99278/session-running',
+                                    io.BytesIO(args.plant_marker.encode()))
+                 if args.setup:
+-                    ftp.storbinary('STOR /data/ps5proton/setup-first-run', io.BytesIO(b''))
+-                ftp.storbinary('STOR /data/homebrew/PPSA99170/test-run.txt', io.BytesIO(script.encode()))
++                    ftp.storbinary('STOR /data/artcraft/setup-first-run', io.BytesIO(b''))
++                ftp.storbinary('STOR /data/homebrew/PPSA99278/test-run.txt', io.BytesIO(script.encode()))
+             # Count an attempted launch even if the control connection fails afterwards.
+             console_guard.after_launch()
+-            ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
++            ps5_console.ps5vkctl_command(settings, 'launch PPSA99278', timeout=120)
+             print('Launch request completed; capturing title output.', flush=True)
+             started = time.monotonic()
+             next_poll = started + 2
+@@ -187,7 +187,7 @@ def main():
+         if args.probe and idle_since:
+             with ftp_connect() as ftp:
+                 sink = io.BytesIO()
+-                ftp.retrbinary('RETR /data/ps5proton/logs/wine-last.log', sink.write)
++                ftp.retrbinary('RETR /data/artcraft/logs/wine-last.log', sink.write)
+                 wine = redact(sink.getvalue().decode(errors='replace'))
+                 (run / 'wine.log').write_text(wine)
+                 probe_marker = PROBES[args.probe]
+@@ -198,7 +198,7 @@ def main():
+                                 and ('returning to launcher' in text or 'restart: to=launcher' in text))
+                 if args.probe == 'd3d11-probe.exe' and probe_passed:
+                     sink = io.BytesIO()
+-                    ftp.retrbinary('RETR /data/ps5proton/logs/d3d-probe.ppm', sink.write)
++                    ftp.retrbinary('RETR /data/artcraft/logs/d3d-probe.ppm', sink.write)
+                     from PIL import Image, ImageStat
+                     picture = Image.open(io.BytesIO(sink.getvalue())).convert('RGB')
+                     picture.save(run / 'd3d-probe.png')
+@@ -208,13 +208,13 @@ def main():
+             with ftp_connect() as ftp:
+                 # LIST, not NLST: the console's FTP server answers NLST with 502.
+                 listing = []
+-                ftp.retrlines('LIST /data/homebrew/PPSA99170', listing.append)
++                ftp.retrlines('LIST /data/homebrew/PPSA99278', listing.append)
+                 marker_left = any(line.split()[-1] == 'session-running' for line in listing if line.split())
+         evidence = {
+             'launch_readiness': launch_readiness,
+             'session_marker_left': marker_left,
+-            'title': 'PPSA99170', 'identity': identity, 'frames_requested': args.frames,
+-            'eboot_sha256': hashlib.sha256((ROOT / 'dist/PPSA99170/eboot.bin').read_bytes()).hexdigest(),
++            'title': 'PPSA99278', 'identity': identity, 'frames_requested': args.frames,
++            'eboot_sha256': hashlib.sha256((ROOT / 'dist/PPSA99278/eboot.bin').read_bytes()).hexdigest(),
+             'fresh_identity_seen': marker in text, 'shell_idle_after_run': bool(idle_since),
+             'title_finished_successfully': finished, 'picture_and_log_check_passed': checked == 0,
+             'post_launch_fault_records': len(checker.CRASH.findall(text)),
+@@ -260,9 +260,9 @@ def main():
+             if idle():
+                 with ftp_connect() as ftp:
+                     for hook in ['test-run.txt', 'wine-run.txt'] + (['session-running'] if args.plant_marker else []):
+-                        remove(ftp, '/data/homebrew/PPSA99170/' + hook)
++                        remove(ftp, '/data/homebrew/PPSA99278/' + hook)
+                     if args.setup:
+-                        remove(ftp, '/data/ps5proton/setup-first-run')
++                        remove(ftp, '/data/artcraft/setup-first-run')
+             else:
+                 clean_finish = False
+             console_guard.finished(clean_finish)
+diff --git a/tools/run-mesa-zink-probe.py b/tools/run-mesa-zink-probe.py
+index 4306dc8..2d31c27 100644
+--- a/tools/run-mesa-zink-probe.py
++++ b/tools/run-mesa-zink-probe.py
+@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
+ spec = importlib.util.spec_from_file_location('console_runner', ROOT / 'tools/run-console.py')
+ console = importlib.util.module_from_spec(spec)
+ spec.loader.exec_module(console)
+-REMOTE = '/data/ps5proton/prefixes/probe/drive_c/windows/system32/'
++REMOTE = '/data/artcraft/prefixes/probe/drive_c/windows/system32/'
+ 
+ 
+ def download(ftp, name):
+diff --git a/tools/run-mouse-controls.py b/tools/run-mouse-controls.py
+index 9b59719..d6df010 100644
+--- a/tools/run-mouse-controls.py
++++ b/tools/run-mouse-controls.py
+@@ -18,7 +18,7 @@ from pathlib import Path
+ ROOT = Path(__file__).resolve().parents[1]
+ support = runpy.run_path(str(ROOT / 'tools/run-prefix-test.py'))
+ connect, console = support['connect'], support['ps5_console']
+-PATH = '/data/ps5proton/controls.txt'
++PATH = '/data/artcraft/controls.txt'
+ MAPPING = b'left r1\nright l1\nmiddle r3\n'
+ 
+ 
+diff --git a/tools/run-payload-direct-memory-probe.py b/tools/run-payload-direct-memory-probe.py
+index dca1f69..a677873 100644
+--- a/tools/run-payload-direct-memory-probe.py
++++ b/tools/run-payload-direct-memory-probe.py
+@@ -40,7 +40,7 @@ def main():
+     settings = ps5_console.load_settings()
+     state = ps5_console.ps5vkctl_command(settings, 'procs', timeout=5)
+     pids = re.search(r'pids=([0-9, ]+)', state)
+-    if 'title=PPSA99170 ' not in state or not pids or str(args.owner) not in re.findall(r'\d+', pids.group(1)):
++    if 'title=PPSA99278 ' not in state or not pids or str(args.owner) not in re.findall(r'\d+', pids.group(1)):
+         raise SystemExit('The specified test owner is not running')
+     elf = ROOT / 'build/payload-direct-memory-probe.elf'
+     subprocess.run([str(ROOT / '.deps/native/ps5-payload-sdk/bin/prospero-clang'), '-std=c11', '-O2',
+diff --git a/tools/run-payload-start-test.py b/tools/run-payload-start-test.py
+index bfc37d6..994491d 100644
+--- a/tools/run-payload-start-test.py
++++ b/tools/run-payload-start-test.py
+@@ -4,7 +4,7 @@
+ 
+   tools/run-payload-start-test.py --name NAME [--build ISOLATED_TITLE_BUILD]
+ 
+-tools/helperhostprobe.c's payload is put at /data/ps5proton/run/helperhostprobe.elf; the isolated native title
++tools/helperhostprobe.c's payload is put at /data/artcraft/run/helperhostprobe.elf; the isolated native title
+ (tools/build-child-probe.py --kind service-native) runs its payload-start mode through tools/run-child-probe.py, which
+ deploys it, launches it, keeps its results and restores production. The title posts the payload to the console's own
+ payload launcher (websrv on 127.0.0.1:8080) with the channel step, then does the channel exchange with the process
+@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
+ import ps5_console  # noqa: E402
+ import console_guard  # noqa: E402
+ 
+-TARGET = '/data/ps5proton/run/helperhostprobe.elf'
++TARGET = '/data/artcraft/run/helperhostprobe.elf'
+ 
+ 
+ def connect(settings):
+@@ -55,7 +55,7 @@ def main():
+     settings = ps5_console.load_settings()
+     with console_guard.writing('probe', settings), connect(settings) as ftp:
+         try:
+-            ftp.mkd('/data/ps5proton/run')
++            ftp.mkd('/data/artcraft/run')
+         except error_perm:
+             pass
+         ftp.storbinary('STOR ' + TARGET, io.BytesIO(elf))
+diff --git a/tools/run-prefix-baseline.py b/tools/run-prefix-baseline.py
+index 26348c9..9b32ddd 100644
+--- a/tools/run-prefix-baseline.py
++++ b/tools/run-prefix-baseline.py
+@@ -21,8 +21,8 @@ support = runpy.run_path(str(ROOT / 'tools/run-prefix-test.py'))
+ connect, listing, remove_tree = (support[k] for k in ('connect', 'listing', 'remove_tree'))
+ console = support['ps5_console']
+ ENTRY = 'proton-baseline-test'
+-GAME = '/data/ps5proton/games/' + ENTRY
+-PREFIX = '/data/ps5proton/prefixes/' + ENTRY
++GAME = '/data/artcraft/games/' + ENTRY
++PREFIX = '/data/artcraft/prefixes/' + ENTRY
+ MARKER = '.ps5-proton-test'
+ OWNER = b'tools/run-prefix-baseline.py\n'
+ 
+diff --git a/tools/run-prefix-test.py b/tools/run-prefix-test.py
+index 2f77629..daf9e6e 100644
+--- a/tools/run-prefix-test.py
++++ b/tools/run-prefix-test.py
+@@ -29,8 +29,8 @@ sys.path.insert(0, str(ROOT.parent / 'PS5_Vulkan/tools'))
+ import ps5_console  # noqa: E402
+ 
+ ENTRY = 'proton-prefix-test'
+-GAME = f'/data/ps5proton/games/{ENTRY}'
+-PREFIX = f'/data/ps5proton/prefixes/{ENTRY}'
++GAME = f'/data/artcraft/games/{ENTRY}'
++PREFIX = f'/data/artcraft/prefixes/{ENTRY}'
+ MARKER = '.ps5-proton-test'
+ PACKAGE = ROOT / '.deps/installers/7z2409-x64.msi'
+ PACKAGE_SHA256 = 'ec6af1ea0367d16dde6639a89a080a524cebc4d4bedfe00ed0cac4b865a918d8'
+@@ -157,7 +157,7 @@ def main():
+         pass
+     with connect(settings) as ftp:
+         texts = []
+-        base = '/data/ps5proton/logs/sessions/0/'   # this session's helper logs (src/pw_log_sessions.h)
++        base = '/data/artcraft/logs/sessions/0/'   # this session's helper logs (src/pw_log_sessions.h)
+         for name, folder, _ in listing(ftp, base) or []:
+             if not folder and re.fullmatch(r'wine-child-\d+\.log', name):
+                 data = io.BytesIO()
+diff --git a/tools/run-process-probe.py b/tools/run-process-probe.py
+index 8038f46..6b70116 100644
+--- a/tools/run-process-probe.py
++++ b/tools/run-process-probe.py
+@@ -20,8 +20,8 @@ import console_guard
+ from console_log import redact
+ spec=importlib.util.spec_from_file_location('child_runner',ROOT/'tools/run-child-probe.py')
+ child_runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(child_runner)
+-BASE='/data/homebrew/PPSA99170/'
+-RUNTIME='/data/ps5proton/runtime/ge11-7/lib/wine/x86_64-unix/'
++BASE='/data/homebrew/PPSA99278/'
++RUNTIME='/data/artcraft/runtime/ge11-7/lib/wine/x86_64-unix/'
+ ACTIVE=None
+ 
+ def verified(readback, signed, elf):
+@@ -63,7 +63,7 @@ def main():
+     parser.add_argument('--pad-script',type=Path,help='a pad script for the owner title (src/pw_pad_script.h); with --gpu-broker, every rendering child must see its held Y and left stick through XInput')
+     parser.add_argument('--production-backup',type=Path,default=ROOT/'.deps/wine-child-production')
+     parser.add_argument('--runtime-build',type=Path,default=ROOT/'.deps/wine-ps5')
+-    parser.add_argument('--profile',help='program: the library entry (/data/ps5proton/games/<id>) to run as the initial Windows program, with descendants')
++    parser.add_argument('--profile',help='program: the library entry (/data/artcraft/games/<id>) to run as the initial Windows program, with descendants')
+     parser.add_argument('--program-seconds',type=int,default=180,help='program: seconds before the title is asked to stop the game')
+     args=parser.parse_args()
+     if args.case=='payload-owner-close' and (not args.payload or not args.owner_build or args.gpu_broker):parser.error('payload-owner-close requires a payload and a headless owner')
+@@ -87,9 +87,9 @@ def main():
+     if args.owner_build:
+         owner_build=args.owner_build.resolve();owner_manifest=json.loads((owner_build/'manifest.json').read_text())
+         if owner_manifest['kind']!='wine-owner':raise RuntimeError('Expected an isolated wine-owner title')
+-        owner_image=(owner_build/'source/dist/PPSA99170/eboot.bin').read_bytes()
++        owner_image=(owner_build/'source/dist/PPSA99278/eboot.bin').read_bytes()
+         owner_elf=(owner_build/'build/eboot.elf').read_bytes()
+-        production_image=(ROOT/'dist/PPSA99170/eboot.bin').read_bytes()
++        production_image=(ROOT/'dist/PPSA99278/eboot.bin').read_bytes()
+         production_elf=(ROOT/'build/ps5/eboot.elf').read_bytes()
+         if hashlib.sha256(owner_image).hexdigest()!=owner_manifest['eboot_sha256']:raise RuntimeError('Owner title differs from manifest')
+         if production_image[:4]!=bytes.fromhex('4f153d1d'):raise RuntimeError('Production title backup must be signed')
+@@ -116,7 +116,7 @@ def main():
+         if not client_inputs.get('wsi') or hashlib.sha256(image).hexdigest()!=client_inputs['sha256'] or set(client_inputs['needed'])-{'libkernel.sprx','libSceLibcInternal.sprx'}:
+             raise RuntimeError('Broker Vulkan module differs from manifest')
+         uploads.append(('libvulkan',image,elf,(backup/'libvulkan.prx').read_bytes(),(backup/'libvulkan.elf').read_bytes()))
+-    payload_path='/data/ps5proton/run/proton-payload-child.elf'
++    payload_path='/data/artcraft/run/proton-payload-child.elf'
+     payload_image=args.payload.resolve().read_bytes() if args.payload else None
+     if args.payload:
+         payload_manifest=json.loads(args.payload.with_suffix('.json').read_text())
+@@ -150,8 +150,8 @@ def main():
+     evidence.write_text(json.dumps(record,indent=2)+'\n')
+     deployed=[];helper_uploaded=False;probe_uploaded=False;java_uploaded=False;parent_deployed=False;graphics_uploaded=False;old_logs=set()
+     param_deployed=False;original_param=b'';payload_uploaded=False
+-    graphics_path='/data/ps5proton/prefixes/probe/drive_c/graphics-render-probe.exe'
+-    capture_path='/data/ps5proton/logs/graphics-child-probe.ppm'
++    graphics_path='/data/artcraft/prefixes/probe/drive_c/graphics-render-probe.exe'
++    capture_path='/data/artcraft/logs/graphics-child-probe.ppm'
+     broker_capture_names=[];broker_readback_names=[]
+     production_files={};production_file_elfs={};prior_captures={}
+     record['production_backup']=str(backup)
+@@ -163,10 +163,10 @@ def main():
+             for name,_,_,original,original_elf in uploads:
+                 if not verified(download(ftp,RUNTIME+name+'.prx'), original, original_elf):
+                     raise RuntimeError('Installed production module differs from signed local backup: '+name)
+-            if args.case=='payload-owner-close' and download(ftp,'/data/ps5proton/prefixes/probe/drive_c/payload-owner-ready',True):raise RuntimeError('Owner-close readiness file already exists')
++            if args.case=='payload-owner-close' and download(ftp,'/data/artcraft/prefixes/probe/drive_c/payload-owner-ready',True):raise RuntimeError('Owner-close readiness file already exists')
+             # Production ships the helper loader and these probes (tools/build-production.sh): a run replaces them and
+             # puts production's copies back afterwards; an older install had none, and the run removes its own.
+-            for path in (BASE+'wine-child.bin','/data/ps5proton/prefixes/probe/drive_c/process-probe.exe',graphics_path,*([payload_path] if args.payload else [])):
++            for path in (BASE+'wine-child.bin','/data/artcraft/prefixes/probe/drive_c/process-probe.exe',graphics_path,*([payload_path] if args.payload else [])):
+                 existing=download(ftp,path,True)
+                 if existing:
+                     if path==BASE+'wine-child.bin':
+@@ -214,8 +214,8 @@ def main():
+             if args.gpu_broker:
+                 paths=[BASE+n for n in old_logs if re.fullmatch(r'gpu-child-\d+-\d+\.ppm',n)]
+                 if download(ftp,BASE+'gpu-broker-results.txt',True):paths.append(BASE+'gpu-broker-results.txt')
+-                ftp.cwd('/data/ps5proton/logs')
+-                paths+=['/data/ps5proton/logs/'+n for n in names(ftp) if re.fullmatch(r'graphics-broker-\d+\.ppm',n)]
++                ftp.cwd('/data/artcraft/logs')
++                paths+=['/data/artcraft/logs/'+n for n in names(ftp) if re.fullmatch(r'graphics-broker-\d+\.ppm',n)]
+                 capture_backup=ROOT/'build'/(args.name+'-prior-captures');capture_backup.mkdir(parents=True,exist_ok=True)
+                 for path in paths:
+                     data=download(ftp,path);saved=capture_backup/path.rsplit('/',1)[-1];saved.write_bytes(data)
+@@ -227,7 +227,7 @@ def main():
+             if args.param_kernel:
+                 # Only over the production param.json, byte for byte, so the original is known.
+                 original_param=download(ftp,BASE+'sce_sys/param.json')
+-                if original_param!=(ROOT/'dist/PPSA99170/sce_sys/param.json').read_bytes():
++                if original_param!=(ROOT/'dist/PPSA99278/sce_sys/param.json').read_bytes():
+                     raise RuntimeError('Deployed param.json differs from the production build; not changed')
+                 param=json.loads(original_param)
+                 for item in args.param_kernel:
+@@ -256,8 +256,8 @@ def main():
+             if child_runner.executable_sha(download(ftp,BASE+'wine-child.bin'))!=child_runner.executable_sha(helper_elf):raise RuntimeError('Helper readback mismatch')
+             probe=args.probe.read_bytes();probe_uploaded=True
+             record['probe_uploaded']=True;evidence.write_text(json.dumps(record,indent=2)+'\n')
+-            ftp.storbinary('STOR /data/ps5proton/prefixes/probe/drive_c/process-probe.exe',io.BytesIO(probe))
+-            if download(ftp,'/data/ps5proton/prefixes/probe/drive_c/process-probe.exe')!=probe:raise RuntimeError('PE probe readback mismatch')
++            ftp.storbinary('STOR /data/artcraft/prefixes/probe/drive_c/process-probe.exe',io.BytesIO(probe))
++            if download(ftp,'/data/artcraft/prefixes/probe/drive_c/process-probe.exe')!=probe:raise RuntimeError('PE probe readback mismatch')
+         record['deployment_verified']=True
+         record['probe_sha256']=hashlib.sha256(probe).hexdigest()
+         record['descendant_patch_sha256']=hashlib.sha256((ROOT/'wine/patches/0926-ntdll-ps5-broker-descendant-spawning.patch').read_bytes()).hexdigest()
+@@ -342,7 +342,7 @@ def main():
+                          len(record['native_children_absent'])==len(record['native_children'])
+         with connect() as ftp:
+             # Helpers log into this session's folder (src/pw_log_sessions.h), which the title made empty at its start.
+-            sessions='/data/ps5proton/logs/sessions/0/'
++            sessions='/data/artcraft/logs/sessions/0/'
+             ftp.cwd(sessions)
+             logs=[name for name in names(ftp) if re.fullmatch(r'wine-child-\d+\.log',name)]
+             record['child_logs']=logs
+@@ -492,10 +492,10 @@ def main():
+                     data=download(ftp,BASE+n);okay,samples,correct=readback_pixels(data,1920,1080)
+                     (ROOT/'klog'/(args.name+'-'+n)).write_bytes(data)
+                     record['gpu_display_captures'].append({'name':n,'sha256':hashlib.sha256(data).hexdigest(),'format_passed':okay,'samples':samples,'pixels_passed':correct})
+-                ftp.cwd('/data/ps5proton/logs');broker_readback_names=[n for n in names(ftp) if re.fullmatch(r'graphics-broker-\d+\.ppm',n)]
++                ftp.cwd('/data/artcraft/logs');broker_readback_names=[n for n in names(ftp) if re.fullmatch(r'graphics-broker-\d+\.ppm',n)]
+                 record['gpu_readbacks']=[]
+                 for n in broker_readback_names:
+-                    data=download(ftp,'/data/ps5proton/logs/'+n);okay,samples,correct=readback_pixels(data,640,360)
++                    data=download(ftp,'/data/artcraft/logs/'+n);okay,samples,correct=readback_pixels(data,640,360)
+                     (ROOT/'klog'/(args.name+'-'+n)).write_bytes(data)
+                     record['gpu_readbacks'].append({'name':n,'sha256':hashlib.sha256(data).hexdigest(),'format_passed':okay,'samples':samples,'pixels_passed':correct})
+                 # One report per rendering child's log (a child's debug output can appear in its log twice).
+@@ -550,11 +550,11 @@ def main():
+                         readback=download(ftp,path)
+                         return verified(readback,production_files[path],production_file_elfs[path]) if path in production_file_elfs else readback==production_files[path]
+                     if args.case=='payload-owner-close':
+-                        path='/data/ps5proton/prefixes/probe/drive_c/payload-owner-ready'
++                        path='/data/artcraft/prefixes/probe/drive_c/payload-owner-ready'
+                         if download(ftp,path,True):remove(ftp,path)
+                     if payload_uploaded:record['payload_restored']=put_back(payload_path)
+                     if helper_uploaded:record['helper_removed']=put_back(BASE+'wine-child.bin')
+-                    if probe_uploaded:record['probe_removed']=put_back('/data/ps5proton/prefixes/probe/drive_c/process-probe.exe')
++                    if probe_uploaded:record['probe_removed']=put_back('/data/artcraft/prefixes/probe/drive_c/process-probe.exe')
+                     if java_uploaded:remove(ftp,BASE+'JavaProcessProbe.class');record['java_removed']=True
+                     if graphics_uploaded:
+                         record['graphics_removed']=put_back(graphics_path)
+@@ -565,9 +565,9 @@ def main():
+                         ftp.cwd(BASE)
+                         for n in names(ftp):
+                             if n not in old_logs and re.fullmatch(r'gpu-child-\d+-\d+\.ppm',n):remove(ftp,BASE+n)
+-                        ftp.cwd('/data/ps5proton/logs')
++                        ftp.cwd('/data/artcraft/logs')
+                         for n in names(ftp):
+-                            if re.fullmatch(r'graphics-broker-\d+\.ppm',n):remove(ftp,'/data/ps5proton/logs/'+n)
++                            if re.fullmatch(r'graphics-broker-\d+\.ppm',n):remove(ftp,'/data/artcraft/logs/'+n)
+                         if download(ftp,BASE+'gpu-broker-results.txt',True):remove(ftp,BASE+'gpu-broker-results.txt')
+                     captures_restored=True
+                     for path,data in prior_captures.items():
+diff --git a/tools/run-registry-flush.py b/tools/run-registry-flush.py
+index 55b3b79..2f25154 100755
+--- a/tools/run-registry-flush.py
++++ b/tools/run-registry-flush.py
+@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT.parent / 'PS5_Vulkan/tools'))
+ import ps5_console  # noqa: E402
+ import ftplib  # noqa: E402
+ 
+-HIVE = '/data/ps5proton/prefixes/probe/user.reg'
++HIVE = '/data/artcraft/prefixes/probe/user.reg'
+ KEY = r'[Software\\MihawkOS\\FlushProbe]'
+ 
+ 
+diff --git a/tools/run-setup-unattended.py b/tools/run-setup-unattended.py
+index 1c568fa..5a1c178 100644
+--- a/tools/run-setup-unattended.py
++++ b/tools/run-setup-unattended.py
+@@ -8,13 +8,13 @@ presses with the real install engine, its first ArtCraft session, Done, and one
+                                                                    written
+ 
+ Before it: the title folder holds the build under test, the tour has not finished (no setup.txt with done=1), and a USB
+-stick with artcraft/ is plugged in. The harness writes only its own hooks (/data/ps5proton/setup-unattended, the title
+-folder's test-run.txt, /data/ps5proton/stop-game) and removes them when the console is idle, failure or not; the title
++stick with artcraft/ is plugged in. The harness writes only its own hooks (/data/artcraft/setup-unattended, the title
++folder's test-run.txt, /data/artcraft/stop-game) and removes them when the console is idle, failure or not; the title
+ writes what a first install writes. With the marker, a scripted run gives the tour the real engine and lets it restart
+ into its sessions (proton_setup_unattended, ps5/src/proton_launch.h); without it nothing of this happens.
+ 
+ No person can close a title, so every launcher is a scripted one that ends itself:
+-  0. prime, only when /data/ps5proton is missing (after a first attempt was renamed aside): a 300-frame launcher with
++  0. prime, only when /data/artcraft is missing (after a first attempt was renamed aside): a 300-frame launcher with
+      no presses is the title's real first run (dev.conf, the folder and logs/ before root, the grant); the harness
+      checks the folder is there and keeps that run's title-early.log, which the next launch writes over.
+   1. install: Welcome, the first language, USB, Check drive, Install, in a launcher of 18000 frames (about 5 min, so
+@@ -51,8 +51,8 @@ import console_guard   # noqa: E402
+ import ps5_console     # noqa: E402
+ from console_log import LineLog, redact   # noqa: E402
+ 
+-TITLE = '/data/homebrew/PPSA99170'
+-MARKER = '/data/ps5proton/setup-unattended'
++TITLE = '/data/homebrew/PPSA99278'
++MARKER = '/data/artcraft/setup-unattended'
+ STOP = re.compile(r'fatal signal|maxpipekva|TTY\(STDIN\)|errno=5|\[IOD\] process_completion: error|nsid1_read')
+ MILESTONE = re.compile(r'\[ArtCraft\] (setup: (?!sky)|install: (from|done|failed|stopped)|restart: |'
+                        r'Wine: (process completed|'
+@@ -95,28 +95,28 @@ def read_results(args):
+ 
+     record = {'name': args.name, 'read': {}}
+     sessions = [f'logs/sessions/{n}/' + row.split()[-1] for n in '012'
+-                for row in listing(f'/data/ps5proton/logs/sessions/{n}')
++                for row in listing(f'/data/artcraft/logs/sessions/{n}')
+                 if row.split() and row.split()[-1] not in ('.', '..') and not row.startswith('d')]
+     for remote in ['/data/homebrew/dev.conf', TITLE + '/title-early.log'] + [
+-            '/data/ps5proton/' + r for r in ('setup.txt', 'logs/title-last.log', 'logs/wine-last.log',
++            '/data/artcraft/' + r for r in ('setup.txt', 'logs/title-last.log', 'logs/wine-last.log',
+                                              'logs/lapy-service.log', 'runtime/ge11-7/runtime-pack.txt',
+                                              'runtime/ge11-7/runtime-stamp', *sessions)]:
+         data = fetch(remote)
+         record['read'][remote] = None if data is None else len(data)
+         if data is not None:
+             (out / remote.strip('/').replace('/', '_')).write_text(redact(data.decode('utf-8', 'replace')))
+-    folders = listing('/data/ps5proton') + listing('/data/ps5proton/runtime/ge11-7')
++    folders = listing('/data/artcraft') + listing('/data/artcraft/runtime/ge11-7')
+     (out / 'data_ps5proton.list').write_text('\n'.join(folders))
+     manifest = (args.package / 'runtime-pack.txt').read_text()
+-    record['runtime_pack_matches'] = fetch('/data/ps5proton/runtime/ge11-7/runtime-pack.txt') == manifest.encode()
+-    record['runtime_stamp_matches'] = fetch('/data/ps5proton/runtime/ge11-7/runtime-stamp') == \
++    record['runtime_pack_matches'] = fetch('/data/artcraft/runtime/ge11-7/runtime-pack.txt') == manifest.encode()
++    record['runtime_stamp_matches'] = fetch('/data/artcraft/runtime/ge11-7/runtime-stamp') == \
+         (args.package / 'runtime-stamp').read_bytes()
+     files = [line.split(' ', 4)[1:] for line in manifest.splitlines() if line.startswith('file ')]
+     passed, failed = 0, []
+     for digest, _, _, relative in files:
+         check = hashlib.sha256()
+         try:
+-            ftp.retrbinary('RETR /data/ps5proton/' + relative, check.update, blocksize=1 << 20)
++            ftp.retrbinary('RETR /data/artcraft/' + relative, check.update, blocksize=1 << 20)
+         except error_perm:
+             failed.append(relative)
+             continue
+@@ -243,28 +243,28 @@ def main():
+             return False
+ 
+         seen = lambda text: (lambda all_lines: any(text in line for line in all_lines[mark:]))
+-        # 0. Priming, when /data/ps5proton is missing: the title's own first run makes it, never FTP (its owner and mode
++        # 0. Priming, when /data/artcraft is missing: the title's own first run makes it, never FTP (its owner and mode
+         # are what the title's pre-root mkdir of logs/ expects). A short scripted launcher with no presses shows no tour
+         # without the marker: it writes dev.conf, makes the folder and logs/ before root, is granted, and ends itself.
+-        if not exists('/data/ps5proton'):
++        if not exists('/data/artcraft'):
+             put(TITLE + '/test-run.txt', script(uuid.uuid4().hex, 300, []))
+             console_guard.after_launch()
+             mark = len(lines)
+-            ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
++            ps5_console.ps5vkctl_command(settings, 'launch PPSA99278', timeout=120)
+             record['launches'].append('prime')
+             wait(lambda all_lines: False, 180, idle_ends=True)
+             early = fetch(TITLE + '/title-early.log')   # the next launch writes over it
+             (run / 'prime-title-early.log').write_text(early)
+-            record['primed'] = {'folder_made': exists('/data/ps5proton'), 'logs_made': exists('/data/ps5proton/logs'),
++            record['primed'] = {'folder_made': exists('/data/artcraft'), 'logs_made': exists('/data/artcraft/logs'),
+                                 'early_lines': [l for l in early.splitlines()
+                                                 if l.startswith(('first run:', 'elevation:'))]}
+             if record['stop_lines'] or not record['primed']['folder_made'] or not idle():
+-                raise SystemExit('the priming launch did not end with /data/ps5proton made and the console idle; '
++                raise SystemExit('the priming launch did not end with /data/artcraft made and the console idle; '
+                                  'stopped here')
+         put(MARKER, b'')
+-        remove('/data/ps5proton/setup-first-run')   # the simulated first run would win over the real one
++        remove('/data/artcraft/setup-first-run')   # the simulated first run would win over the real one
+         # 1. The install, unless an earlier run finished it: the stamp is the last file an install writes.
+-        stamp = fetch('/data/ps5proton/runtime/ge11-7/runtime-stamp')
++        stamp = fetch('/data/artcraft/runtime/ge11-7/runtime-stamp')
+         record['install_skipped'] = bool(stamp)
+         if not stamp:
+             # 1. The install. Welcome; the language focused (en-US); How to install: USB; Check drive; Install.
+@@ -274,7 +274,7 @@ def main():
+             put(TITLE + '/test-run.txt', script(identity, 18000, presses))
+             console_guard.after_launch()
+             mark = len(lines)
+-            ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
++            ps5_console.ps5vkctl_command(settings, 'launch PPSA99278', timeout=120)
+             record['launches'].append('install')
+             installed = wait(lambda all_lines: any('install: done' in l or 'install: failed' in l
+                                                    for l in all_lines[mark:]), 600)
+@@ -293,7 +293,7 @@ def main():
+                                                                      (130, 'cross')]))
+         console_guard.after_launch()
+         mark = len(lines)
+-        ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
++        ps5_console.ps5vkctl_command(settings, 'launch PPSA99278', timeout=120)
+         record['launches'].append('prepare')
+         if not wait(seen('setup: the first ArtCraft session starts'), 120):
+             raise SystemExit('Preparing did not start the first session; stopped here')
+@@ -307,7 +307,7 @@ def main():
+         wait(lambda all_lines: False, 45)
+         if record['stop_lines']:
+             raise SystemExit('stopped on a stop line')
+-        put('/data/ps5proton/stop-game', b'unattended rehearsal\n')
++        put('/data/artcraft/stop-game', b'unattended rehearsal\n')
+         record['session_logged_off'] = wait(seen('Wine: process completed; returning to launcher'), 120)
+         wait(lambda all_lines: False, 180, idle_ends=True)
+         clean = record['session_logged_off'] and not record['stop_lines']
+@@ -325,7 +325,7 @@ def main():
+         record['storage_errors'] = len(storage)
+         try:
+             if idle():
+-                for path in (MARKER, TITLE + '/test-run.txt', TITLE + '/wine-run.txt', '/data/ps5proton/stop-game'):
++                for path in (MARKER, TITLE + '/test-run.txt', TITLE + '/wine-run.txt', '/data/artcraft/stop-game'):
+                     remove(path)
+                 record['hooks_removed'] = True
+             else:
+diff --git a/tools/run-shell-scorecard.py b/tools/run-shell-scorecard.py
+index 2f6bf30..13c5a27 100644
+--- a/tools/run-shell-scorecard.py
++++ b/tools/run-shell-scorecard.py
+@@ -219,7 +219,7 @@ def main():
+     name = args.name or args.score
+     if args.name:
+         subprocess.run([sys.executable, str(ROOT / 'tools/run-console.py'), '--name', name, '--profile', 'mihawk-os',
+-            '--args=Z:\\data\\ps5proton\\prefixes\\probe\\drive_c\\shell-scorecard64-probe.exe --capture=Z:\\data\\ps5proton\\logs\\game-frame.ppm',
++            '--args=Z:\\data\\artcraft\\prefixes\\probe\\drive_c\\shell-scorecard64-probe.exe --capture=Z:\\data\\artcraft\\logs\\game-frame.ppm',
+             '--marker', 'PS5_PROTON_SHELL_SCORECARD', '--seconds', '900', '--watchdog', '1000'], cwd=ROOT)
+     path = ROOT / 'evidence' / (name + '.json')
+     if not path.exists():
+diff --git a/tools/run-shell-surfaces.py b/tools/run-shell-surfaces.py
+index 9f6c966..08a9835 100644
+--- a/tools/run-shell-surfaces.py
++++ b/tools/run-shell-surfaces.py
+@@ -56,7 +56,7 @@ def main():
+     args = parser.parse_args()
+     result = subprocess.run([sys.executable, str(ROOT / 'tools/run-console.py'), '--name', args.name,
+         '--profile', 'mihawk-os',
+-        '--args=Z:\\data\\ps5proton\\prefixes\\probe\\drive_c\\shell-surfaces64-probe.exe --capture=Z:\\data\\ps5proton\\logs\\game-frame.ppm',
++        '--args=Z:\\data\\artcraft\\prefixes\\probe\\drive_c\\shell-surfaces64-probe.exe --capture=Z:\\data\\artcraft\\logs\\game-frame.ppm',
+         '--marker', 'PS5_PROTON_SHELL_SURFACES_PROBE', '--seconds', '300', '--watchdog', '360'], cwd=ROOT)
+     path = ROOT / 'evidence' / (args.name + '.json')
+     if not path.exists():
+diff --git a/tools/run-tls-fixture.py b/tools/run-tls-fixture.py
+index e5fd3d3..f692960 100644
+--- a/tools/run-tls-fixture.py
++++ b/tools/run-tls-fixture.py
+@@ -38,13 +38,13 @@ from cryptography.x509.oid import NameOID
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ ENTRY = 'proton-tls-test'
+-GAME = '/data/ps5proton/games/' + ENTRY
+-PREFIX = '/data/ps5proton/prefixes/' + ENTRY
++GAME = '/data/artcraft/games/' + ENTRY
++PREFIX = '/data/artcraft/prefixes/' + ENTRY
+ OWNER = b'tools/run-tls-fixture.py\n'
+ MARKER = '.ps5-proton-test'
+ # The trusted root, beside tls-probe.exe in the probe prefix (C:\), for one run.
+ ROOT_FILE = 'tls-fixture-root.der'
+-ROOT_PATH = '/data/ps5proton/prefixes/probe/drive_c/' + ROOT_FILE
++ROOT_PATH = '/data/artcraft/prefixes/probe/drive_c/' + ROOT_FILE
+ 
+ 
+ def certificates(directory, name, host):
+diff --git a/tools/run-wine-probe.py b/tools/run-wine-probe.py
+index e58c8f3..518e714 100644
+--- a/tools/run-wine-probe.py
++++ b/tools/run-wine-probe.py
+@@ -40,11 +40,11 @@ try:
+         ftp.connect(settings['host'], settings['ftp_port'], timeout=30)
+         ftp.login(settings['ftp_user'], settings['ftp_password'])
+         try:
+-            ftp.delete('/data/ps5proton/stop-game')
++            ftp.delete('/data/artcraft/stop-game')
+         except ftplib.error_perm as error:
+             if not str(error).startswith('550'):
+                 raise
+-        base = '/data/homebrew/PPSA99170'
++        base = '/data/homebrew/PPSA99278'
+         request = f'profile={args.profile}\n' if args.profile else f'path=C:\\{name}\n'
+         ftp.storbinary(f'STOR {base}/wine-run.txt', io.BytesIO(request.encode()))
+         ftp.storbinary(f'STOR {base}/test-run.txt', io.BytesIO(b'frames 10\nsamples all\n'))
+@@ -54,14 +54,14 @@ try:
+                 with ftplib.FTP() as ftp:
+                     ftp.connect(settings['host'], settings['ftp_port'], timeout=15)
+                     ftp.login(settings['ftp_user'], settings['ftp_password'])
+-                    ftp.storbinary('STOR /data/ps5proton/stop-game', io.BytesIO(b'run budget reached\n'))
++                    ftp.storbinary('STOR /data/artcraft/stop-game', io.BytesIO(b'run budget reached\n'))
+                 print('Requested the title to return to the launcher', flush=True)
+             except Exception as error:
+                 print(str(error).replace(settings['host'], '<console>'), flush=True)
+         timer = threading.Timer(args.seconds, request_stop)
+         timer.start()
+     console_guard.after_launch()
+-    result, log, _ = runner.run_title('PPSA99170', r'\[MihawkOS\].*ends: status', args.seconds + 30,
++    result, log, _ = runner.run_title('PPSA99278', r'\[MihawkOS\].*ends: status', args.seconds + 30,
+         args.output, echo_pattern=r'\[MihawkOS\]|PS5_PROTON_|wine startup|fatal signal', exit_grace=30)
+     text = log.read_text()
+     # The synchronous Wine sink survives LoadExec even when klog loses its tail.
+@@ -70,7 +70,7 @@ try:
+         ftp.connect(settings['host'], settings['ftp_port'], timeout=20)
+         ftp.login(settings['ftp_user'], settings['ftp_password'])
+         with wine_log.open('wb') as output:
+-            ftp.retrbinary('RETR /data/ps5proton/logs/wine-last.log', output.write)
++            ftp.retrbinary('RETR /data/artcraft/logs/wine-last.log', output.write)
+     text += wine_log.read_text(errors='replace')
+     marker = ('PS5_PROTON_HID_PROBE PASS' if args.hid else 'PS5_PROTON_D3D11_PROBE PASS' if args.d3d else
+               'PS5_PROTON_XINPUT_PROBE PASS' if args.input else 'PS5_PROTON_PE64_PROBE PASS')
+@@ -91,8 +91,8 @@ finally:
+             with ftplib.FTP() as ftp:
+                 ftp.connect(settings['host'], settings['ftp_port'], timeout=15)
+                 ftp.login(settings['ftp_user'], settings['ftp_password'])
+-                for path in ('/data/homebrew/PPSA99170/test-run.txt',
+-                             '/data/homebrew/PPSA99170/wine-run.txt', '/data/ps5proton/stop-game'):
++                for path in ('/data/homebrew/PPSA99278/test-run.txt',
++                             '/data/homebrew/PPSA99278/wine-run.txt', '/data/artcraft/stop-game'):
+                     try:
+                         ftp.delete(path)
+                     except ftplib.error_perm as error:
+diff --git a/tools/sign-release.py b/tools/sign-release.py
+index bc377bc..5db07b9 100644
+--- a/tools/sign-release.py
++++ b/tools/sign-release.py
+@@ -6,7 +6,7 @@
+       The owner, once, on their own PC. A new Ed25519 key in the ignored keys/ folder (mode 0600; tools/privacy_check.py
+       refuses to stage it), and its public half, which the title is built with (ps5/CMakeLists.txt). Refuses to replace
+       either: a title built with one key takes updates signed by that key only.
+-  tools/sign-release.py sign --base URL [--version V] [--title dist/PPSA99170] [--runtime dist/runtime]
++  tools/sign-release.py sign --base URL [--version V] [--title dist/PPSA99278] [--runtime dist/runtime]
+                              [--out dist/release] [--key keys/release-ed25519.pem]
+       The release folder, flat, as its assets are published: the title pack (tools/pack-runtime.py --title-pack) and its
+       title-pack.txt, the runtime's pieces and runtime-pack.txt, and mihawkos-release.txt signed with the key. --base is
+@@ -149,7 +149,7 @@ def main():
+     release = commands.add_parser('sign')
+     release.add_argument('--base', required=True)
+     release.add_argument('--version')
+-    release.add_argument('--title', type=Path, default=ROOT / 'dist/PPSA99170')
++    release.add_argument('--title', type=Path, default=ROOT / 'dist/PPSA99278')
+     release.add_argument('--runtime', type=Path, default=ROOT / 'dist/runtime')
+     release.add_argument('--out', type=Path, default=ROOT / 'dist/release')
+     release.add_argument('--key', type=Path, default=KEY)
+diff --git a/tools/space-probe.c b/tools/space-probe.c
+index 2a98653..7c30902 100644
+--- a/tools/space-probe.c
++++ b/tools/space-probe.c
+@@ -11,7 +11,7 @@
+ 
+ int sceKernelDebugOutText(int, const char *);
+ 
+-static const char *const paths[] = { "/data", "/data/ps5proton", "/mnt/usb0", "/mnt/usb1" };
++static const char *const paths[] = { "/data", "/data/artcraft", "/mnt/usb0", "/mnt/usb1" };
+ 
+ int main(void)
+ {
+diff --git a/tools/stage-wine.py b/tools/stage-wine.py
+index c654e3d..65f8259 100644
+--- a/tools/stage-wine.py
++++ b/tools/stage-wine.py
+@@ -395,7 +395,7 @@ def main():
+         (mesa32_target / 'version').write_text('mesa %s %s %s\n' % (mesa32_manifest['mesa_revision'],
+             mesa32_manifest['files']['opengl32.dll'][:16], mesa32_manifest['files']['libgallium_wgl.dll'][:16]))
+     # MihawkBrowser (docs/MIHAWK_BROWSER.md §3.6): once, read-only, in the runtime and outside every prefix (a prefix
+-    # copy would put its 316 MB in each one), reached as Z:\data\ps5proton\runtime\ge11-7\lib\mihawk-browser.
++    # copy would put its 316 MB in each one), reached as Z:\data\artcraft\runtime\ge11-7\lib\mihawk-browser.
+     browser = DEPS / 'mihawk-browser/app'
+     if not (browser / 'MihawkBrowser.exe').is_file():
+         raise SystemExit('MihawkBrowser is not built: run tools/build-mihawk-browser.sh')
+@@ -412,7 +412,7 @@ def main():
+         # The registry was made on the host: its font files are named by their host paths, and the computer by the
+         # host's name. On the console the fonts are in the runtime's share folder, and the computer is a PS5.
+         text = re.sub(r'Z:\\\\home\\\\[^"]*?\\\\wine-runtime\\\\build\\\\fonts\\\\',
+-                      lambda m: 'Z:\\\\data\\\\ps5proton\\\\runtime\\\\ge11-7\\\\share\\\\wine\\\\fonts\\\\', text)
++                      lambda m: 'Z:\\\\data\\\\artcraft\\\\runtime\\\\ge11-7\\\\share\\\\wine\\\\fonts\\\\', text)
+         text = re.sub(r'(?i)"(ComputerName|Hostname|USERDOMAIN)"="CACHYOS-X8664"',
+                       lambda m: f'"{m.group(1)}"="' + ('ps5' if m.group(1) == 'Hostname' else 'PS5') + '"', text)
+         # the host's system fonts (Z:\\usr\\share\\fonts\\...) are registered too, and the console has none of those files
+diff --git a/tools/start-lapy-service.py b/tools/start-lapy-service.py
+index 3e8920c..bf8e284 100644
+--- a/tools/start-lapy-service.py
++++ b/tools/start-lapy-service.py
+@@ -44,7 +44,7 @@ def main():
+     manifest = json.loads((build / 'manifest.json').read_text())
+     elf = (build / 'lapy-root-daemon.elf').read_bytes()
+     if (manifest['elf_sha256'] != hashlib.sha256(elf).hexdigest() or manifest['mode'] != 'service'
+-            or manifest['max_requests'] is not None or manifest['target_title'] != 'PPSA99170'):
++            or manifest['max_requests'] is not None or manifest['target_title'] != 'PPSA99278'):
+         raise RuntimeError('Resident payload manifest mismatch')
+     folder = ROOT / 'klog' / time.strftime('resident-service-%Y%m%d-%H%M%S')
+     folder.mkdir(parents=True, exist_ok=False)
+@@ -56,7 +56,7 @@ def main():
+             ftp.login(settings['ftp_user'], settings['ftp_password'] or 'codex')
+             sink = io.BytesIO()
+             try:
+-                ftp.retrbinary('RETR /data/ps5proton/logs/lapy-service.log', sink.write)
++                ftp.retrbinary('RETR /data/artcraft/logs/lapy-service.log', sink.write)
+             except error_perm as error:
+                 if not str(error).startswith('550'):
+                     raise
+@@ -93,7 +93,7 @@ def main():
+         if 'daemon_result' in text or 'daemon_held' in text or '\tERR\t' in text:
+             raise RuntimeError('Resident preflight failed; inspect captured log')
+         if manifest['build_id'] in text and 'phase=service_baseline' in text:
+-            state.update(status='ready', log='/data/ps5proton/logs/lapy-service.log',
++            state.update(status='ready', log='/data/artcraft/logs/lapy-service.log',
+                          logging='console file; host connection not required', max_requests=None)
+             state_path.write_text(json.dumps(state, indent=2) + '\n')
+             print('Resident owned-root service ready for this boot; diagnostics persist on the console.')
+diff --git a/tools/validate-lapy.py b/tools/validate-lapy.py
+index b3e1a90..433c4a2 100644
+--- a/tools/validate-lapy.py
++++ b/tools/validate-lapy.py
+@@ -45,7 +45,7 @@ def main():
+     elf = (build / 'lapy-root-daemon.elf').read_bytes()
+     if manifest['elf_sha256'] != hashlib.sha256(elf).hexdigest():
+         raise RuntimeError('Payload ELF does not match the manifest')
+-    if (manifest['mode'] != ('service' if service else 'one-shot') or manifest['target_title'] != 'PPSA99170'
++    if (manifest['mode'] != ('service' if service else 'one-shot') or manifest['target_title'] != 'PPSA99278'
+             or manifest['max_requests'] != requests or not manifest['require_client_result']):
+         raise RuntimeError('Payload mode or title does not match this validation run')
+     out = ROOT / 'klog' / args.name
+diff --git a/tools/verify-title.py b/tools/verify-title.py
+index e637e31..5f08e1f 100755
+--- a/tools/verify-title.py
++++ b/tools/verify-title.py
+@@ -2,7 +2,7 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ """Read the deployed title back from the console by hash.
+ 
+-  tools/verify-title.py [dist/PPSA99170] [--no-record]
++  tools/verify-title.py [dist/PPSA99278] [--no-record]
+ 
+ Every file of the dist folder is read from /data/homebrew/<TITLE_ID>/<same path> with the FTP server's SELF mode off
+ (with it on, a signed file reads back decrypted) and compared by sha256. Exit 0 when all match: unless --no-record,
+@@ -31,7 +31,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
+ import console_guard  # noqa: E402
+ from console_log import redact  # noqa: E402
+ 
+-RUNTIME_MANIFEST = '/data/ps5proton/runtime/ge11-7/deploy-manifest.json'
++RUNTIME_MANIFEST = '/data/artcraft/runtime/ge11-7/deploy-manifest.json'
+ 
+ 
+ def connect(settings):
+@@ -98,7 +98,7 @@ def check(settings, folder, staged=None):
+ 
+ def main():
+     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+-    parser.add_argument('folder', nargs='?', default=str(ROOT / 'dist/PPSA99170'))
++    parser.add_argument('folder', nargs='?', default=str(ROOT / 'dist/PPSA99278'))
+     parser.add_argument('--no-record', action='store_true', help='do not record the result in the console guard')
+     args = parser.parse_args()
+     folder = Path(args.folder).resolve()
+diff --git a/wine/patches/0900-ntdll-ps5-standard-output-to-a-file.patch b/wine/patches/0900-ntdll-ps5-standard-output-to-a-file.patch
+index 11a2499..c9e5fa6 100644
+--- a/wine/patches/0900-ntdll-ps5-standard-output-to-a-file.patch
++++ b/wine/patches/0900-ntdll-ps5-standard-output-to-a-file.patch
+@@ -8,7 +8,7 @@ A PS5 title has no file descriptors 1 and 2 that lead anywhere: a Windows progra
+ gets standard handles for them and what it writes is lost. Wine's conformance tests
+ print every result with printf. With WINE_PS5_STDOUT set to a unix path, the first
+ process's standard output and error are that file (rewritten for each process); a
+-test run sets it to /data/ps5proton/logs/wine-stdout.txt and reads it back over FTP.
++test run sets it to /data/artcraft/logs/wine-stdout.txt and reads it back over FTP.
+ No pipe and no thread are involved.
+ ---
+   dlls/ntdll/unix/env.c | 44 ++++++++++++++++++++++++++++++++++++++++++++
+diff --git a/wine/ps5/pw_payload_spawn.h b/wine/ps5/pw_payload_spawn.h
+index 44df6e1..03d62e7 100644
+--- a/wine/ps5/pw_payload_spawn.h
++++ b/wine/ps5/pw_payload_spawn.h
+@@ -24,7 +24,7 @@ static void payload_trace(const char *phase,int pid,int control,int status)
+         clock_gettime(CLOCK_MONOTONIC,&now);
+         int count=snprintf(line,sizeof(line),"payload-lifecycle: ms=%lld writer=%d child=%d fd=%d phase=%s status=%d\n",
+             now.tv_sec*1000ll+now.tv_nsec/1000000,(int)getpid(),pid,control,phase,status);
+-        int fd=open("/data/homebrew/PPSA99170/payload-lifecycle.log",O_WRONLY|O_CREAT|O_APPEND,0600);
++        int fd=open("/data/homebrew/PPSA99278/payload-lifecycle.log",O_WRONLY|O_CREAT|O_APPEND,0600);
+         if(fd>=0) {
+             if(count>0 && (size_t)count<sizeof(line)) {
+                 ssize_t written;
+@@ -52,7 +52,7 @@ static int payload_spawn(int control,int *native_pid)
+     snprintf(token,sizeof(token),"pp%016llx%016llx",(unsigned long long)getpid(),__atomic_add_fetch(&serial,1,__ATOMIC_RELAXED));
+     snprintf(path,sizeof(path),"/system_tmp/proton-%s.sock",token);
+     const char *image=getenv("WINE_PS5_PAYLOAD_IMAGE");
+-    if(!image)image="/data/ps5proton/run/proton-payload-child.elf";
++    if(!image)image="/data/artcraft/run/proton-payload-child.elf";
+     FILE *file=fopen(image,"rb");if(!file)return -1;
+     if(fseek(file,0,SEEK_END)) { fclose(file);return -1; }
+     const long size=ftell(file);rewind(file);
+-- 
+2.43.0
+

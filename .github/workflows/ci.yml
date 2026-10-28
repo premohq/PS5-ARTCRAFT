@@ -64,9 +64,13 @@ jobs:
       - name: The title's changed sources compile in the host-reference configuration
         working-directory: fork
         run: |
-          for f in ps5/src/proton_launch.cpp ps5/src/proton_install.cpp; do
-            g++ -std=c++20 -fsyntax-only -w -DPS5_HOST_REFERENCE '-DPS5_APP_ROOT="/tmp"' '-DPS5_TITLE_ID="PPSA99170"' \
-              '-DPS5_TITLE_NAME="ArtCraft"' -Iexternal -Iexternal/tinygltf -Ips5/src -Isrc -Iinclude "$f"
+          # The title's id and name as the build reads them (ps5/CMakeLists.txt): ArtCraft's own, after patch 0007.
+          id=$(python -c 'import json; print(json.load(open("ps5/sce_sys/param.json"))["titleId"])')
+          name=$(python -c 'import json; print(json.load(open("ps5/sce_sys/param.json"))["localizedParameters"]["en-US"]["titleName"])')
+          test "$id" != PPSA99170 && ! grep -rq '"/data/ps5proton' ps5/src src native wine/ps5
+          for f in ps5/src/proton_launch.cpp ps5/src/proton_install.cpp ps5/src/proton_update.cpp; do
+            g++ -std=c++20 -fsyntax-only -w -DPS5_HOST_REFERENCE '-DPS5_APP_ROOT="/tmp"' "-DPS5_TITLE_ID=\"$id\"" \
+              "-DPS5_TITLE_NAME=\"$name\"" -Iexternal -Iexternal/tinygltf -Ips5/src -Isrc -Iinclude "$f"
           done
 
   launcher-compat:

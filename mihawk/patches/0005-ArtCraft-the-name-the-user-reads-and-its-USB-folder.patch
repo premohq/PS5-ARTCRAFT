@@ -1,6 +1,6 @@
-From cc0cba0ddfb1195fbb088d7fdc1b5a9f44af0420 Mon Sep 17 00:00:00 2001
+From 2b4d02b9a7d45db2cc6e8f82fbb360e411e262f0 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
-Date: Wed, 28 Oct 2026 08:45:48 +0000
+Date: Wed, 28 Oct 2026 15:12:17 +0000
 Subject: [PATCH] ArtCraft: the name the user reads and its USB folder
 
 Everything the user reads says ArtCraft instead of MihawkOS or Mihawk OS:
@@ -12,9 +12,10 @@ runtime wallpaper's corner note (now only the name). The library's own
 desktop entry is "ArtCraft Windows desktop".
 
 The USB stick's folder of runtime pieces is artcraft/, as the setup now
-tells the user; the installer still takes a mihawkos/ folder from a stick
-made for MihawkOS. The pack format's own tags (mihawkos-runtime-pack and
-the like) are not names the user reads and stay, as the packs carry them.
+tells the user. A stick made for MihawkOS holds MihawkOS's runtime, not
+ArtCraft's, so its mihawkos/ folder is not read. The pack format's own tags
+(mihawkos-runtime-pack and the like) are not names the user reads and
+stay, as the packs carry them.
 
 The credits stay Mihawk's: About says ArtCraft is "a modified version of
 MihawkOS. Copyright (C) 2026 Mihawk and the authors credited in NOTICE.md"
@@ -47,7 +48,7 @@ Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
  native/proton_loading.cpp          |   2 +-
  native/proton_wine.cpp             |   4 +-
  ps5/sce_sys/param.json             |   2 +-
- ps5/src/proton_install.cpp         |   5 +-
+ ps5/src/proton_install.cpp         |   4 +-
  ps5/src/proton_install.h           |   6 +-
  ps5/src/proton_launch.cpp          |   4 +-
  ps5/src/samples.cpp                |   2 +-
@@ -64,7 +65,7 @@ Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
  tools/run-console.py               |  12 +-
  tools/run-launcher.py              |  22 +--
  tools/run-setup-unattended.py      |  12 +-
- 22 files changed, 214 insertions(+), 212 deletions(-)
+ 22 files changed, 213 insertions(+), 212 deletions(-)
 
 diff --git a/examples/ps5proton/ps5proton.cpp b/examples/ps5proton/ps5proton.cpp
 index fd280d7..e3ddf40 100644
@@ -205,20 +206,19 @@ index b2ab577..9bf3a57 100644
    },
    "masterVersion": "01.00",
 diff --git a/ps5/src/proton_install.cpp b/ps5/src/proton_install.cpp
-index 73cfb20..9b372d5 100644
+index 73cfb20..6af364f 100644
 --- a/ps5/src/proton_install.cpp
 +++ b/ps5/src/proton_install.cpp
-@@ -296,7 +296,8 @@ ProtonInstall proton_install_find(const char *only)
+@@ -296,7 +296,7 @@ ProtonInstall proton_install_find(const char *only)
  			while (struct dirent *entry = readdir(dir)) stick = stick || (strcmp(entry->d_name, ".") && strcmp(entry->d_name, ".."));
  			closedir(dir);
  		}
 -		folders.push_back(mount + "/mihawkos");
 +		folders.push_back(mount + "/artcraft");
-+		folders.push_back(mount + "/mihawkos");   /* a stick made for MihawkOS */
  	}
  	size_t best = 0;
  	std::string partial;
-@@ -316,7 +317,7 @@ ProtonInstall proton_install_find(const char *only)
+@@ -316,7 +316,7 @@ ProtonInstall proton_install_find(const char *only)
  		found.problem = best ? ProtonInstall::partial : stick ? ProtonInstall::no_folder : ProtonInstall::no_stick;
  		found.message = best ? partial + " holds " + std::to_string(best) + " of the " + std::to_string(gManifest.chunk_count) +
  			" runtime pieces. Copy all of them, then try again." :
