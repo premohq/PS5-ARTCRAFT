@@ -41,6 +41,21 @@ class Commands(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn('gridcraft          1.2.3', out)
 
+    def test_lock_refresh_dry_run_writes_nothing(self):
+        before = (self.edition / 'suite.lock.json').read_bytes()
+        web = fixtures.newer_releases(self.edition, '2.0.0', keep=('gridcraft',))
+        with mock.patch('urllib.request.urlopen', web):
+            code, out, _ = run('--edition', self.edition, 'lock', '--refresh', '--dry-run')
+        self.assertEqual(code, 0)
+        self.assertIn('photocraft         2.0.0', out)
+        self.assertIn('2 would change: artcraft-launcher, photocraft', out)
+        self.assertEqual((self.edition / 'suite.lock.json').read_bytes(), before)
+
+    def test_lock_dry_run_needs_refresh(self):
+        code, _, err = run('--edition', self.edition, 'lock', '--dry-run')
+        self.assertEqual(code, 1)
+        self.assertIn('--refresh --dry-run', err)
+
     def test_show_reports_an_unpinned_app(self):
         lock = json.loads((self.edition / 'suite.lock.json').read_text())
         del lock['pins']['gridcraft']

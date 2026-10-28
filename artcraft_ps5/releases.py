@@ -79,8 +79,8 @@ def latest_pin(app: App, arch: str, opener: Opener | None = None) -> Pin:
     return Pin(id=app.id, version=version, tag=tag, asset=asset, url=url, sha256=sums[asset], size=remote_size(url, opener))
 
 
-def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, say=print) -> dict:
-    """Pin the newest release of the launcher and every app, and write the lock file."""
+def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, write: bool = True, say=print) -> dict:
+    """Pin the newest release of the launcher and every app, and write the lock file (unless `write` is false)."""
     pins = {}
     for app in (edition.launcher, *edition.apps):
         pin = latest_pin(app, edition.arch, opener)
@@ -94,7 +94,8 @@ def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, 
         'refreshed': datetime.date.today().isoformat(),
         'pins': pins,
     }
-    path.write_text(json.dumps(lock, indent=2) + '\n')
+    if write:
+        path.write_text(json.dumps(lock, indent=2) + '\n')
     return lock
 
 

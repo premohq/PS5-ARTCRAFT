@@ -60,5 +60,4 @@ is, and the Python tools carry no licence statement yet.
 
 ## Smaller things
 
-- `lock --refresh` writes the lock at once. A dry run that only lists newer releases would help before a rebuild.
 - The wallpaper is drawn at 1920×1080. The desktop's real size on the console should decide that.

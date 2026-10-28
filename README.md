@@ -96,7 +96,7 @@ python3 -m artcraft_ps5 build
 | Command | What it does |
 |---|---|
 | `python3 -m artcraft_ps5 show` | The edition, the suite, what is pinned and what the console gets |
-| `python3 -m artcraft_ps5 lock [--refresh]` | The pins; `--refresh` pins every app's newest release from its `SHA256SUMS.txt` (no API quota) |
+| `python3 -m artcraft_ps5 lock [--refresh [--dry-run]]` | The pins; `--refresh` pins every app's newest release from its `SHA256SUMS.txt` (no API quota), `--dry-run` only lists them |
 | `python3 -m artcraft_ps5 fetch [--apps ID ...]` | Downloads the pinned releases into `.deps/downloads`, resuming, each checked against its SHA-256 |
 | `python3 -m artcraft_ps5 wallpaper [--out FILE]` | Draws the desktop wallpaper (BMP for Wine; a `.png` path gives a preview) |
 | `python3 -m artcraft_ps5 icon [--out FILE]` | Draws the title's 512×512 icon |
@@ -142,7 +142,7 @@ Then start the ArtCraft title: it opens the ArtCraft desktop, and ArtCraft Launc
   any root that is not the host's from the machine's Root store the first time a process opens it, so the root is gone
   again after the first check. A copy in the user's Root store survives; whether Wine's chain engine trusts it is
   open ([roadmap](docs/ROADMAP.md)).
-- **The tools:** 63 tests (`python3 -m unittest`) cover the edition's checks, pinning and downloads, the portable
+- **The tools:** 66 tests (`python3 -m unittest`) cover the edition's checks, pinning and downloads, the portable
   installs, the registry, launcher-state and signature formats, staging, the FTP deploy and the command line.
 - **The fork patches:** the title code compiles in the host-reference configuration; the shell changes compile with
   MinGW in a mock; the profile move passes the fork's own host test, extended for MihawkOS v3 prefixes, under ASan

@@ -10,7 +10,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-from artcraft_ps5 import ROOT
+from artcraft_ps5 import ROOT, edition, releases
 
 REAL_EDITION = ROOT / 'edition'
 
@@ -109,6 +109,21 @@ def make_edition(directory: Path, downloads: Path, apps=('photocraft', 'gridcraf
                         'sha256': hashlib.sha256(zip_path.read_bytes()).hexdigest(), 'size': zip_path.stat().st_size}
     (directory / 'suite.lock.json').write_text(json.dumps({'arch': 'x64', 'pins': pins}, indent=2))
     return directory
+
+
+def newer_releases(directory: Path, version: str, *, keep: tuple[str, ...] = ()) -> Web:
+    """GitHub as `lock --refresh` sees it: every app in the edition at `directory` has a `version` release, except
+    the ones in `keep`, whose newest release is still the pinned one."""
+    e = edition.load(directory)
+    files = {}
+    for app in (e.launcher, *e.apps):
+        release = e.pins[app.id].version if app.id in keep else version
+        asset = f'{app.id}-{release}-windows-x64-portable.zip'
+        data = app.id.encode() * 100
+        files[f'https://github.com/{app.repo}/releases/latest/download/SHA256SUMS.txt'] = \
+            f'{hashlib.sha256(data).hexdigest()}  {asset}\n'.encode()
+        files[releases.asset_url(app.repo, f'v{release}', asset)] = data
+    return Web(files)
 
 
 def copy_real_edition(directory: Path) -> Path:

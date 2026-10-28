@@ -42,14 +42,7 @@ class Latest(unittest.TestCase):
             tmp = Path(tmp)
             directory = fixtures.make_edition(tmp / 'edition', tmp / 'downloads', apps=('photocraft',))
             e = edition.load(directory)
-            files = {}
-            for app in (e.launcher, *e.apps):
-                asset = f'{app.id}-2.0.0-windows-x64-portable.zip'
-                data = app.id.encode() * 100
-                files[f'https://github.com/{app.repo}/releases/latest/download/SHA256SUMS.txt'] = \
-                    f'{hashlib.sha256(data).hexdigest()}  {asset}\n'.encode()
-                files[releases.asset_url(app.repo, 'v2.0.0', asset)] = data
-            web = fixtures.Web(files)
+            web = fixtures.newer_releases(directory, '2.0.0')
             said = []
             lock = releases.refresh_lock(e, directory / 'suite.lock.json', web, say=said.append)
             self.assertEqual(lock['pins']['photocraft']['version'], '2.0.0')
@@ -59,6 +52,16 @@ class Latest(unittest.TestCase):
             self.assertTrue(all(url.endswith('SHA256SUMS.txt') or wanted == 'bytes=0-0' for url, wanted in web.requests))
             self.assertEqual(edition.load(directory).pins['photocraft'].version, '2.0.0')
             self.assertEqual(json.loads((directory / 'suite.lock.json').read_text())['arch'], 'x64')
+
+    def test_refresh_without_writing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            directory = fixtures.make_edition(tmp / 'edition', tmp / 'downloads', apps=('photocraft',))
+            before = (directory / 'suite.lock.json').read_bytes()
+            lock = releases.refresh_lock(edition.load(directory), directory / 'suite.lock.json',
+                                         fixtures.newer_releases(directory, '2.0.0'), write=False, say=lambda _: None)
+            self.assertEqual(lock['pins']['photocraft']['version'], '2.0.0')
+            self.assertEqual((directory / 'suite.lock.json').read_bytes(), before)
 
 
 class Download(unittest.TestCase):

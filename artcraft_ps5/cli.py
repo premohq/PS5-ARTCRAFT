@@ -1,7 +1,7 @@
 """`python3 -m artcraft_ps5 <command>`: the edition built, staged and sent to the console from one place.
 
   show        the edition, its suite and what is pinned (and checks all three)
-  lock        the pins; with --refresh, pin every app's newest release instead
+  lock        the pins; with --refresh, pin every app's newest release instead (--dry-run: only list them)
   fetch       download the pinned releases and verify each one
   wallpaper   draw the desktop wallpaper (BMP for Wine; a .png path gives a preview)
   icon        draw the title's icon (512x512 PNG)
@@ -80,9 +80,18 @@ def cmd_show(args) -> int:
 def cmd_lock(args) -> int:
     e = edition.load(args.edition)
     path = args.edition / 'suite.lock.json'
+    if args.dry_run and not args.refresh:
+        raise edition.EditionError('--dry-run goes with --refresh: `lock --refresh --dry-run`')
     if args.refresh:
-        releases.refresh_lock(e, path)
-        print(f'wrote {path.relative_to(ROOT) if path.is_relative_to(ROOT) else path}')
+        lock = releases.refresh_lock(e, path, write=not args.dry_run)
+        shown = path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+        if not args.dry_run:
+            print(f'wrote {shown}')
+            return 0
+        newer = [app_id for app_id, pin in lock['pins'].items()
+                 if app_id not in e.pins or e.pins[app_id].version != pin['version']]
+        print(f'dry run: {shown} not written; ' +
+              (f'{len(newer)} would change: {", ".join(newer)}' if newer else 'every pin is the newest release'))
         return 0
     if not e.pins:
         raise edition.EditionError(f'{path} is missing: run `python3 -m artcraft_ps5 lock --refresh`')
@@ -208,6 +217,7 @@ def parser() -> argparse.ArgumentParser:
     command('show', cmd_show, 'the edition, its suite and its pins')
     sub = command('lock', cmd_lock, 'the pinned releases')
     sub.add_argument('--refresh', action='store_true', help='pin the newest release of every app and the launcher')
+    sub.add_argument('--dry-run', action='store_true', help='with --refresh: list the newest releases; write nothing')
     sub = command('fetch', cmd_fetch, 'download and verify the pinned releases')
     apps(sub)
     downloads(sub)
