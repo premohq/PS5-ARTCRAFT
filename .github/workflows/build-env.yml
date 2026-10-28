@@ -2,7 +2,8 @@ name: Build environment
 
 # The PC build's container (build/Dockerfile) and the quick part of build/build.sh: the toolchain is the pinned one,
 # the sources check out at their pins with ArtCraft's patches, and every pinned input of the fork's build answers at
-# its URL (the fork's tools/fetch-all.sh --check). The build itself takes hours on a PC and is not run here.
+# its URL (the fork's tools/fetch-all.sh --check); then the first build step, PS5_Vulkan's libc.prx and native tool.
+# The rest takes hours on a PC (it builds Wine three times) and is not run here.
 
 on:
   push:
@@ -21,4 +22,7 @@ jobs:
       - name: The build container (Arch Linux snapshot, clang/LLD 23.1.3, MinGW)
         run: docker build -t artcraft-build build
       - name: The toolchain, the sources at their pins with the patches, and every pinned input's URL
-        run: docker run --rm -v "$PWD":/src artcraft-build bash /src/build/build.sh --check
+        run: docker run --rm -v "$PWD":/src -v artcraft-work:/work artcraft-build bash /src/build/build.sh --check
+      - name: The first build step, PS5_Vulkan's libc.prx and native tool at the fork's pin
+        timeout-minutes: 45
+        run: docker run --rm -v "$PWD":/src -v artcraft-work:/work artcraft-build bash /src/build/build.sh --until vulkan

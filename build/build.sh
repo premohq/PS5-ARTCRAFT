@@ -5,6 +5,7 @@
 #   build/build.sh [--jobs N]
 #   build/build.sh --check       only what is quick: the toolchain, the sources at their pins with ArtCraft's patches,
 #                                and every pinned download's URL and SHA-256 (the fork's tools/fetch-all.sh --check)
+#   build/build.sh --until vulkan  stop once PS5_Vulkan's libc.prx and native tool are built (minutes; CI runs it)
 #
 # Run it in the build container (build/Dockerfile, README.md On the PC), or on an Arch Linux host with the
 # packages that Dockerfile installs. WORK (default /work in the container, ~/artcraft-build elsewhere) holds the
@@ -22,11 +23,13 @@ memory_gb=$(awk '/^MemTotal/ { print int($2 / 1048576) }' /proc/meminfo)
 jobs=$(( $(nproc) < memory_gb / 2 ? $(nproc) : memory_gb / 2 ))   # a Wine compile job wants up to about 2 GB
 (( jobs >= 1 )) || jobs=1
 check=false
+until=
 while [ $# -gt 0 ]; do
     case $1 in
     --jobs) jobs=$2; shift ;;
     --check) check=true ;;
-    *) echo "usage: build/build.sh [--jobs N] [--check]" >&2; exit 2 ;;
+    --until) until=$2; shift; [[ $until == vulkan ]] || { echo "--until takes vulkan" >&2; exit 2; } ;;
+    *) echo "usage: build/build.sh [--jobs N] [--check | --until vulkan]" >&2; exit 2 ;;
     esac
     shift
 done
@@ -74,6 +77,10 @@ if [[ ! -f PS5_Vulkan/runtime/libc.prx || ! -x PS5_Vulkan/build/host/ps5-native-
 fi
 [[ -f PS5_Vulkan/runtime/libc.prx && -x PS5_Vulkan/build/host/ps5-native-tool ]] ||
     { echo "PS5_Vulkan did not build runtime/libc.prx and build/host/ps5-native-tool" >&2; exit 1; }
+if [[ $until == vulkan ]]; then
+    ls -l PS5_Vulkan/runtime/libc.prx PS5_Vulkan/build/host/ps5-native-tool
+    exit 0
+fi
 
 step "the fork's pinned one-time inputs (tools/fetch-all.sh; the host Wine build takes hours)"
 (cd "$fork" && JOBS=$jobs bash tools/fetch-all.sh)
