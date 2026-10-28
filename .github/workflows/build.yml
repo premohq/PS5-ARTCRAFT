@@ -1,0 +1,71 @@
+name: Build ArtCraft
+
+# The whole build on a GitHub runner: build/build.sh in the build container (the Mihawk OS fork with ArtCraft's
+# patches, its Wine builds, the title, the runtime, and the ArtCraft desktop), then build/package-release.sh. The
+# result is a workflow artifact and, unless declined, a GitHub release with three ZIPs and the steps to install them.
+# Started by hand (Actions, Build ArtCraft, Run workflow): it takes hours.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Publish the result as a GitHub release
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build the title, its runtime and the ArtCraft desktop
+    runs-on: ubuntu-24.04
+    timeout-minutes: 358
+    steps:
+      - name: Room on the runner (preinstalled toolchains this build does not use)
+        run: |
+          df -h / /mnt
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+            /usr/share/swift /usr/local/share/powershell /usr/local/share/chromium /usr/local/lib/node_modules
+          sudo docker image prune --all --force > /dev/null
+          sudo mkdir -p /mnt/artcraft-work && sudo chmod 777 /mnt/artcraft-work
+          df -h / /mnt
+      - uses: actions/checkout@v4
+      - name: The build container
+        run: docker build -t artcraft-build build
+      - name: build/build.sh (the sources, the fork's own build, the ArtCraft desktop)
+        timeout-minutes: 330
+        shell: bash   # -o pipefail: the build's own exit status, not tee's
+        run: |
+          docker run --rm -v "$PWD":/src -v /mnt/artcraft-work:/work artcraft-build bash /src/build/build.sh 2>&1 |
+            tee build.log
+      - name: Where the time and the space went
+        if: always()
+        run: |
+          grep '^==> ' build.log || true
+          sudo du -sh /mnt/artcraft-work/* /mnt/artcraft-work/PS5_MihawkOS/.deps/* 2>/dev/null | sort -h | tail -25 || true
+          df -h / /mnt
+      - name: The fork's own logs, when a step failed
+        if: failure()
+        run: |
+          for log in $(sudo find /mnt/artcraft-work/PS5_MihawkOS/.deps -maxdepth 3 -name '*.log' -newer build/build.sh 2>/dev/null); do
+            echo "== $log"; sudo tail -n 40 "$log"
+          done
+      - name: Package for download
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" out dist
+          bash build/package-release.sh release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artcraft-ps5
+          path: release/
+          retention-days: 30
+          compression-level: 0
+      - name: Publish the release
+        if: inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=build-$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)
+          gh release create "$tag" release/* --prerelease --target "$GITHUB_SHA" --title "ArtCraft for PS5 ($tag)" \
+            --notes-file release/README.txt

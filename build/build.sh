@@ -33,7 +33,7 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-step() { printf '\n==> %s\n' "$*"; }
+step() { printf '\n==> [%s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 need() { command -v "$1" >/dev/null || { echo "$1 is missing: run this in the build container (build/Dockerfile)" >&2; exit 2; }; }
 for tool in git curl clang ld.lld llvm-config python3 x86_64-w64-mingw32-gcc magick meson ninja cmake; do need "$tool"; done
 llvm=$(llvm-config --version)
