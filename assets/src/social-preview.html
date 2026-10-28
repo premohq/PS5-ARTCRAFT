@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- GitHub's social preview, 1280x640. assets/render.cjs supplies SUITE and the fonts. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="artcraft.css">
+<style>
+  .card { width: 1280px; height: 640px; grid-template-rows: 56px 1fr 56px; border-width: 0; }
+  .bar { padding: 0 40px; font-size: 14px; }
+  .main { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .word { font-size: 132px; }
+  .sub { font-size: 34px; margin-top: 20px; }
+  .apps { display: flex; gap: 16px; margin-top: 64px; }
+  .app { width: 74px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .app img { width: 74px; height: 74px; }
+  .app .name { font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="bar"><span>PS5 homebrew</span><span id="count"></span></div>
+  <div class="main">
+    <div class="word">PS5-Art<b>Craft</b></div>
+    <div class="sub">The Craft App Suite on PlayStation 5</div>
+    <div class="apps" id="apps"></div>
+  </div>
+  <div class="bar foot"><span>Updates itself</span><span>USB keyboard + mouse</span></div>
+</div>
+<script>
+  const apps = window.SUITE;
+  document.getElementById('count').textContent = `${apps.length} Craft apps`;
+  const box = document.getElementById('apps');
+  for (const app of apps) {
+    const cell = box.appendChild(document.createElement('div'));
+    cell.className = 'app';
+    cell.appendChild(icon(app));
+    cell.appendChild(appName(app));
+  }
+</script>
+</body>
+</html>

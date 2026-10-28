@@ -1,0 +1,51 @@
+/* ArtCraft Launcher's look, as it draws itself: warm paper, hairline rules, Archivo for names, Inter for text,
+   Geist Mono in tracked capitals for labels, and each app's name with "Craft" in the app's own colour. */
+:root {
+  --paper: #f2f1ee;
+  --line: #cecdcb;
+  --ink: #111111;
+  --text: #3a3833;
+  --muted: #74716b;
+  --accent: #2f7bf5;
+}
+
+html, body { margin: 0; background: transparent; }
+
+.card {
+  box-sizing: border-box;
+  display: grid;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  font: 500 12px/1 'Geist Mono', monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bar.foot { border-bottom: 0; border-top: 1px solid var(--line); }
+
+.word {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+.word b, .name b { font-weight: inherit; color: color-mix(in srgb, var(--c, var(--accent)) 82%, black); }
+
+.sub { font-family: 'Inter', sans-serif; font-weight: 500; color: var(--text); }
+
+.name { font-family: 'Archivo', sans-serif; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+
+/* every icon gets the same rounded corners, as not all ship with them */
+.card img { display: block; border-radius: 22%; filter: drop-shadow(0 3px 5px rgba(17, 17, 17, 0.20)); }
