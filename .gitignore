@@ -5,3 +5,4 @@ __pycache__/
 /dist/
 /session/artcraft-session.exe
 .env
+/_site/
