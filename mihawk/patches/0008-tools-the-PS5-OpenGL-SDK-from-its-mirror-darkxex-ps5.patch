@@ -1,0 +1,104 @@
+From 1a94a6c13301f2936026d2dacba8a067be767ea3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 15:56:46 +0000
+Subject: [PATCH] tools: the PS5 OpenGL SDK from its mirror, darkxex/ps5-opengl
+ 1.0.2
+
+blackbearreloaded/ps5-opengl is gone (its releases answer 404), so
+fetch-all.sh could no longer fetch the pinned OpenGL SDK 1.0.0 and the
+build stopped there. MihawkOS v4.0.0-alpha-4 moved to darkxex/ps5-opengl
+1.0.2, whose release note says the archive is unchanged. This takes
+exactly that change, no more: the version, digest
+30d8e51dd062739b629346102be5932728ba714bc50b1bdcdf08306c8843d9a4 and URL
+in tools/fetch-opengl-sdk.sh and tools/fetch-all.sh, and the folder name
+in tools/build-wine-ps5.sh and tools/stage-licences.py. Every OpenGL
+line matches v4.0.0-alpha-4's.
+
+Checked: the archive matches that digest. It holds sdk/manifest.sha256,
+lib/libPS5OpenGL.a and lib/libPS5OpenGLCore33.a, and every licence text
+stage-licences.py copies.
+---
+ tools/build-wine-ps5.sh   | 6 +++---
+ tools/fetch-all.sh        | 4 ++--
+ tools/fetch-opengl-sdk.sh | 7 ++++---
+ tools/stage-licences.py   | 4 ++--
+ 4 files changed, 11 insertions(+), 10 deletions(-)
+
+diff --git a/tools/build-wine-ps5.sh b/tools/build-wine-ps5.sh
+index a99d5cb..c46b277 100755
+--- a/tools/build-wine-ps5.sh
++++ b/tools/build-wine-ps5.sh
+@@ -159,13 +159,13 @@ done
+ 
+ # The pinned OpenGL SDK is linked unless it is declined: a win32u.prx built without it has no OpenGL, and every OpenGL
+ # game (a .NET MonoGame game, a Java game) then fails at its first GL call, which looks like a regression elsewhere.
+-if [ -z "$ps5opengl_sdk" ] && [ "$no_opengl" = 0 ] && [ -f "$root/.deps/ps5-opengl-sdk-1.0.0/sdk/manifest.sha256" ]; then
+-    ps5opengl_sdk=$root/.deps/ps5-opengl-sdk-1.0.0/sdk
++if [ -z "$ps5opengl_sdk" ] && [ "$no_opengl" = 0 ] && [ -f "$root/.deps/ps5-opengl-sdk-1.0.2/sdk/manifest.sha256" ]; then
++    ps5opengl_sdk=$root/.deps/ps5-opengl-sdk-1.0.2/sdk
+     echo "linking the pinned OpenGL SDK: $ps5opengl_sdk (--no-opengl to decline)"
+ fi
+ # Missing, it stops the build: only --no-opengl builds without it (the helper runtime, tools/build-production.sh).
+ [ -n "$ps5opengl_sdk" ] || [ "$no_opengl" = 1 ] || [ "$check_only" = 1 ] ||
+-    fail "no OpenGL SDK at $root/.deps/ps5-opengl-sdk-1.0.0/sdk: run tools/fetch-opengl-sdk.sh, or pass --no-opengl"
++    fail "no OpenGL SDK at $root/.deps/ps5-opengl-sdk-1.0.2/sdk: run tools/fetch-opengl-sdk.sh, or pass --no-opengl"
+ [ -z "$ps5vk_sdk" ] || [ -z "$radv" ] || fail "--ps5vk-sdk and --radv both name libvulkan.prx; give one"
+ [ -z "$ps5opengl_sdk" ] || [ -f "$ps5opengl_sdk/lib/libPS5OpenGL.a" ] ||
+     [ -f "$ps5opengl_sdk/lib/libPS5OpenGLCore33.a" ] ||
+diff --git a/tools/fetch-all.sh b/tools/fetch-all.sh
+index dc708e7..4f82702 100755
+--- a/tools/fetch-all.sh
++++ b/tools/fetch-all.sh
+@@ -105,8 +105,8 @@ fetch "$deps/GE-Proton11-7-x86_64.tar.gz" \
+     "$ge_sha256"
+ # The OpenGL SDK linked into the title's win32u.prx; tools/fetch-opengl-sdk.sh holds its pin and unpacks it.
+ opengl_sha256=$(sed -n 's/^digest=//p' "$root/tools/fetch-opengl-sdk.sh")
+-fetch "$deps/ps5-opengl-sdk-1.0.0.tar.gz" \
+-    https://github.com/blackbearreloaded/ps5-opengl/releases/download/v1.0.0/ps5-opengl-sdk-1.0.0.tar.gz "$opengl_sha256"
++fetch "$deps/ps5-opengl-sdk-1.0.2.tar.gz" \
++    https://github.com/darkxex/ps5-opengl/releases/download/v1.0.2/ps5-opengl-sdk-1.0.2.tar.gz "$opengl_sha256"
+ $check || bash "$root/tools/fetch-opengl-sdk.sh"
+ # The Lapy daemon's inputs, pinned in tools/build-lapy-validation.py: the upstream payload SDK v0.42, and the logger
+ # header at prospero-win e665a2c (that revision carries no licence, so it is fetched, never vendored).
+diff --git a/tools/fetch-opengl-sdk.sh b/tools/fetch-opengl-sdk.sh
+index 2ab6583..1480cb8 100755
+--- a/tools/fetch-opengl-sdk.sh
++++ b/tools/fetch-opengl-sdk.sh
+@@ -2,14 +2,15 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ set -euo pipefail
+ root=$(cd -- "$(dirname -- "$0")/.." && pwd)
+-version=1.0.0
+-digest=f93643c04c843d56143b00951df1f8042ea7706ae9f19e4e9abf158e1ead77c5
++# The original repository (blackbearreloaded/ps5-opengl) is gone; darkxex/ps5-opengl mirrors it (its release note says the archive is unchanged).
++version=1.0.2
++digest=30d8e51dd062739b629346102be5932728ba714bc50b1bdcdf08306c8843d9a4
+ archive="$root/.deps/ps5-opengl-sdk-$version.tar.gz"
+ prefix="$root/.deps/ps5-opengl-sdk-$version"
+ mkdir -p "$root/.deps"
+ if [[ ! -f $archive ]]; then
+     curl -fL --retry 3 -o "$archive.part" \
+-        "https://github.com/blackbearreloaded/ps5-opengl/releases/download/v$version/ps5-opengl-sdk-$version.tar.gz"
++        "https://github.com/darkxex/ps5-opengl/releases/download/v$version/ps5-opengl-sdk-$version.tar.gz"
+     printf '%s  %s\n' "$digest" "$archive.part" | sha256sum -c -
+     mv "$archive.part" "$archive"
+ fi
+diff --git a/tools/stage-licences.py b/tools/stage-licences.py
+index 5accaf8..f0b7eab 100644
+--- a/tools/stage-licences.py
++++ b/tools/stage-licences.py
+@@ -89,9 +89,9 @@ OWN = {'ps5-proton/LICENSE': 'LICENSE', 'ps5-proton/NOTICE.md': 'NOTICE.md', 'ps
+ # Mesa's licence page, the same at the RADV (PS5_Vulkan's export) and WGL/Zink (b3588f78) revisions.
+ MESA = '.deps/mesa-foundation-wgl/source/docs/license.rst'
+ 
+-# The PS5 OpenGL SDK 1.0.0 (tools/fetch-opengl-sdk.sh), statically linked into the runtime's win32u.prx: its licence,
++# The PS5 OpenGL SDK 1.0.2 (tools/fetch-opengl-sdk.sh), statically linked into the runtime's win32u.prx: its licence,
+ # its third-party notices and every component licence its package carries.
+-OPENGL_SDK = '.deps/ps5-opengl-sdk-1.0.0'
++OPENGL_SDK = '.deps/ps5-opengl-sdk-1.0.2'
+ OPENGL_SDK_TEXTS = ['LICENSE', 'THIRD_PARTY_NOTICES.md', 'LICENSES/Dear-ImGui.txt', 'LICENSES/Mesa/Apache-2.0', 'LICENSES/Mesa/BSL-1.0', 'LICENSES/Mesa/exceptions/Linux-Syscall-Note', 'LICENSES/Mesa/GPL-1.0-or-later', 'LICENSES/Mesa/GPL-2.0-only', 'LICENSES/Mesa/MIT', 'LICENSES/Mesa/SGI-B-2.0', 'LICENSES/NanoVG.txt', 'LICENSES/OpenGNM-PSBC.txt', 'LICENSES/OpenGNM.txt', 'LICENSES/SDL2.txt', 'LICENSES/Sokol-Samples.txt', 'LICENSES/Sokol.txt', 'LICENSES/SPIRV-Headers.txt', 'LICENSES/vecmath.txt', 'LICENSES/VK-GL-CTS.txt', 'LICENSES/Vulkan-Headers.txt']
+ 
+ RUNTIME = {
+-- 
+2.43.0
+
