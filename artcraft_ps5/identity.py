@@ -11,6 +11,10 @@ a matching conceptId and contentId.
 Mihawk OS's documents (*.md) and the records of its console runs (evidence/, docs/history/) stay as they are: they
 describe Mihawk OS.
 
+The title ships a root-access daemon built for its own title id, and tools/build-production.sh takes only the one
+whose SHA-256 it pins. Mihawk OS's pin is the PPSA99170 build, so the edition's pin replaces it: mihawk/mihawk.lock.json
+lapy_daemon_sha256, made by .github/workflows/daemon.yml from the same pinned inputs.
+
 The title updates itself from PROTON_UPDATE_URL, checked with the key in platform/update/release-key.txt. Both are
 empty at the fork's pin. If a later Mihawk OS filled them in, ArtCraft would offer Mihawk OS's releases as its own
 updates, so this stops without writing anything.
@@ -44,9 +48,15 @@ def content_id(title_id: str, brand: str) -> str:
     return f'UP9000-{title_id}_00-{label}'
 
 
-def targeted(title_id: str, brand: str) -> list[tuple[str, str, str, int]]:
+def targeted(title_id: str, brand: str, daemon_pins: dict[str, str]) -> list[tuple[str, str, str, int]]:
     """(file, old, new, count): the edits that are not a plain swap, applied first."""
+    for title in (MIHAWK_TITLE_ID, title_id):
+        if not re.fullmatch(r'[0-9a-f]{64}', daemon_pins.get(title, '')):
+            raise RebrandError(f'mihawk/mihawk.lock.json lapy_daemon_sha256 has no pin for {title}: the Root-access daemon '
+                               f'workflow (.github/workflows/daemon.yml) builds it and prints its SHA-256')
     return [
+        ('tools/build-production.sh', f'daemon_sha256={daemon_pins[MIHAWK_TITLE_ID]}\n',
+         f'daemon_sha256={daemon_pins[title_id]}\n', 1),
         ('ps5/sce_sys/param.json', f'"conceptId": "{MIHAWK_TITLE_ID[4:]}"', f'"conceptId": "{title_id[4:]}"', 1),
         ('ps5/sce_sys/param.json', f'"contentId": "UP9000-{MIHAWK_TITLE_ID}_00-PS5PROTON0000000"',
          f'"contentId": "{content_id(title_id, brand)}"', 1),
@@ -61,7 +71,8 @@ def tracked(fork: Path) -> list[str]:
     return sorted(name for name in names if name.endswith(SOURCES) and not name.startswith(KEPT))
 
 
-def identity(fork: Path, title_id: str, data_root: PurePosixPath, brand: str, *, say=print) -> dict[str, int]:
+def identity(fork: Path, title_id: str, data_root: PurePosixPath, brand: str, daemon_pins: dict[str, str], *,
+             say=print) -> dict[str, int]:
     if not re.fullmatch(r'PPSA[0-9]{5}', title_id) or title_id == MIHAWK_TITLE_ID:
         raise RebrandError(f'{title_id}: the title needs an id of its own, like PPSA99278')
     if data_root.parent != PurePosixPath('/data') or str(data_root) == MIHAWK_DATA_ROOT:
@@ -74,7 +85,7 @@ def identity(fork: Path, title_id: str, data_root: PurePosixPath, brand: str, *,
     changes: dict[str, int] = {}
     def read(name: str) -> str:              # bytes as they are: CRLF files keep their line ends
         return (fork / name).read_bytes().decode()
-    for name, old, new, count in targeted(title_id, brand):
+    for name, old, new, count in targeted(title_id, brand, daemon_pins):
         text = files.setdefault(name, read(name))
         if text.count(old) != count:
             raise RebrandError(f'{name}: expected {count} of {old!r}, found {text.count(old)}: the fork moved it')

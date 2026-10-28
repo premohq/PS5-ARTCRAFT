@@ -113,8 +113,13 @@ def command_mihawk(args) -> None:
         lock = json.loads((ROOT / 'mihawk' / 'mihawk.lock.json').read_text())
         if not fork.exists():
             _git('clone', lock['repo'], str(fork))
+        status = subprocess.run(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=fork, check=True,
+                                capture_output=True, text=True).stdout
+        if status:
+            raise EditionError(f'{fork} has changes of its own; commit or stash them first:\n{status}')
         _git('fetch', 'origin', lock['commit'], cwd=fork)
-        _git('checkout', '-b', 'artcraft', lock['commit'], cwd=fork)
+        # The branch is made again from the pin each time, so running this again picks up changed patches.
+        _git('checkout', '-B', 'artcraft', lock['commit'], cwd=fork)
         patches = sorted(str(p) for p in (ROOT / 'mihawk' / 'patches').glob('*.patch'))
         _git('am', *patches, cwd=fork)
         print(f'{fork}: branch artcraft, {len(patches)} patches applied on {lock["commit"][:7]}; build it as its README says')
@@ -127,7 +132,8 @@ def command_mihawk(args) -> None:
             print(path)
     elif args.action == 'identity':
         from . import identity
-        identity.identity(fork, edition.title_id, edition.data_root, edition.title_name)
+        lock = json.loads((ROOT / 'mihawk' / 'mihawk.lock.json').read_text())
+        identity.identity(fork, edition.title_id, edition.data_root, edition.title_name, lock.get('lapy_daemon_sha256', {}))
 
 
 def main(argv: list[str] | None = None) -> int:

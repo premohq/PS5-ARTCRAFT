@@ -9,11 +9,13 @@ from artcraft_ps5 import identity
 from artcraft_ps5.rebrand import RebrandError
 
 ROOT = PurePosixPath('/data/artcraft')
+PINS = {'PPSA99170': 'a' * 64, 'PPSA99278': 'b' * 64}
 FILES = {
     'ps5/sce_sys/param.json': '{\n  "conceptId": "99170",\n  "contentId": "UP9000-PPSA99170_00-PS5PROTON0000000",\n'
                               '  "titleId": "PPSA99170"\n}\n',
     'tools/publication-check.py': "OWN = re.compile(rb'PPSA(?!99170|99130|99008)[0-9]{5}')\nTITLE = 'dist/PPSA99170'\n",
     'ps5/CMakeLists.txt': 'set(PROTON_UPDATE_URL "" CACHE STRING "Where the signed release manifest is published")\n',
+    'tools/build-production.sh': f'title=$(read param.json)\ndaemon_sha256={"a" * 64}\n',
     'ps5/src/proton_launch.h': '#define PROTON_DATA_ROOT "/data/ps5proton"\n#define SANDBOX "/mnt/sandbox/" "PPSA99170_000"\n',
     'tests/probe.c': 'L"Z:\\\\data\\\\ps5proton\\\\logs";\r\nconst char *x = "metadata/ps5proton /data/ps5proton-old";\r\n',
     'tools/run.py': "PATH = 'Z:\\\\data\\\\ps5proton\\\\run'\nREG = 'Z:\\\\\\\\data\\\\\\\\ps5proton'\n",
@@ -39,7 +41,7 @@ def read(fork: Path, name: str) -> str:
 
 
 def test_the_title_and_its_folder_become_the_editions(fork):
-    changes = identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', say=lambda *a: None)
+    changes = identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', PINS, say=lambda *a: None)
     assert read(fork, 'ps5/sce_sys/param.json') == ('{\n  "conceptId": "99278",\n  "contentId": '
                                                     '"UP9000-PPSA99278_00-ARTCRAFT00000000",\n  "titleId": "PPSA99278"\n}\n')
     assert read(fork, 'tools/publication-check.py') == ("OWN = re.compile(rb'PPSA(?!99278|99170|99130|99008)[0-9]{5}')\n"
@@ -55,6 +57,14 @@ def test_the_title_and_its_folder_become_the_editions(fork):
         assert read(fork, name) == FILES[name]
     assert read(fork, 'dist/built.py') == "TITLE = 'PPSA99170'\n"
     assert changes['ps5/sce_sys/param.json'] == 3 and 'docs/NOTES.md' not in changes
+    # The daemon the build takes is the one built for the edition's title.
+    assert read(fork, 'tools/build-production.sh') == f'title=$(read param.json)\ndaemon_sha256={"b" * 64}\n'
+
+
+def test_the_editions_daemon_pin_is_required(fork):
+    with pytest.raises(RebrandError, match='no pin for PPSA99278'):
+        identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', {'PPSA99170': 'a' * 64}, say=lambda *a: None)
+    assert read(fork, 'tools/build-production.sh') == FILES['tools/build-production.sh']
 
 
 def test_a_label_is_sixteen_characters():
@@ -70,7 +80,7 @@ def test_a_label_is_sixteen_characters():
 ])
 def test_mihawk_os_values_are_refused(fork, title_id, root, message):
     with pytest.raises(RebrandError, match=message):
-        identity.identity(fork, title_id, root, 'ArtCraft', say=lambda *a: None)
+        identity.identity(fork, title_id, root, 'ArtCraft', PINS, say=lambda *a: None)
     assert read(fork, 'ps5/sce_sys/param.json') == FILES['ps5/sce_sys/param.json']
 
 
@@ -78,9 +88,9 @@ def test_a_fork_with_an_update_feed_or_a_moved_string_is_left_alone(fork):
     (fork / 'platform/update').mkdir(parents=True)
     (fork / 'platform/update/release-key.txt').write_text('ab' * 32 + '\n')
     with pytest.raises(RebrandError, match="Mihawk OS's releases"):
-        identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', say=lambda *a: None)
+        identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', PINS, say=lambda *a: None)
     (fork / 'platform/update/release-key.txt').unlink()
     (fork / 'ps5/sce_sys/param.json').write_text('{"titleId": "PPSA99170"}\n')
     with pytest.raises(RebrandError, match='param.json: expected 1'):
-        identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', say=lambda *a: None)
+        identity.identity(fork, 'PPSA99278', ROOT, 'ArtCraft', PINS, say=lambda *a: None)
     assert read(fork, 'ps5/src/proton_launch.h') == FILES['ps5/src/proton_launch.h']

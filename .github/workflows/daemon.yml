@@ -1,10 +1,11 @@
 name: Root-access daemon
 
-# The title ships a Lapy root-access daemon built for its own title id, and tools/build-production.sh only takes one
-# matching its pinned SHA-256. Mihawk OS's pin is for PPSA99170, so ArtCraft (PPSA99278) needs a pin of its own. This
-# builds both from the same pinned inputs with the LLVM release the pin was made with. Mihawk OS's must reproduce
-# its pin, which proves the toolchain; ArtCraft's must match mihawk/mihawk.lock.json's, which patch 0007 puts into
-# build-production.sh.
+# The title ships a Lapy root-access daemon built for its own title id, and tools/build-production.sh takes only the
+# one whose SHA-256 it pins. Mihawk OS's pin is for PPSA99170, so ArtCraft (PPSA99278) needs a pin of its own. This
+# builds both from the same pinned inputs with clang/LLD 23.1.3 as Arch Linux packages them, the build the owner's
+# CachyOS uses: LLVM's own release makes the same code but names its source revision in .comment, which changes the
+# file (the first runs of this workflow). Mihawk OS's daemon must reproduce its pin, which proves the toolchain;
+# ArtCraft's must match mihawk/mihawk.lock.json's, which patch 0007 puts into build-production.sh.
 
 on:
   push:
@@ -18,25 +19,31 @@ jobs:
   daemon:
     name: Daemon for PPSA99170 (reproduces Mihawk OS's pin) and PPSA99278 (ArtCraft's)
     runs-on: ubuntu-24.04
+    container: archlinux:base-devel
     env:
-      LLVM_CONFIG: ${{ github.workspace }}/llvm/LLVM-23.1.3-Linux-X64/bin/llvm-config
+      LLVM_VERSION: 23.1.3
     steps:
+      - name: Arch Linux's clang, LLD and LLVM 23.1.3 (from the Arch Linux Archive), Python and git
+        run: |
+          pacman -Syu --noconfirm --needed git python patch unzip curl
+          archive=https://archive.archlinux.org/packages
+          urls=()
+          for name in llvm-libs llvm clang lld compiler-rt; do
+            file=$(curl -sSf "$archive/${name:0:1}/$name/" | grep -o "\"$name-$LLVM_VERSION-[0-9]*-x86_64.pkg.tar.zst\"" |
+              tr -d '"' | sort -V | tail -1)
+            [ -n "$file" ] || { echo "no $name $LLVM_VERSION in the Arch Linux Archive" >&2; exit 1; }
+            urls+=("$archive/${name:0:1}/$name/$file")
+          done
+          printf '%s\n' "${urls[@]}"
+          pacman -U --noconfirm "${urls[@]}"
+          clang --version | head -1
+          ld.lld --version
       - uses: actions/checkout@v4
         with:
           path: artcraft
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: LLVM 23.1.3, the release Mihawk OS's daemon pin was built with (compiler, linker and tools)
-        run: |
-          mkdir llvm
-          curl -sSfL https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/LLVM-23.1.3-Linux-X64.tar.xz |
-            tar -xJ -C llvm --exclude='*.a' --exclude='LLVM-23.1.3-Linux-X64/include' \
-              --exclude='LLVM-23.1.3-Linux-X64/share' --exclude='LLVM-23.1.3-Linux-X64/libexec'
-          "$LLVM_CONFIG" --version
-          "$("$LLVM_CONFIG" --bindir)/clang" --version | head -1
       - name: The fork at its pin and with ArtCraft's patches, side by side, with the daemon's source beside them
         run: |
+          git config --global --add safe.directory '*'
           lock=artcraft/mihawk/mihawk.lock.json
           repo=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["repo"])' $lock)
           commit=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["commit"])' $lock)
@@ -74,17 +81,13 @@ jobs:
             https://github.com/mihawk-99/PS5_MihawkOS/releases/download/v3.0.0-alpha-3/PS5_MihawkOS-v3.0.0-alpha-3-PPSA99170.zip
           echo "1dd6297c343908060cf56d61b162f6553c5dc6e5894f03ee23f7c547582b2a3d  release.zip" | sha256sum -c
           unzip -q -o release.zip PPSA99170/lapy-root-daemon.elf -d release
-          echo "5651f2ade61731a302e2a630344e6bd893a33f6503c90237d0abed699364bd7f  release/PPSA99170/lapy-root-daemon.elf" | sha256sum -c
           ours=pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/lapy-root-daemon.elf
-          bin=$("$LLVM_CONFIG" --bindir)
           for f in "$ours" release/PPSA99170/lapy-root-daemon.elf; do
-            echo "== $f"; "$bin/llvm-readelf" -S -l -n "$f"; "$bin/llvm-readelf" -p .comment "$f" || true
+            echo "== $f"; llvm-readelf -S -n "$f" 2>/dev/null; llvm-readelf -p .comment "$f" 2>/dev/null || true
           done
-          "$bin/llvm-objdump" -d --no-show-raw-insn "$ours" | sed 1,3d > ours.s
-          "$bin/llvm-objdump" -d --no-show-raw-insn release/PPSA99170/lapy-root-daemon.elf | sed 1,3d > release.s
-          diff ours.s release.s | head -80 || true
-          cmp -l "$ours" release/PPSA99170/lapy-root-daemon.elf | wc -l
-          cat pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/build.log
+          llvm-objdump -d --no-show-raw-insn "$ours" | sed 1,3d > ours.s
+          llvm-objdump -d --no-show-raw-insn release/PPSA99170/lapy-root-daemon.elf | sed 1,3d > release.s
+          diff ours.s release.s | head -80 && echo "the code is the same"
       - name: ArtCraft's daemon (PPSA99278) from the patched fork matches ArtCraft's pin
         run: |
           python fork/tools/build-lapy-validation.py --resident --sdk-zip "$PWD/sdk.zip"
