@@ -1,5 +1,5 @@
-From 1a94a6c13301f2936026d2dacba8a067be767ea3 Mon Sep 17 00:00:00 2001
-From: Claude <noreply@anthropic.com>
+From 7ee3a3e1e58e61cb8b45579894f1e5503f5e5bc0 Mon Sep 17 00:00:00 2001
+From: premohq <48417750+premohq@users.noreply.github.com>
 Date: Wed, 28 Oct 2026 15:56:46 +0000
 Subject: [PATCH] tools: the PS5 OpenGL SDK from its mirror, darkxex/ps5-opengl
  1.0.2

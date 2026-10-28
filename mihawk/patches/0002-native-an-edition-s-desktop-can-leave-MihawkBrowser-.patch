@@ -1,5 +1,5 @@
-From 44c3a46dad21aa04f5d7dee1fd252f00de2e0bae Mon Sep 17 00:00:00 2001
-From: Claude <noreply@anthropic.com>
+From 22d08e2824d27d9a31bc305eff9966e682d596cf Mon Sep 17 00:00:00 2001
+From: premohq <48417750+premohq@users.noreply.github.com>
 Date: Wed, 28 Oct 2026 03:47:49 +0000
 Subject: [PATCH] native: an edition's desktop can leave MihawkBrowser's
  shortcut out
@@ -14,9 +14,6 @@ an edition nothing changes.
 Proven: nothing beyond reading; native/proton_wine.cpp needs the PS5 SDK's
 headers (ps5platform/memory.h), which this checkout does not carry. No
 console run.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
 ---
  native/proton_wine.cpp | 12 ++++++++----
  1 file changed, 8 insertions(+), 4 deletions(-)

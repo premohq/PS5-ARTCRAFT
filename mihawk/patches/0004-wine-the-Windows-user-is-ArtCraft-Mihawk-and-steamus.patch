@@ -1,5 +1,5 @@
-From 8ceb4285b36e86cca7ee546b50f03d00bd4e3ad4 Mon Sep 17 00:00:00 2001
-From: Claude <noreply@anthropic.com>
+From 8d48e5f72211cb0209f88eaebc71707f053d4450 Mon Sep 17 00:00:00 2001
+From: premohq <48417750+premohq@users.noreply.github.com>
 Date: Wed, 28 Oct 2026 04:00:08 +0000
 Subject: [PATCH] wine: the Windows user is ArtCraft; Mihawk and steamuser
  profiles move to it
@@ -35,9 +35,6 @@ rewritten, the second start a no-op), growing text and the worst-case room;
 tests/test_pw_wine_launch.c (users/ArtCraft folders) and
 tests/test_pw_wine_prefix.c pass. tools/host-tests.sh itself needs
 ../PS5_Vulkan, not in this checkout. No console run.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
 ---
  native/proton_wine.cpp                        |   8 +-
  src/pw_wine_launch.h                          |   2 +-

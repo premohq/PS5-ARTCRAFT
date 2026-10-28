@@ -1,5 +1,5 @@
-From 9030500eab6fd0390f0c463e49afb1b6f917db72 Mon Sep 17 00:00:00 2001
-From: Claude <noreply@anthropic.com>
+From 12e73ab56fcaa0100fa3c1b1cea36d4e38f5efc1 Mon Sep 17 00:00:00 2001
+From: premohq <48417750+premohq@users.noreply.github.com>
 Date: Wed, 28 Oct 2026 08:44:49 +0000
 Subject: [PATCH] ArtCraft's mark on the Start button and the PS5 tile
 
@@ -29,9 +29,6 @@ Proven: tests/test_taskbar_logo.py and tests/test_title_icon.py pass with
 librsvg 2.58 installed, so against the SVG: mean error 1.44 levels at 22 px
 (96 DPI), 0.62 at 33, 0.66 at 44; 95 to 97 % of pixels within 8 (the test's
 limits: 1.5 and 90 %; the Mihawk mark measured 1.36 at 22). No console run.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
 ---
  ps5/sce_sys/icon0.png       | Bin 20647 -> 35692 bytes
  ps5/tools/icon0.svg         |  23 ++++++++----
