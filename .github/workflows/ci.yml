@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python tools (ruff, pytest)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy pillow pytest pyftpdlib ruff
+      - run: ruff check artcraft_ps5 tests
+      - run: python -m pytest -q tests
+
+  session:
+    name: Session helper (MinGW-w64)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64
+      - run: make -C session
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artcraft-session
+          path: session/artcraft-session.exe
+
+  mihawk-patches:
+    name: Mihawk OS fork patches (git am, the fork's host tests)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends librsvg2-bin
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy pillow pytest
+      - name: Apply the series at the fork's pin
+        run: |
+          repo=$(python -c 'import json; print(json.load(open("mihawk/mihawk.lock.json"))["repo"])')
+          commit=$(python -c 'import json; print(json.load(open("mihawk/mihawk.lock.json"))["commit"])')
+          git clone --filter=blob:none "$repo" fork
+          git -C fork checkout -b artcraft "$commit"
+          git -C fork -c user.name=ci -c user.email=ci@example.invalid am "$PWD"/mihawk/patches/*.patch
+      - name: The fork's host tests for what the patches touch
+        working-directory: fork
+        run: |
+          set -e
+          cc() { gcc -std=gnu11 -O1 -g -Wall -Wextra -Werror -fsanitize=address,undefined -Isrc -Iwine/ps5 "$@"; }
+          cc -o /tmp/profile tests/test_pw_wine_profile.c src/pw_wine_profile.c && /tmp/profile
+          cc -o /tmp/launch tests/test_pw_wine_launch.c src/pw_wine_launch.c && /tmp/launch
+          cc -o /tmp/prefix tests/test_pw_wine_prefix.c wine/ps5/pw_wine_prefix.c src/pw_wine_launch.c && /tmp/prefix
+          cc -o /tmp/setup tests/test_pw_setup.c src/pw_setup.c -lm && /tmp/setup "$PWD"
+          cc -o /tmp/logs tests/test_pw_detailed_logs.c src/pw_detailed_logs.c src/pw_log_sessions.c && /tmp/logs
+          python -m pytest -q tests/test_taskbar_logo.py tests/test_title_icon.py tests/test_package_install.py
+      - name: The title's changed sources compile in the host-reference configuration
+        working-directory: fork
+        run: |
+          for f in ps5/src/proton_launch.cpp ps5/src/proton_install.cpp; do
+            g++ -std=c++20 -fsyntax-only -w -DPS5_HOST_REFERENCE '-DPS5_APP_ROOT="/tmp"' '-DPS5_TITLE_ID="PPSA99170"' \
+              '-DPS5_TITLE_NAME="ArtCraft"' -Iexternal -Iexternal/tinygltf -Ips5/src -Isrc -Iinclude "$f"
+          done
+
+  launcher-compat:
+    name: ArtCraft Launcher reads the seeded files (its own types)
+    runs-on: ubuntu-24.04
+    needs: session
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy pillow
+      - uses: actions/download-artifact@v4
+        with:
+          name: artcraft-session
+          path: session
+      - name: Stage the launcher and one small app
+        run: |
+          python -m artcraft_ps5 fetch --apps soundcraft
+          python -m artcraft_ps5 stage --apps soundcraft
+      - name: Read them with craft-launcher at the pinned launcher's tag
+        run: |
+          tag=$(python -c 'import json; print(json.load(open("edition/suite.lock.json"))["pins"]["artcraft-launcher"]["tag"])')
+          git clone --depth 1 --branch "$tag" https://github.com/storytold/craft-launcher launcher
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev
+          bash tests/launcher_compat/run.sh launcher dist/artcraft soundcraft

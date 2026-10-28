@@ -13,8 +13,8 @@ import json
 import os
 import re
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from .edition import App, Edition, EditionError, Pin
 

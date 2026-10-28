@@ -1,11 +1,12 @@
 """Put the edition's name (edition.json title name) where a Mihawk OS fork shows "MihawkOS" or "Mihawk OS".
 
-Everything the user reads: the title's name and its screens (the loading screen's footer among them), the guided setup in every language, the desktop's
-shortcut tips, the logging README, the browser's title, the runtime wallpaper's corner note. The credits stay
-Mihawk's: the About page says the title is a modified version of MihawkOS (GPLv3 section 5a), keeps "Copyright (C)
-2026 Mihawk and the authors credited in NOTICE.md" and names both source repositories; the music is "by Mihawk".
-Identifiers nobody reads stay, so the fork's tools, formats and existing prefixes keep working: window classes,
-HKCU\\Software\\Mihawk keys, the mihawk prefix id, mihawk.exe, the mihawkos USB folder, pack and release formats,
+Everything the user reads: the title's name and its screens (the loading screen's footer among them), the guided
+setup in every language, the desktop's shortcut tips, the logging README, the browser's title, the runtime
+wallpaper's corner note, and the USB stick's folder of runtime pieces (artcraft/; the installer still takes a
+mihawkos/ one). The credits stay Mihawk's: the About page says the title is a modified version of MihawkOS (GPLv3
+section 5a), keeps "Copyright (C) 2026 Mihawk and the authors credited in NOTICE.md" and names both source
+repositories; the music is "by Mihawk". Identifiers nobody reads stay, so the fork's tools, formats and existing
+prefixes keep working: window classes, HKCU\\Software\\Mihawk keys, the mihawk prefix id, mihawk.exe, pack and release formats,
 MihawkBrowser.lnk.
 
 The title's log lines are tagged with its name, so the fork's console tools and their tests now look for

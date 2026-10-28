@@ -154,8 +154,9 @@ def render_icon(svg: Path, png: Path) -> None:
     """icon0.png from icon0.svg with librsvg, as the fork's tests/test_title_icon.py checks it."""
     if not shutil.which('rsvg-convert'):
         raise RuntimeError('rsvg-convert (librsvg) is needed to render the title icon')
-    from PIL import Image
     import io
+
+    from PIL import Image
     data = subprocess.run(['rsvg-convert', '-w', '512', '-h', '512', str(svg)], capture_output=True, check=True).stdout
     Image.open(io.BytesIO(data)).convert('RGB').save(png, format='PNG', optimize=True)
 

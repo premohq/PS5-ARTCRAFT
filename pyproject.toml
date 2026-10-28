@@ -1,0 +1,28 @@
+[project]
+name = "artcraft-ps5"
+version = "0.1.0"
+description = "Build, stage and deploy the ArtCraft edition of Mihawk OS for a jailbroken PS5"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+dependencies = ["numpy>=1.24", "Pillow>=10"]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "pyftpdlib>=1.5"]
+
+[tool.setuptools]
+packages = ["artcraft_ps5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore:write permissions assigned to anonymous user:RuntimeWarning"]
+
+[tool.ruff]
+line-length = 150
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E731"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["artcraft_ps5", "conftest"]
