@@ -111,6 +111,7 @@ jobs:
       - name: Stage the launcher and one small app
         run: |
           python -m artcraft_ps5 fetch --apps soundcraft
+          python -m artcraft_ps5 wallpaper
           python -m artcraft_ps5 stage --apps soundcraft
       - name: Read them with craft-launcher at the pinned launcher's tag
         run: |

@@ -90,7 +90,7 @@ step "the title and its runtime (tools/build-production.sh; two more Wine builds
 
 step "the ArtCraft desktop: the session helper, the launcher and the apps (dist/artcraft)"
 make -C "$src/session"
-(cd "$src" && python3 -m artcraft_ps5 fetch && python3 -m artcraft_ps5 stage --clean)
+(cd "$src" && python3 -m artcraft_ps5 fetch && python3 -m artcraft_ps5 wallpaper && python3 -m artcraft_ps5 stage --clean)
 # The title reads edition.json from its own folder: in the title it opens ArtCraft's desktop from the first start,
 # once deploy has sent that desktop (until then it shows its library).
 cp "$src/dist/artcraft/data/homebrew/$title/edition.json" "$fork/dist/$title/edition.json"
