@@ -9,6 +9,19 @@ permissions:
   contents: read
 
 jobs:
+  authorship:
+    name: Every commit is premohq's own (no co-author trailers)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Authors, committers and trailers
+        run: |
+          bad=$(git log --format='%h %an <%ae> / %cn <%ce>' | grep -iE 'claude|anthropic' || true)
+          bad+=$(git log -i -E --grep='^(co-authored-by:|claude-session:)' --format='%h %s')
+          if [ -n "$bad" ]; then echo "$bad"; echo "::error::commits above are not premohq's alone"; exit 1; fi
+
   python:
     name: Python tools (ruff, pytest) on Python ${{ matrix.python }}
     runs-on: ubuntu-24.04

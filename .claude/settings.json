@@ -1,0 +1,13 @@
+{
+  "env": {
+    "GIT_AUTHOR_NAME": "premohq",
+    "GIT_AUTHOR_EMAIL": "48417750+premohq@users.noreply.github.com",
+    "GIT_COMMITTER_NAME": "premohq",
+    "GIT_COMMITTER_EMAIL": "48417750+premohq@users.noreply.github.com"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  }
+}
