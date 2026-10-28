@@ -106,3 +106,47 @@ def test_remote_size_reads_the_byte_range():
     with pytest.raises(EditionError, match='no byte range'):
         releases.remote_size('https://example.invalid/a', no_range)
     assert urllib.error  # the real opener's errors surface as they are
+
+
+def github(releases_by_url: dict[str, str], sizes: dict[str, int]):
+    """An opener answering SHA256SUMS.txt by URL and a one-byte range of each asset by URL, as GitHub does."""
+    asked = []
+
+    def opener(request):
+        url = request.full_url
+        asked.append(url)
+        if url in releases_by_url:
+            return FakeResponse(releases_by_url[url].encode())
+        if url in sizes and request.get_header('Range') == 'bytes=0-0':
+            return FakeResponse(b'x', 206, {'Content-Range': f'bytes 0-0/{sizes[url]}'})
+        raise AssertionError(f'unexpected request: {url}')
+    return opener, asked
+
+
+def test_chosen_versions_are_pinned_and_every_other_pin_is_kept(tmp_path):
+    from artcraft_ps5 import edition as editions
+    suite = editions.load(need_lock=True)
+    repo = suite.launcher.repo
+    asset = 'artcraft-launcher-0.7.0-windows-x64-portable.zip'
+    url = f'https://github.com/{repo}/releases/download/v0.7.0/{asset}'
+    opener, asked = github({f'https://github.com/{repo}/releases/download/v0.7.0/SHA256SUMS.txt': f'{"ab" * 32}  {asset}\n'},
+                           {url: 10_000})
+    lock = releases.refresh_lock(suite, tmp_path / 'lock.json', opener, versions={'artcraft-launcher': '0.7.0'},
+                                 say=lambda *a: None)
+    assert lock['pins']['artcraft-launcher'] == {'version': '0.7.0', 'tag': 'v0.7.0', 'asset': asset, 'url': url,
+                                                 'sha256': 'ab' * 32, 'size': 10_000}
+    assert list(lock['pins']) == list(suite.pins)
+    assert all(lock['pins'][app_id]['sha256'] == pin.sha256 for app_id, pin in suite.pins.items() if app_id != 'artcraft-launcher')
+    assert len(asked) == 2                     # only the chosen release was read
+
+
+def test_a_version_must_be_a_release_of_a_suite_app():
+    from artcraft_ps5 import edition as editions
+    suite = editions.load(need_lock=True)
+    with pytest.raises(EditionError, match='not in the suite: nope'):
+        releases.refresh_lock(suite, None, versions={'nope': '1.0.0'})
+    repo = suite.launcher.repo
+    sums = {f'https://github.com/{repo}/releases/download/v0.7.0/SHA256SUMS.txt':
+            f'{"ab" * 32}  artcraft-launcher-0.7.1-windows-x64-portable.zip\n'}
+    with pytest.raises(EditionError, match='lists artcraft-launcher-0.7.1'):
+        releases.release_pin(suite.launcher, 'x64', github(sums, {})[0], '0.7.0')

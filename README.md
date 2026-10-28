@@ -20,35 +20,33 @@ Windows programs on the PS5 through Wine and Proton's stack.
 
 ## On the PC
 
-You need an x86_64 Linux machine (or WSL2) with Python 3.10+, `numpy` and `Pillow`, MinGW-w64
-(`gcc-mingw-w64-x86-64`) and what the Mihawk fork's README asks for to build the title and runtime.
+You need an x86_64 Linux machine (or WSL2) with Git, Python 3.10+ with `numpy` and `Pillow`
+(`pip install -e .`), MinGW-w64 (`gcc-mingw-w64-x86-64`), and what the Mihawk fork's README asks for to build the
+title and runtime.
 
 ```sh
-# 1. The fork, at its pin, with the edition's patches
-git clone https://github.com/premohq/PS5_MihawkOS ../PS5_MihawkOS
-git -C ../PS5_MihawkOS checkout -b artcraft b91f6eeef116d824c4307129547dd35adbf42cbe
-git -C ../PS5_MihawkOS am "$PWD"/mihawk/patches/*.patch
-#    then build and install the title and runtime as its README says (tools/fetch-all.sh,
-#    tools/build-production.sh, tools/console-setup.py)
+# 1. The fork at its pin with the edition's patches (branch artcraft in ../PS5_MihawkOS), then build and
+#    install the title and runtime as the fork's README says (tools/fetch-all.sh, tools/build-production.sh,
+#    tools/console-setup.py)
+python3 -m artcraft_ps5 mihawk prepare
 
-# 2. The session helper
+# 2. The session helper (or take artcraft-session.exe from the CI run's artcraft-session artifact)
 make -C session
 
-# 3. The suite, staged and sent to the console (PS5_HOST / FTP_PORT as in ../PS5_Vulkan/.env)
-python3 - <<'EOF'
-from pathlib import Path
-from artcraft_ps5 import edition, releases, artwork, stage
-e = edition.load(need_lock=True)
-for pin in e.pins.values():
-    releases.download(pin, Path('.deps/downloads'))
-wall = Path('.deps/artcraft-wallpaper.bmp')
-artwork.save_bmp(artwork.wallpaper([a.rgb for a in e.apps], theme=e.wallpaper_theme, seed=e.wallpaper_seed), wall)
-stage.stage(e, Path('.deps/downloads'), Path('dist/artcraft'), Path('session/artcraft-session.exe'), wall)
-EOF
-python3 -c "from pathlib import Path; from artcraft_ps5 import deploy; deploy.deploy(Path('dist/artcraft'), deploy.console_settings(env_file=Path('../PS5_Vulkan/.env')))"
+# 3. The suite: download and check every pinned release, lay out the console's files, send them
+python3 -m artcraft_ps5 fetch
+python3 -m artcraft_ps5 stage              # draws the wallpaper the first time
+python3 -m artcraft_ps5 deploy --dry-run   # what would go where
+python3 -m artcraft_ps5 deploy             # PS5_HOST / FTP_PORT from ../PS5_Vulkan/.env, the environment or --host
 ```
 
-A command-line front end (`python3 -m artcraft_ps5 ...`) is next.
+Close the ArtCraft title on the console before a deploy. The first deploy sends everything (about 1.25 GB).
+After that ArtCraft Launcher owns itself and the apps and updates them as on a PC, so later deploys send only the
+edition's own files: the session helper, its settings, the registry files, the wallpaper and the library entry.
+Install more apps from the launcher; `deploy --force` re-sends everything as a repair. `python3 -m artcraft_ps5 lock
+--refresh` pins the newest releases for the next fresh console.
+
+On the console, test in the order of [docs/console-checklist.md](docs/console-checklist.md).
 
 ## What is proven
 
@@ -65,8 +63,9 @@ A command-line front end (`python3 -m artcraft_ps5 ...`) is next.
   S_FALSE without an error and `WinVerifyTrust` reports success. An unsigned or tampered file is still refused. The
   edition also installs the Microsoft Identity Verification Root 2020 (taken from the launcher's own signature, pinned
   by SHA-256) and the `WTPF_IGNOREEXPIRATION` policy, so the check keeps passing if Wine starts enforcing the chain.
-- The fork patches: the title code compiles in the host-reference configuration; the shell changes compile with MinGW
-  in a mock; the profile move passes the fork's own host test, extended for MihawkOS v3 prefixes, under ASan and UBSan.
+- The fork patches (CI applies them at the pin and runs the fork's host tests on every push): the title code
+  compiles in the host-reference configuration; the shell changes compile with MinGW in a mock; the profile move
+  passes the fork's own host test, extended for MihawkOS v3 prefixes, under ASan and UBSan, as root and as a user.
   None has run on a console.
 
 ## Licences

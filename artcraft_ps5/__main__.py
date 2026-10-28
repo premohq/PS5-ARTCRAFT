@@ -1,6 +1,7 @@
 """python3 -m artcraft_ps5 COMMAND: build, stage and send the ArtCraft edition.
 
   lock [--refresh]                 show the pinned releases, or pin the newest of each (edition/suite.lock.json)
+       [--pin ID=VERSION ...]      pin those at those releases, keeping the rest (an older one shows its update)
   fetch [--apps ID ...]            download the launcher and the apps, each checked against its pin (.deps/downloads)
   wallpaper [--theme dark|light]   draw the desktop's wallpaper (.deps/artcraft-wallpaper.bmp)
   stage [--apps ID ...]            lay out everything for the console (dist/artcraft): needs fetch, and
@@ -34,8 +35,14 @@ FORK = ROOT.parent / 'PS5_MihawkOS'
 def command_lock(args) -> None:
     from . import releases
     edition = load()
-    if args.refresh:
-        releases.refresh_lock(edition, ROOT / 'edition' / 'suite.lock.json')
+    if args.refresh or args.pin:
+        versions = None
+        if args.pin:
+            pairs = [word.split('=', 1) for word in args.pin]
+            if any(len(pair) != 2 or not pair[1] for pair in pairs):
+                raise EditionError('--pin takes ID=VERSION, like artcraft-launcher=0.8.0')
+            versions = {app_id: version.removeprefix('v') for app_id, version in pairs}
+        releases.refresh_lock(edition, ROOT / 'edition' / 'suite.lock.json', versions=versions)
         return
     if not edition.pins:
         raise EditionError('no lock yet: run `python3 -m artcraft_ps5 lock --refresh`')
@@ -123,7 +130,8 @@ def main(argv: list[str] | None = None) -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest='command', required=True)
     lock = commands.add_parser('lock', help='show or refresh the pinned releases')
-    lock.add_argument('--refresh', action='store_true')
+    lock.add_argument('--refresh', action='store_true', help='pin the newest release of each')
+    lock.add_argument('--pin', nargs='+', metavar='ID=VERSION', help='pin these at these releases, keep the rest')
     lock.set_defaults(run=command_lock)
     fetch = commands.add_parser('fetch', help='download and verify the pinned releases')
     fetch.add_argument('--apps', nargs='+', metavar='ID')

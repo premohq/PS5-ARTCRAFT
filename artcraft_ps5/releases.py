@@ -19,6 +19,7 @@ from pathlib import Path
 from .edition import App, Edition, EditionError, Pin
 
 USER_AGENT = 'PS5-ARTCRAFT (+https://github.com/premohq/PS5-ARTCRAFT)'
+PIN_FIELDS = ('version', 'tag', 'asset', 'url', 'sha256', 'size')    # a pin in edition/suite.lock.json
 CHUNK = 1 << 20
 
 Opener = Callable[[urllib.request.Request], 'urllib.response.addinfourl']
@@ -71,25 +72,40 @@ def remote_size(url: str, opener: Opener | None = None) -> int:
         return int(content_range.rsplit('/', 1)[1])
 
 
-def latest_pin(app: App, arch: str, opener: Opener | None = None) -> Pin:
-    sums = parse_sha256sums(fetch_text(f'https://github.com/{app.repo}/releases/latest/download/SHA256SUMS.txt', opener))
-    asset, version = portable_asset(sums, app.id, arch)
+def release_pin(app: App, arch: str, opener: Opener | None = None, version: str | None = None) -> Pin:
+    """The pin for the newest release, or for the release tagged v<version>."""
+    where = f'download/v{version}' if version else 'latest/download'
+    sums = parse_sha256sums(fetch_text(f'https://github.com/{app.repo}/releases/{where}/SHA256SUMS.txt', opener))
+    asset, found = portable_asset(sums, app.id, arch)
+    if version and found != version:
+        raise EditionError(f'{app.id} v{version}: its SHA256SUMS.txt lists {asset}')
+    version = found
     tag = f'v{version}'
     url = asset_url(app.repo, tag, asset)
     return Pin(id=app.id, version=version, tag=tag, asset=asset, url=url, sha256=sums[asset], size=remote_size(url, opener))
 
 
-def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, say=print) -> dict:
-    """Pin the newest release of the launcher and every app, and write the lock file."""
-    pins = {}
-    for app in (edition.launcher, *edition.apps):
-        pin = latest_pin(app, edition.arch, opener)
+def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, versions: dict[str, str] | None = None,
+                 say=print) -> dict:
+    """Pin the newest release of the launcher and every app, and write the lock file.
+
+    With versions ({app id: version}), pin just those apps at those releases and keep every other pin: an older
+    launcher or app on a fresh console shows its update working."""
+    known = {app.id: app for app in (edition.launcher, *edition.apps)}
+    unknown = sorted(set(versions or {}) - set(known))
+    if unknown:
+        raise EditionError(f'not in the suite: {", ".join(unknown)}')
+    if versions and set(known) - set(edition.pins):
+        raise EditionError('pin every release first (`lock --refresh`), then the chosen versions')
+    pins = {app_id: {k: getattr(pin, k) for k in PIN_FIELDS} for app_id, pin in edition.pins.items() if versions}
+    for app in (known[app_id] for app_id in (versions or known)):
+        pin = release_pin(app, edition.arch, opener, (versions or {}).get(app.id))
         previous = edition.pins.get(app.id)
         change = '' if not previous else ' (unchanged)' if previous.version == pin.version else f' (was {previous.version})'
         say(f'{app.id:18} {pin.version:10} {pin.size / 2**20:7.1f} MiB  {pin.asset}{change}')
-        pins[app.id] = {k: getattr(pin, k) for k in ('version', 'tag', 'asset', 'url', 'sha256', 'size')}
+        pins[app.id] = {k: getattr(pin, k) for k in PIN_FIELDS}
     lock = {
-        'comment': 'Written by `python3 -m artcraft_ps5 lock --refresh`; every asset is checked against this sha256.',
+        'comment': 'Written by `python3 -m artcraft_ps5 lock`; every asset is checked against this sha256.',
         'arch': edition.arch,
         'refreshed': datetime.date.today().isoformat(),
         'pins': pins,

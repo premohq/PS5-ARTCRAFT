@@ -1,13 +1,8 @@
 # The Mihawk OS fork's ArtCraft patches
 
 `mihawk.lock.json` pins the fork ([premohq/PS5_MihawkOS](https://github.com/premohq/PS5_MihawkOS)) at the commit these
-patches apply to. Apply them with `git am`:
-
-```sh
-git clone https://github.com/premohq/PS5_MihawkOS ../PS5_MihawkOS
-git -C ../PS5_MihawkOS checkout -b artcraft "$(python3 -c 'import json; print(json.load(open("mihawk/mihawk.lock.json"))["commit"])')"
-git -C ../PS5_MihawkOS am "$PWD"/mihawk/patches/*.patch
-```
+patches apply to. `python3 -m artcraft_ps5 mihawk prepare` clones it into ../PS5_MihawkOS (or `--dir`), checks
+out the pin on a branch named artcraft and applies them with `git am`, as CI does on every push.
 
 | Patch | What it changes | Proven |
 |---|---|---|
@@ -26,11 +21,9 @@ None has run on a console: the fork's commit gate (`tools/gate.py`) is still to 
 then
 
 ```sh
-python3 -c "from pathlib import Path; from artcraft_ps5 import edition, rebrand; \
-  rebrand.rebrand(Path('../PS5_MihawkOS'), edition.load().title_name)"   # stops, naming the file, if a string moved
+python3 -m artcraft_ps5 mihawk rebrand  # stops, naming the file, if a string moved
 git -C ../PS5_MihawkOS commit -a        # 0005
-python3 -c "from pathlib import Path; from artcraft_ps5 import edition, mark; e = edition.load(); \
-  mark.write(Path('../PS5_MihawkOS'), [a.rgb for a in e.apps])"
+python3 -m artcraft_ps5 mihawk mark
 git -C ../PS5_MihawkOS commit -a        # 0006 (fix up tests/test_taskbar_logo.py and test_title_icon.py as 0006 does)
 git -C ../PS5_MihawkOS format-patch --binary --no-numbered <pin>..HEAD -o "$PWD"/mihawk/patches
 ```
