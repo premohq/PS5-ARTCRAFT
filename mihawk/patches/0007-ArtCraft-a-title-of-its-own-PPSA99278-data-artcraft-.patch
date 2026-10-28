@@ -1,6 +1,6 @@
-From 8194509f2af2ef39ed9f5d0cd6a7ab1e7f56a5b7 Mon Sep 17 00:00:00 2001
+From 242c24033abdee06b86fc7cfbea3eddb23e98c5c Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
-Date: Wed, 28 Oct 2026 15:16:06 +0000
+Date: Wed, 28 Oct 2026 15:45:20 +0000
 Subject: [PATCH] ArtCraft: a title of its own (PPSA99278, /data/artcraft)
  beside MihawkOS
 
@@ -20,14 +20,23 @@ conceptId 99278 and contentId UP9000-PPSA99278_00-ARTCRAFT00000000. The
 service helper now loads gpu-client.prx from ArtCraft's own folder, not
 MihawkOS's. The publication check counts PPSA99278 as the title's own.
 
+The title ships the Lapy root-access daemon built for its own title id,
+and tools/build-production.sh takes only the one it pins by SHA-256.
+build-lapy-validation.py now builds it for PPSA99278, and the pin is that
+build's: d999540e51576a40723fa25739a77cba93fd8bb652eac7084b912ac98acf23b5.
+It was built with clang/LLD 23.1.3 as Arch Linux packages them, the
+toolchain that rebuilds MihawkOS's pinned PPSA99170 daemon (5651f2ad...)
+byte for byte from the same inputs (PS5-ARTCRAFT's daemon workflow).
+
 MihawkOS's documents (*.md) and the records of its console runs
 (evidence/, docs/history/) are unchanged: they describe MihawkOS.
 
 Made by PS5-ARTCRAFT's artcraft_ps5/identity.py. It refuses to run if
 the tree names an update feed or a release key, since ArtCraft would
-then offer MihawkOS's releases as its own updates. Every one of the 102
-changed files reverses byte for byte to its committed text when the two
-values are swapped back, so nothing else changed.
+then offer MihawkOS's releases as its own updates. Apart from the daemon
+pin, every one of the 103 changed files reverses byte for byte to its
+committed text when the two values are swapped back, so nothing else
+changed.
 
 Proven on the host: the profile, launch, prefix, setup and detailed-logs
 tests, as root and as an unprivileged user; the logo, icon and package
@@ -82,6 +91,7 @@ in the host-reference configuration as PPSA99278.
  tests/window-effects-probe.c                  |  2 +-
  tools/build-child-probe.py                    |  2 +-
  tools/build-lapy-validation.py                |  2 +-
+ tools/build-production.sh                     |  2 +-
  tools/carrier-image-probe.c                   |  4 +-
  tools/console-iobench.c                       |  6 +--
  tools/console-iobench.py                      |  4 +-
@@ -137,7 +147,7 @@ in the host-reference configuration as PPSA99278.
  tools/verify-title.py                         |  6 +--
  ...-ntdll-ps5-standard-output-to-a-file.patch |  2 +-
  wine/ps5/pw_payload_spawn.h                   |  4 +-
- 102 files changed, 269 insertions(+), 269 deletions(-)
+ 103 files changed, 270 insertions(+), 270 deletions(-)
 
 diff --git a/examples/ps5proton/ps5proton.cpp b/examples/ps5proton/ps5proton.cpp
 index e3ddf40..e454b92 100644
@@ -1037,6 +1047,19 @@ index 32677fb..1112e34 100644
                     (['--service', '--require-client-result', '--max-requests', str(a.service_requests)]
                      if a.service_requests or a.resident else []), check=True)
  
+diff --git a/tools/build-production.sh b/tools/build-production.sh
+index 31bef36..cc857ac 100755
+--- a/tools/build-production.sh
++++ b/tools/build-production.sh
+@@ -34,7 +34,7 @@ title=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["titleId
+ # the title folder. tools/build-lapy-validation.py --resident builds it (platform/lapy/README.md),
+ # checked first, so a build that cannot ship stops before hours of building.
+ daemon=$root/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client
+-daemon_sha256=5651f2ade61731a302e2a630344e6bd893a33f6503c90237d0abed699364bd7f
++daemon_sha256=d999540e51576a40723fa25739a77cba93fd8bb652eac7084b912ac98acf23b5
+ python3 - "$daemon" "$daemon_sha256" "$title" <<'EOF'
+ import hashlib, json, sys
+ from pathlib import Path
 diff --git a/tools/carrier-image-probe.c b/tools/carrier-image-probe.c
 index 4befef5..aa2929e 100644
 --- a/tools/carrier-image-probe.c

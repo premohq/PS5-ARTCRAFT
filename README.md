@@ -69,8 +69,10 @@ On the console, test in the order of [docs/console-checklist.md](docs/console-ch
   S_FALSE without an error and `WinVerifyTrust` reports success. An unsigned or tampered file is still refused. The
   edition also installs the Microsoft Identity Verification Root 2020 (taken from the launcher's own signature, pinned
   by SHA-256) and the `WTPF_IGNOREEXPIRATION` policy, so the check keeps passing if Wine starts enforcing the chain.
-- ArtCraft's own title: patch 0007 changes only the title id and the data folder, in the 102 files that name them.
-  Each of them reverses byte for byte to the fork's own text when the two values are swapped back. The fork's
+- ArtCraft's own title: patch 0007 changes only the title id and the data folder, in the files that name them, and
+  the root-access daemon's pin. Each file reverses byte for byte to the fork's own text when the two values are
+  swapped back, the daemon pin aside. The daemon is built for ArtCraft's title with clang/LLD 23.1.3 as Arch Linux
+  packages them, which rebuilds Mihawk OS's pinned daemon byte for byte (`.github/workflows/daemon.yml`). The fork's
   Python tests (148) and host tests have the same outcome as before it. `deploy` refuses to write anything under
   Mihawk OS's title or data folder.
 - The fork patches (CI applies them at the pin and runs the fork's host tests on every push): the title code
