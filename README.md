@@ -1,5 +1,13 @@
 # PS5-ARTCRAFT
 
+<p align="center">
+  <a href="https://github.com/premohq/PS5-ARTCRAFT/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/premohq/PS5-ARTCRAFT?include_prereleases&label=release&color=3b8cff"></a>
+  <a href="https://ko-fi.com/premohq"><img alt="Ko-fi: support PS5-ARTCRAFT" src="https://img.shields.io/badge/ko--fi-support%20PS5--ARTCRAFT-FF5E5B?logo=kofi&logoColor=white"></a>
+  <a href="https://www.paypal.com/paypalme/empthe"><img alt="PayPal: support PS5-ARTCRAFT" src="https://img.shields.io/badge/paypal-support%20PS5--ARTCRAFT-00457C?logo=paypal&logoColor=white"></a>
+  <img alt="Platform: PS5 homebrew" src="https://img.shields.io/badge/platform-PS5%20homebrew-1f5fd6">
+  <a href="#licences"><img alt="Licence: GPL-3.0-or-later patches, MIT/Apache-2.0 apps" src="https://img.shields.io/badge/licence-GPL--3.0--or--later-a9a6ff"></a>
+</p>
+
 The Craft App Suite (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PdfCraft, EffectCraft, DesignCraft, FigCraft,
 WordCraft, SoundCraft, DeckCraft, CADCraft, GridCraft) on a jailbroken PS5, on a closed desktop of its own with a file
 manager, USB keyboard and mouse, a themed wallpaper, and ArtCraft Launcher starting by itself and updating itself and
@@ -13,6 +21,16 @@ other as it was. The cost is disk space: ArtCraft brings its own copy of the run
 
 > Status: work in progress, nothing here has run on a console yet. What has been checked, and how, is listed under
 > [What is proven](#what-is-proven).
+
+## Support
+
+PS5-ARTCRAFT is free. If it brings ArtCraft to your PS5, you can support it:
+
+- **Ko-fi:** [ko-fi.com/premohq](https://ko-fi.com/premohq), for a one-off tip or the
+  [$3 a month Early Access tier](https://ko-fi.com/premohq/tiers).
+- **PayPal:** [paypal.me/empthe](https://www.paypal.com/paypalme/empthe), or scan the code:
+
+<a href="https://www.paypal.com/paypalme/empthe"><img src="docs/support-qr.svg" width="120" alt="QR code for paypal.me/empthe"></a>
 
 ## How it fits together
 
