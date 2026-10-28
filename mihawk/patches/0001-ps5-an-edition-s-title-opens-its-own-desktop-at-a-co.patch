@@ -1,8 +1,7 @@
 From 1b4fba9ca61525e5f888aef98e2da7b5e394bd42 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 28 Oct 2026 03:47:16 +0000
-Subject: [PATCH 1/5] ps5: an edition's title opens its own desktop at a cold
- start
+Subject: [PATCH] ps5: an edition's title opens its own desktop at a cold start
 
 An edition of the title (PS5-ARTCRAFT's ArtCraft) is a library entry with a
 prefix of its own whose desktop the title should open by itself, the way a

@@ -1,7 +1,7 @@
 From c6489765f4c31f3110d84097999f0cc75619f96e Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 28 Oct 2026 03:49:27 +0000
-Subject: [PATCH 3/5] explorer: ArtCraft's Start and taskbar keep only File
+Subject: [PATCH] explorer: ArtCraft's Start and taskbar keep only File
  Explorer and Settings
 
 The ArtCraft edition's desktop is a closed one for the Craft App Suite: its

@@ -1,0 +1,1460 @@
+From c36c7dfe26f41e3e25493cd46cc4461a7a6017ba Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 08:45:48 +0000
+Subject: [PATCH] ArtCraft: the name the user reads and its USB folder
+
+Everything the user reads says ArtCraft instead of MihawkOS or Mihawk OS:
+the PS5 tile's name (param.json titleName; its picture is the next
+commit's, with the Start button's mark), the guided setup in its nine
+languages, the launcher's pages, the loading screen, the desktop shortcuts'
+tips, the detailed logs' README, the browser's window title, the install package's README, the
+runtime wallpaper's corner note (now only the name). The library's own
+desktop entry is "ArtCraft Windows desktop".
+
+The USB stick's folder of runtime pieces is artcraft/, as the setup now
+tells the user; the installer still takes a mihawkos/ folder from a stick
+made for MihawkOS. The pack format's own tags (mihawkos-runtime-pack and
+the like) are not names the user reads and stay, as the packs carry them.
+
+The credits stay Mihawk's: About says ArtCraft is "a modified version of
+MihawkOS. Copyright (C) 2026 Mihawk and the authors credited in NOTICE.md"
+(GPLv3 section 5a) and names both source repositories; the music is
+"Original music by Mihawk". Identifiers nobody reads stay so tools, formats
+and prefixes keep working: window classes, HKCU\Software\Mihawk keys, the
+mihawk prefix id, mihawk.exe, MihawkBrowser.lnk.
+
+The title tags its log with its name, so lines read [ArtCraft]: the console
+tools (run-console.py, run-launcher.py, run-setup-unattended.py) and their
+tests look for that tag.
+
+Made by PS5-ARTCRAFT's artcraft_ps5/rebrand.py, whose every rule must match
+as often as it says (a new Mihawk OS that moved a string stops it).
+
+Proven on the host: tests/test_pw_setup.c (9 of 9 languages with complete
+drawable text: every glyph of the new name is in the baked font),
+tests/test_pw_detailed_logs.c (ASan, UBSan), tests/test_package_install.py;
+ps5/src/proton_launch.cpp and proton_install.cpp compile in the
+host-reference configuration. tests/test_console_setup.py,
+test_run_console_verdicts.py and test_console_guard.py need ../PS5_Vulkan's
+ps5_console and were not run; their change is the tag alone, made the same
+in the tools they test. No console run.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
+---
+ examples/ps5proton/ps5proton.cpp   |  15 +-
+ examples/ps5proton/setup_tour.hpp  |   4 +-
+ native/proton_loading.cpp          |   2 +-
+ native/proton_wine.cpp             |   4 +-
+ ps5/sce_sys/param.json             |   2 +-
+ ps5/src/proton_install.cpp         |   5 +-
+ ps5/src/proton_install.h           |   6 +-
+ ps5/src/proton_launch.cpp          |   4 +-
+ ps5/src/samples.cpp                |   2 +-
+ src/pw_browser.c                   |   6 +-
+ src/pw_detailed_logs.c             |  10 +-
+ src/pw_setup.c                     | 238 ++++++++++++++---------------
+ tests/test_console_guard.py        |   6 +-
+ tests/test_console_setup.py        |   6 +-
+ tests/test_package_install.py      |   2 +-
+ tests/test_pw_detailed_logs.c      |   2 +-
+ tests/test_run_console_verdicts.py |  48 +++---
+ tools/build-wine-theme.py          |   2 +-
+ tools/package-install.py           |  16 +-
+ tools/run-console.py               |  12 +-
+ tools/run-launcher.py              |  22 +--
+ tools/run-setup-unattended.py      |  12 +-
+ 22 files changed, 214 insertions(+), 212 deletions(-)
+
+diff --git a/examples/ps5proton/ps5proton.cpp b/examples/ps5proton/ps5proton.cpp
+index fd280d7..e3ddf40 100644
+--- a/examples/ps5proton/ps5proton.cpp
++++ b/examples/ps5proton/ps5proton.cpp
+@@ -366,7 +366,7 @@ class VulkanExample : public ps5ui::KitExample
+ 		} else if (page == Page::settings && settingsList.focus() == 1) {
+ 			paint.heading("Game Mode", 1240, y, 38, look.text);
+ 			y += 65;
+-			paragraph(paint, "On: a full-screen game's frames go straight to the screen, and the Mihawk desktop unloads while it plays.",
++			paragraph(paint, "On: a full-screen game's frames go straight to the screen, and the desktop unloads while it plays.",
+ 				1240, y, 24, look.text_muted);
+ 			y += 30;
+ 			paragraph(paint, "Off: every game is shown inside the desktop, which stays loaded. Use it if a game's screen stays black.",
+@@ -381,7 +381,8 @@ class VulkanExample : public ps5ui::KitExample
+ 			// by the owner on 2026-10-18.
+ 			paint.heading("About " PS5_TITLE_NAME, 1240, y, 38, look.text);
+ 			y += 65;
+-			paragraph(paint, PS5_TITLE_NAME ". Copyright (C) 2026 Mihawk and the authors credited in NOTICE.md.", 1240, y, 22,
++			paragraph(paint, PS5_TITLE_NAME ", a modified version of MihawkOS. Copyright (C) 2026 Mihawk and the authors credited in "
++				"NOTICE.md.", 1240, y, 22,
+ 				look.text_muted);
+ 			y += 22;
+ 			paragraph(paint, "This program is free software under the GNU General Public License, version 3 or later. It comes "
+@@ -390,7 +391,7 @@ class VulkanExample : public ps5ui::KitExample
+ 			paragraph(paint, "Licence texts: /data/homebrew/PPSA99170/licenses (this title) and " PROTON_DATA_ROOT
+ 				"/runtime/ge11-7/share/licenses (the Windows runtime).", 1240, y, 22, look.text_muted);
+ 			y += 22;
+-			paragraph(paint, "Source: github.com/mihawk-99/PS5_MihawkOS", 1240, y, 22, look.text_muted);
++			paragraph(paint, "Source: github.com/premohq/PS5_MihawkOS, a fork of github.com/mihawk-99/PS5_MihawkOS", 1240, y, 22, look.text_muted);
+ 			y += 22;
+ 			paragraph(paint, "Not affiliated with Sony, Microsoft or Valve.", 1240, y, 22, look.text_muted);
+ 			ps5ui::draw_hints(scene, kit.fonts, look,
+@@ -399,7 +400,7 @@ class VulkanExample : public ps5ui::KitExample
+ 			paint.heading("Runtime", 1240, y, 38, look.text);
+ 			y += 65;
+ 			paragraph(paint, "Windows programs run on a Wine runtime of about 1.2 GB. Install it, or repair it, from its pieces "
+-				"in " PROTON_DATA_ROOT "/install or in a mihawkos folder on a USB stick.", 1240, y, 24, look.text_muted);
++				"in " PROTON_DATA_ROOT "/install or in an artcraft folder on a USB stick.", 1240, y, 24, look.text_muted);
+ 			y += 30;
+ 			const auto &done = install.progress;
+ 			if (install.phase == ProtonInstall::checking || install.phase == ProtonInstall::running) {
+@@ -427,7 +428,7 @@ class VulkanExample : public ps5ui::KitExample
+ 		} else if (page == Page::settings && settingsList.focus() == 5) {
+ 			paint.heading("Music", 1240, y, 38, look.text);
+ 			y += 65;
+-			paragraph(paint, "MihawkOS's own music, made for it: Bubble Garden, Glass Meadow and Sky Lounge, quietly looping under "
++			paragraph(paint, "Original music by Mihawk: Bubble Garden, Glass Meadow and Sky Lounge, quietly looping under "
+ 				"the menus and the guided setup. Press CROSS, or R1 in the library, for the next one or for silence.", 1240, y, 24,
+ 				look.text_muted);
+ 			y += 30;
+@@ -439,7 +440,7 @@ class VulkanExample : public ps5ui::KitExample
+ 			paint.heading("Guided setup", 1240, y, 38, look.text);
+ 			y += 65;
+ 			paragraph(paint, "Run the first-launch tour again: your language, installing the Windows runtime, and the first start "
+-				"of Mihawk OS. What is installed already is kept.", 1240, y, 24, look.text_muted);
++				"of ArtCraft. What is installed already is kept.", 1240, y, 24, look.text_muted);
+ 			ps5ui::draw_hints(scene, kit.fonts, look,
+ 				{ { hui::ui::Button::dpad, "Choose" }, { hui::ui::Button::cross, "Start" },
+ 				  { hui::ui::Button::circle, "Back" } }, 120, 1040);
+@@ -567,7 +568,7 @@ public:
+ 				if (game.id == "mihawk-os") desktop = proton_game_prefix(game);
+ 			games.erase(std::remove_if(games.begin(), games.end(), [&desktop](const ProtonGame &game) {
+ 				return game.id != "mihawk-os" && proton_game_prefix(game) == desktop; }), games.end());
+-			proton_say("launcher: library shows %zu of %zu (Mihawk OS and entries with a prefix of their own; %s/library-show-all "
++			proton_say("launcher: library shows %zu of %zu (the Windows desktop and entries with a prefix of their own; %s/library-show-all "
+ 				"shows them all)", games.size(), installed, PROTON_DATA_ROOT);
+ 		}
+ 		// An edition (proton_edition) that has its own desktop installed lists that one instead of Mihawk OS's.
+diff --git a/examples/ps5proton/setup_tour.hpp b/examples/ps5proton/setup_tour.hpp
+index 3f5935e..96d5e6e 100644
+--- a/examples/ps5proton/setup_tour.hpp
++++ b/examples/ps5proton/setup_tour.hpp
+@@ -428,7 +428,7 @@ public:
+ 		const auto &fonts = fonts_;
+ 		hui::ui::Painter paint(list, fonts, look);
+ 		const auto ink = paint.page_text(), muted = paint.page_text_muted();
+-		paint.heading("MihawkOS", 96, 92, 32, ink);
++		paint.heading("ArtCraft", 96, 92, 32, ink);
+ 		if (step_ != PW_SETUP_WELCOME) progressDots(list, paint, look);
+ 		const float ease = 1.0f - (1.0f - entered_) * (1.0f - entered_) * (1.0f - entered_);
+ 		list.push_opacity(ease);
+@@ -755,7 +755,7 @@ private:
+ 			}
+ 			cover();
+ 			this->outcome = Outcome::prepare;
+-			proton_say("setup: the first Mihawk OS session starts");
++			proton_say("setup: the first ArtCraft session starts");
+ 			break;
+ 		case T_ENTER: finish(Outcome::enter, "finished"); break;
+ 		default: break;
+diff --git a/native/proton_loading.cpp b/native/proton_loading.cpp
+index b405b21..d37538a 100644
+--- a/native/proton_loading.cpp
++++ b/native/proton_loading.cpp
+@@ -216,7 +216,7 @@ void draw_base()
+         std::fill(screen.base.begin() + ptrdiff_t(y) * kWidth, screen.base.begin() + ptrdiff_t(y + 1) * kWidth, row);
+     }
+     draw_text(screen.base, screen.title_font, 64, screen.name, kWidth / 2.0f, 490, rgb(240, 243, 246), true, 1600);
+-    draw_text(screen.base, screen.text_font, 22, "MihawkOS", 64, int(kHeight) - 56, rgb(110, 118, 129), false);
++    draw_text(screen.base, screen.text_font, 22, "ArtCraft", 64, int(kHeight) - 56, rgb(110, 118, 129), false);
+     screen.canvas = screen.base;
+ }
+ 
+diff --git a/native/proton_wine.cpp b/native/proton_wine.cpp
+index 4e82e82..9ad5ff2 100644
+--- a/native/proton_wine.cpp
++++ b/native/proton_wine.cpp
+@@ -425,7 +425,7 @@ void sync_desktop_shortcuts(const std::vector<ProtonGame> &catalog, const std::s
+         const size_t slash = game.executable.find_last_of("\\/");
+         names.push_back(!game.name.empty() ? game.name : game.executable.substr(slash + 1));
+         directories.push_back(!game.directory.empty() ? game.directory : game.executable.substr(0, slash));
+-        descriptions.push_back("Mihawk OS library: " + game.id);
++        descriptions.push_back("ArtCraft library: " + game.id);
+         PwShellLinkEntry entry{};
+         entry.display_name = names.back().c_str();
+         entry.link.target = game.executable.c_str();
+@@ -471,7 +471,7 @@ void sync_desktop_shortcuts(const std::vector<ProtonGame> &catalog, const std::s
+         names.push_back(folder.name);
+         directories.push_back(std::string("C:\\Games\\") + folder.name);
+         targets.push_back(directories.back() + "\\" + folder.program);
+-        descriptions.push_back("Mihawk OS games folder: " + names.back());
++        descriptions.push_back("ArtCraft games folder: " + names.back());
+         PwShellLinkEntry entry{};
+         entry.display_name = names.back().c_str();
+         entry.link.target = targets.back().c_str();
+diff --git a/ps5/sce_sys/param.json b/ps5/sce_sys/param.json
+index b2ab577..9bf3a57 100644
+--- a/ps5/sce_sys/param.json
++++ b/ps5/sce_sys/param.json
+@@ -25,7 +25,7 @@
+   "localizedParameters": {
+     "defaultLanguage": "en-US",
+     "en-US": {
+-      "titleName": "MihawkOS"
++      "titleName": "ArtCraft"
+     }
+   },
+   "masterVersion": "01.00",
+diff --git a/ps5/src/proton_install.cpp b/ps5/src/proton_install.cpp
+index 73cfb20..9b372d5 100644
+--- a/ps5/src/proton_install.cpp
++++ b/ps5/src/proton_install.cpp
+@@ -296,7 +296,8 @@ ProtonInstall proton_install_find(const char *only)
+ 			while (struct dirent *entry = readdir(dir)) stick = stick || (strcmp(entry->d_name, ".") && strcmp(entry->d_name, ".."));
+ 			closedir(dir);
+ 		}
+-		folders.push_back(mount + "/mihawkos");
++		folders.push_back(mount + "/artcraft");
++		folders.push_back(mount + "/mihawkos");   /* a stick made for MihawkOS */
+ 	}
+ 	size_t best = 0;
+ 	std::string partial;
+@@ -316,7 +317,7 @@ ProtonInstall proton_install_find(const char *only)
+ 		found.problem = best ? ProtonInstall::partial : stick ? ProtonInstall::no_folder : ProtonInstall::no_stick;
+ 		found.message = best ? partial + " holds " + std::to_string(best) + " of the " + std::to_string(gManifest.chunk_count) +
+ 			" runtime pieces. Copy all of them, then try again." :
+-			"No runtime pieces found. Put them in " PROTON_DATA_ROOT "/install, or in a mihawkos folder on a USB stick.";
++			"No runtime pieces found. Put them in " PROTON_DATA_ROOT "/install, or in an artcraft folder on a USB stick.";
+ 		return gState = found;
+ 	}
+ 	const uint64_t needed = pw_pack_space_needed(&gManifest, kFirstPrefixBytes + kMarginBytes);
+diff --git a/ps5/src/proton_install.h b/ps5/src/proton_install.h
+index 9a24be4..83e56cc 100644
+--- a/ps5/src/proton_install.h
++++ b/ps5/src/proton_install.h
+@@ -2,7 +2,7 @@
+  * MihawkOS - "Install runtime from storage" (docs/SELF_INSTALL.md, phase 5).
+  *
+  * The title folder pins the runtime's manifest (runtime-pack.txt, tools/pack-runtime.py). Its pieces are looked for
+- * in /data/ps5proton/install, then in mihawkos/ on each USB stick, and src/pw_pack.h installs them into
++ * in /data/ps5proton/install, then in artcraft/ on each USB stick, and src/pw_pack.h installs them into
+  * /data/ps5proton on a thread of its own while the launcher draws its progress. Every failure is a sentence for the
+  * screen; the log gets the same line with the code and errno.
+  *
+@@ -26,7 +26,7 @@ struct ProtonInstall {
+ 		none,
+ 		no_manifest,     /* this build pins no runtime manifest, or a damaged one */
+ 		no_stick,        /* no folder holds pieces, and no /mnt/usbN holds anything */
+-		no_folder,       /* a stick, but no mihawkos folder of pieces on it */
++		no_folder,       /* a stick, but no artcraft folder of pieces on it */
+ 		partial,         /* `have` of `total` pieces */
+ 		no_space,        /* never reported by the title: it cannot learn the free space (a full disk is storage_full) */
+ 		read_failed,     /* a piece could not be read */
+@@ -49,7 +49,7 @@ struct ProtonInstall {
+ };
+ 
+ /* Look again for the pieces and the free space (not while an install runs). Needs /data. `only` "usb": the sticks'
+- * mihawkos folders alone, not /data/ps5proton/install. */
++ * artcraft folders alone, not /data/ps5proton/install. */
+ ProtonInstall proton_install_find(const char *only = nullptr);
+ /* Start the install proton_install_find found ready; returns at once. */
+ void proton_install_start();
+diff --git a/ps5/src/proton_launch.cpp b/ps5/src/proton_launch.cpp
+index e0ea233..28cd672 100644
+--- a/ps5/src/proton_launch.cpp
++++ b/ps5/src/proton_launch.cpp
+@@ -759,7 +759,7 @@ const ProtonEdition &proton_edition()
+ 			proton_say("edition: %s is not readable json (%s); none applies", path.c_str(), error.what());
+ 			return ProtonEdition();
+ 		}
+-		proton_say("edition: %s, profile %s, Mihawk OS desktop %s, browser shortcut %s", read.name.c_str(),
++		proton_say("edition: %s, profile %s, the Windows desktop %s, browser shortcut %s", read.name.c_str(),
+ 			read.profile.empty() ? "(none)" : read.profile.c_str(), read.hide_mihawk_desktop ? "hidden" : "listed",
+ 			read.browser_shortcut ? "kept" : "left out");
+ 		return read;
+@@ -835,7 +835,7 @@ std::vector<ProtonGame> proton_read_games(std::string *problem)
+ 	if (!desktop_known) {
+ 		ProtonGame desktop;
+ 		desktop.id = "mihawk-os";
+-		desktop.name = "Mihawk OS";
++		desktop.name = "ArtCraft Windows desktop";
+ 		desktop.detail = "Shared Windows desktop";
+ 		desktop.prefix = "mihawk";
+ 		desktop.executable = "C:\\windows\\system32\\mihawk.exe";
+diff --git a/ps5/src/samples.cpp b/ps5/src/samples.cpp
+index 7ba4635..3277ea3 100644
+--- a/ps5/src/samples.cpp
++++ b/ps5/src/samples.cpp
+@@ -17,7 +17,7 @@
+ #include "ps5_samples.h"
+ 
+ #define PS5_SAMPLES \
+-	SAMPLE(ps5proton, true, "MihawkOS", "The launcher: Windows games through Wine and Proton's stack")
++	SAMPLE(ps5proton, true, "ArtCraft", "The launcher: Windows games through Wine and Proton's stack")
+ 
+ #define SAMPLE(id, menu, title, description) \
+ 	namespace sample_##id { VulkanExampleBase *createExample(); }
+diff --git a/src/pw_browser.c b/src/pw_browser.c
+index f1343e5..3b38d49 100644
+--- a/src/pw_browser.c
++++ b/src/pw_browser.c
+@@ -544,7 +544,7 @@ static void CEF_CALLBACK on_title_change(cef_display_handler_t *self, cef_browse
+ {
+     (void)self;
+     wchar_t text[512];
+-    _snwprintf(text, 512, L"%.*s - MihawkBrowser", title ? (int)min(title->length, 400) : 0,
++    _snwprintf(text, 512, L"%.*s - ArtCraft Browser", title ? (int)min(title->length, 400) : 0,
+                title && title->str ? (const wchar_t *)title->str : L"");
+     SetWindowTextW(app_state.main, text);
+     RELEASE(browser);
+@@ -668,7 +668,7 @@ static void navigate_address(void)
+     WideCharToMultiByte(CP_UTF8, 0, text, -1, text8, sizeof text8, NULL, NULL);
+     int result = pw_browser_address(text8, url, sizeof url);
+     if (result == PW_OK) { navigate(url); if (app_state.browser) SetFocus(browser_window()); }
+-    else if (result == PW_ERR_UNSUPPORTED) show_error(L"MihawkBrowser opens https:// addresses only.", L"");
++    else if (result == PW_ERR_UNSUPPORTED) show_error(L"ArtCraft Browser opens https:// addresses only.", L"");
+ }
+ 
+ /* The address box (a WinUI TextBox, §4.1): the frame is the main window's paint; the EDIT is its text line, 11 px in
+@@ -1723,7 +1723,7 @@ static void create_main_window(void)
+          NULL, L"MihawkBrowserDownloads", NULL},
+     };
+     for (size_t i = 0; i < ARRAY_SIZE(classes); ++i) RegisterClassExW(&classes[i]);
+-    app_state.main = CreateWindowExW(0, L"MihawkBrowser", L"MihawkBrowser", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
++    app_state.main = CreateWindowExW(0, L"MihawkBrowser", L"ArtCraft Browser", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+                                      CW_USEDEFAULT, CW_USEDEFAULT, 1280, 800, NULL, NULL, instance, NULL);
+     app_state.back = owner_button(app_state.main, L"Back", WS_DISABLED, ID_BACK);
+     app_state.forward = owner_button(app_state.main, L"Forward", WS_DISABLED, ID_FORWARD);
+diff --git a/src/pw_detailed_logs.c b/src/pw_detailed_logs.c
+index c589f56..3c5e3c6 100644
+--- a/src/pw_detailed_logs.c
++++ b/src/pw_detailed_logs.c
+@@ -12,9 +12,9 @@
+ #include <unistd.h>
+ 
+ static const char readme[] =
+-    "MihawkOS detailed logs: one session\n"
++    "ArtCraft detailed logs: one session\n"
+     "\n"
+-    "This folder holds every log of one MihawkOS session. MihawkOS wrote it because Settings > Logging is On.\n"
++    "This folder holds every log of one ArtCraft session. ArtCraft wrote it because Settings > Logging is On.\n"
+     "Its name is the time the session started, in UTC.\n"
+     "\n"
+     "To report a problem:\n"
+@@ -22,19 +22,19 @@ static const char readme[] =
+     "2. Post the zip with your report: what you ran, what you did, and what went wrong.\n"
+     "\n"
+     "Before you post:\n"
+-    "- Mask your console's IP address: four numbers with dots between them, like 192.168.x.y. MihawkOS replaces\n"
++    "- Mask your console's IP address: four numbers with dots between them, like 192.168.x.y. ArtCraft replaces\n"
+     "  the digits of every address it finds with x, but look through the files and mask any it missed.\n"
+     "- The logs name the programs you ran and the folders they are in (for example C:\\Games\\<name>), and they hold\n"
+     "  what those programs printed. Leave out the zip if you do not want to share that.\n"
+     "- The logs hold no game files and no saves.\n"
+     "\n"
+-    "If the console froze or MihawkOS closed during the session, start MihawkOS once more: it adds the session's\n"
++    "If the console froze or ArtCraft closed during the session, start ArtCraft once more: it adds the session's\n"
+     "last logs to this folder then.\n"
+     "\n"
+     "klog.txt, the console's kernel log, is here only when klogsrv was loaded during the session (it comes with the\n"
+     "payload loader some consoles run). Without klogsrv there is no klog.txt; the other logs are complete anyway.\n"
+     "\n"
+-    "MihawkOS keeps the 5 newest of these folders, at most 96 MB each, and removes older ones. Turn Logging off in\n"
++    "ArtCraft keeps the 5 newest of these folders, at most 96 MB each, and removes older ones. Turn Logging off in\n"
+     "Settings when you no longer need it: sessions write more while it is on.\n";
+ 
+ int pw_detailed_logs_load(int *enabled, const char *path)
+diff --git a/src/pw_setup.c b/src/pw_setup.c
+index d46dcd2..774201b 100644
+--- a/src/pw_setup.c
++++ b/src/pw_setup.c
+@@ -44,14 +44,14 @@ PwSetupStep pw_setup_back(PwSetupStep step)
+ 
+ /* English (US). */
+ static const char *const text_en[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Welcome to MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Welcome to ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Let’s get your PS5 ready for Windows games. It takes about ten minutes.",
+     [PW_TEXT_GET_STARTED] = "Get started",
+     [PW_TEXT_SKIP_SETUP] = "Skip setup",
+     [PW_TEXT_LANGUAGE_TITLE] = "Choose your language",
+-    [PW_TEXT_LANGUAGE_BODY] = "Your Windows games use it too, with its keyboard layout. The Mihawk OS desktop stays in English.",
++    [PW_TEXT_LANGUAGE_BODY] = "Your Windows games use it too, with its keyboard layout. The ArtCraft desktop stays in English.",
+     [PW_TEXT_METHOD_TITLE] = "Choose how to install",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS needs its Windows runtime, about 1.2 GB.",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft needs its Windows runtime, about 1.2 GB.",
+     [PW_TEXT_METHOD_USB] = "USB drive",
+     [PW_TEXT_METHOD_USB_BODY] = "Copy the files to a USB drive on any computer.",
+     [PW_TEXT_METHOD_INTERNET] = "Internet",
+@@ -62,7 +62,7 @@ static const char *const text_en[PW_TEXT_COUNT] = {
+     [PW_TEXT_QR_CAPTION] = "Scan for step-by-step instructions on your phone.",
+     [PW_TEXT_USB_TITLE] = "Prepare a USB drive",
+     [PW_TEXT_USB_STEP1] = "On a computer, format a USB drive as exFAT with an MBR partition table. This erases the drive.",
+-    [PW_TEXT_USB_STEP2] = "Download MihawkOS and copy its mihawkos folder to the top of the drive.",
++    [PW_TEXT_USB_STEP2] = "Download ArtCraft and copy its artcraft folder to the top of the drive.",
+     [PW_TEXT_USB_STEP3] = "Plug the drive into a USB port on your PS5.",
+     [PW_TEXT_USB_STEP4] = "Choose Check drive.",
+     [PW_TEXT_CHECK_DRIVE] = "Check drive",
+@@ -71,41 +71,41 @@ static const char *const text_en[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "Try again",
+     [PW_TEXT_ERR_NO_STICK] = "No USB drive found. Plug it in, wait a few seconds, then try again. If it is already in, "
+         "format it as exFAT with MBR: the PS5 does not read GPT or NTFS drives.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "The drive has no mihawkos folder at its top. Copy the folder to the drive, then try again.",
+-    [PW_TEXT_ERR_PARTIAL] = "The mihawkos folder is incomplete: it has {1} of {2} pieces. Copy the whole folder again, "
++    [PW_TEXT_ERR_NO_FOLDER] = "The drive has no artcraft folder at its top. Copy the folder to the drive, then try again.",
++    [PW_TEXT_ERR_PARTIAL] = "The artcraft folder is incomplete: it has {1} of {2} pieces. Copy the whole folder again, "
+         "then try again.",
+     [PW_TEXT_ERR_NO_SPACE] = "Your PS5 needs {1} free and has {2}. Delete something, then try again.",
+     [PW_TEXT_ERR_READ] = "The USB drive could not be read. Check that it is still plugged in, then try again. What is "
+         "already installed is kept.",
+-    [PW_TEXT_ERR_DAMAGED] = "A file on the drive is damaged or from another version. Copy the mihawkos folder again, "
++    [PW_TEXT_ERR_DAMAGED] = "A file on the drive is damaged or from another version. Copy the artcraft folder again, "
+         "then try again.",
+     [PW_TEXT_ERR_FULL] = "Your PS5’s storage is full. Delete something, then try again. What is already installed "
+         "is kept.",
+     [PW_TEXT_ERR_WRITE] = "Your PS5’s storage refused a write. Try again; if it happens again, restart the PS5.",
+     [PW_TEXT_ERR_CANCELLED] = "The install stopped. What is already installed is kept.",
+-    [PW_TEXT_ERR_BUILD] = "This copy of MihawkOS cannot install a Windows runtime. Reinstall MihawkOS.",
++    [PW_TEXT_ERR_BUILD] = "This copy of ArtCraft cannot install a Windows runtime. Reinstall ArtCraft.",
+     [PW_TEXT_INSTALLING_TITLE] = "Installing the Windows runtime",
+     [PW_TEXT_INSTALLING_BODY] = "Keep the drive plugged in. This takes about a minute.",
+     [PW_TEXT_INSTALLING_CHECKING] = "Checking what is already installed…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} of {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "Installed.",
+     [PW_TEXT_STOP] = "Stop",
+-    [PW_TEXT_PREPARE_TITLE] = "Preparing Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "Preparing ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "The first start builds your Windows drive. It takes a few minutes, and the screen may stay "
+         "still for a while. It ends by itself and comes back here.",
+-    [PW_TEXT_PREPARE_NOTE] = "During this first start the controller does not work in games, so MihawkOS ends it as "
++    [PW_TEXT_PREPARE_NOTE] = "During this first start the controller does not work in games, so ArtCraft ends it as "
+         "soon as the drive is ready.",
+     [PW_TEXT_PREPARE_START] = "Start",
+     [PW_TEXT_PREPARE_FAILED] = "The first start did not finish. Try again: it carries on where it stopped.",
+     [PW_TEXT_BUILD_TITLE] = "Building your Windows drive",
+-    [PW_TEXT_BUILD_BODY] = "This takes about a minute. When the drive is ready, MihawkOS comes back to the setup by "
++    [PW_TEXT_BUILD_BODY] = "This takes about a minute. When the drive is ready, ArtCraft comes back to the setup by "
+         "itself.",
+     [PW_TEXT_BUILD_SETTINGS] = "Setting up Windows",
+     [PW_TEXT_BUILD_DOTNET] = "Installing .NET support",
+     [PW_TEXT_BUILD_FINISHING] = "Finishing up",
+     [PW_TEXT_DONE_TITLE] = "You’re all set",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS is ready. You can run this setup again from Settings, in the library.",
+-    [PW_TEXT_ENTER] = "Enter Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "ArtCraft is ready. You can run this setup again from Settings, in the library.",
++    [PW_TEXT_ENTER] = "Enter ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Select",
+     [PW_TEXT_HINT_BACK] = "Back",
+     [PW_TEXT_HINT_MOVE] = "Move",
+@@ -115,15 +115,15 @@ static const char *const text_en[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_fr[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Bienvenue sur MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Bienvenue sur ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Préparons votre PS5 pour les jeux Windows. Comptez une dizaine de minutes.",
+     [PW_TEXT_GET_STARTED] = "Commencer",
+     [PW_TEXT_SKIP_SETUP] = "Passer la configuration",
+     [PW_TEXT_LANGUAGE_TITLE] = "Choisissez votre langue",
+     [PW_TEXT_LANGUAGE_BODY] = "Vos jeux Windows l’utilisent aussi, avec sa disposition de clavier. Le bureau de "
+-        "Mihawk OS reste en anglais.",
++        "ArtCraft reste en anglais.",
+     [PW_TEXT_METHOD_TITLE] = "Choisissez comment installer",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS a besoin de son environnement Windows, environ 1,2 Go.",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft a besoin de son environnement Windows, environ 1,2 Go.",
+     [PW_TEXT_METHOD_USB] = "Clé USB",
+     [PW_TEXT_METHOD_USB_BODY] = "Copiez les fichiers sur une clé USB depuis n’importe quel ordinateur.",
+     [PW_TEXT_METHOD_INTERNET] = "Internet",
+@@ -135,7 +135,7 @@ static const char *const text_fr[PW_TEXT_COUNT] = {
+     [PW_TEXT_USB_TITLE] = "Préparez une clé USB",
+     [PW_TEXT_USB_STEP1] = "Sur un ordinateur, formatez une clé USB en exFAT avec une table de partition MBR. "
+         "Cela efface la clé.",
+-    [PW_TEXT_USB_STEP2] = "Téléchargez MihawkOS et copiez son dossier mihawkos à la racine de la clé.",
++    [PW_TEXT_USB_STEP2] = "Téléchargez ArtCraft et copiez son dossier artcraft à la racine de la clé.",
+     [PW_TEXT_USB_STEP3] = "Branchez la clé sur un port USB de votre PS5.",
+     [PW_TEXT_USB_STEP4] = "Choisissez Vérifier la clé.",
+     [PW_TEXT_CHECK_DRIVE] = "Vérifier la clé",
+@@ -145,48 +145,48 @@ static const char *const text_fr[PW_TEXT_COUNT] = {
+     [PW_TEXT_ERR_NO_STICK] = "Aucune clé USB trouvée. Branchez-la, attendez quelques secondes, puis "
+         "réessayez. Si elle est déjà branchée, formatez-la en exFAT avec MBR : la PS5 ne lit pas "
+         "les clés GPT ou NTFS.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "La clé n’a pas de dossier mihawkos à sa racine. Copiez le dossier sur la "
++    [PW_TEXT_ERR_NO_FOLDER] = "La clé n’a pas de dossier artcraft à sa racine. Copiez le dossier sur la "
+         "clé, puis réessayez.",
+-    [PW_TEXT_ERR_PARTIAL] = "Le dossier mihawkos est incomplet : il contient {1} morceaux sur {2}. Copiez de nouveau le "
++    [PW_TEXT_ERR_PARTIAL] = "Le dossier artcraft est incomplet : il contient {1} morceaux sur {2}. Copiez de nouveau le "
+         "dossier entier, puis réessayez.",
+     [PW_TEXT_ERR_NO_SPACE] = "Votre PS5 a besoin de {1} libres et n’en a que {2}. Supprimez quelque chose, puis "
+         "réessayez.",
+     [PW_TEXT_ERR_READ] = "Impossible de lire la clé USB. Vérifiez qu’elle est toujours branchée, "
+         "puis réessayez. Ce qui est déjà installé est conservé.",
+     [PW_TEXT_ERR_DAMAGED] = "Un fichier de la clé est endommagé ou d’une autre version. Copiez de nouveau "
+-        "le dossier mihawkos, puis réessayez.",
++        "le dossier artcraft, puis réessayez.",
+     [PW_TEXT_ERR_FULL] = "Le stockage de votre PS5 est plein. Supprimez quelque chose, puis réessayez. Ce qui est "
+         "déjà installé est conservé.",
+     [PW_TEXT_ERR_WRITE] = "Le stockage de votre PS5 a refusé une écriture. Réessayez ; si cela se "
+         "reproduit, redémarrez la PS5.",
+     [PW_TEXT_ERR_CANCELLED] = "Installation arrêtée. Ce qui est déjà installé est "
+         "conservé.",
+-    [PW_TEXT_ERR_BUILD] = "Cette copie de MihawkOS ne peut pas installer d’environnement Windows. Réinstallez "
+-        "MihawkOS.",
++    [PW_TEXT_ERR_BUILD] = "Cette copie de ArtCraft ne peut pas installer d’environnement Windows. Réinstallez "
++        "ArtCraft.",
+     [PW_TEXT_INSTALLING_TITLE] = "Installation de l’environnement Windows",
+     [PW_TEXT_INSTALLING_BODY] = "Laissez la clé branchée. Cela prend environ une minute.",
+     [PW_TEXT_INSTALLING_CHECKING] = "Vérification de ce qui est déjà installé…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} sur {2} Mo · {3} Mo/s",
+     [PW_TEXT_INSTALLED] = "Installé.",
+     [PW_TEXT_STOP] = "Arrêter",
+-    [PW_TEXT_PREPARE_TITLE] = "Préparation de Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "Préparation de ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "Le premier démarrage crée votre disque Windows. Cela prend quelques minutes, et "
+         "l’écran peut rester immobile un moment. Il se termine tout seul et revient ici.",
+-    [PW_TEXT_PREPARE_NOTE] = "Pendant ce premier démarrage, la manette ne fonctionne pas dans les jeux : MihawkOS "
++    [PW_TEXT_PREPARE_NOTE] = "Pendant ce premier démarrage, la manette ne fonctionne pas dans les jeux : ArtCraft "
+         "le termine donc dès que le disque est prêt.",
+     [PW_TEXT_PREPARE_START] = "Démarrer",
+     [PW_TEXT_PREPARE_FAILED] = "Le premier démarrage ne s’est pas terminé. Réessayez : il reprend "
+         "là où il s’est arrêté.",
+     [PW_TEXT_BUILD_TITLE] = "Création de votre disque Windows",
+-    [PW_TEXT_BUILD_BODY] = "Cela prend environ une minute. Une fois le disque prêt, MihawkOS revient tout seul à la "
++    [PW_TEXT_BUILD_BODY] = "Cela prend environ une minute. Une fois le disque prêt, ArtCraft revient tout seul à la "
+         "configuration.",
+     [PW_TEXT_BUILD_SETTINGS] = "Configuration de Windows",
+     [PW_TEXT_BUILD_DOTNET] = "Installation de la prise en charge de .NET",
+     [PW_TEXT_BUILD_FINISHING] = "Finalisation",
+     [PW_TEXT_DONE_TITLE] = "Tout est prêt",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS est prêt. Vous pouvez relancer cette configuration depuis Settings, dans la "
++    [PW_TEXT_DONE_BODY] = "ArtCraft est prêt. Vous pouvez relancer cette configuration depuis Settings, dans la "
+         "bibliothèque.",
+-    [PW_TEXT_ENTER] = "Entrer dans Mihawk OS",
++    [PW_TEXT_ENTER] = "Entrer dans ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Choisir",
+     [PW_TEXT_HINT_BACK] = "Retour",
+     [PW_TEXT_HINT_MOVE] = "Déplacer",
+@@ -196,15 +196,15 @@ static const char *const text_fr[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_es[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Bienvenido a MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Bienvenido a ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Vamos a preparar tu PS5 para los juegos de Windows. Tardarás unos diez minutos.",
+     [PW_TEXT_GET_STARTED] = "Empezar",
+     [PW_TEXT_SKIP_SETUP] = "Omitir la configuración",
+     [PW_TEXT_LANGUAGE_TITLE] = "Elige tu idioma",
+     [PW_TEXT_LANGUAGE_BODY] = "Tus juegos de Windows también lo usarán, con su distribución de teclado. El escritorio de "
+-        "Mihawk OS sigue en inglés.",
++        "ArtCraft sigue en inglés.",
+     [PW_TEXT_METHOD_TITLE] = "Elige cómo instalar",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS necesita su entorno de Windows, de unos 1,2 GB.",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft necesita su entorno de Windows, de unos 1,2 GB.",
+     [PW_TEXT_METHOD_USB] = "Unidad USB",
+     [PW_TEXT_METHOD_USB_BODY] = "Copia los archivos en una unidad USB desde cualquier ordenador.",
+     [PW_TEXT_METHOD_INTERNET] = "Internet",
+@@ -216,7 +216,7 @@ static const char *const text_es[PW_TEXT_COUNT] = {
+     [PW_TEXT_USB_TITLE] = "Prepara una unidad USB",
+     [PW_TEXT_USB_STEP1] = "En un ordenador, formatea una unidad USB como exFAT con una tabla de particiones MBR. Esto borra "
+         "la unidad.",
+-    [PW_TEXT_USB_STEP2] = "Descarga MihawkOS y copia su carpeta mihawkos en la raíz de la unidad.",
++    [PW_TEXT_USB_STEP2] = "Descarga ArtCraft y copia su carpeta artcraft en la raíz de la unidad.",
+     [PW_TEXT_USB_STEP3] = "Conecta la unidad a un puerto USB de tu PS5.",
+     [PW_TEXT_USB_STEP4] = "Elige Comprobar unidad.",
+     [PW_TEXT_CHECK_DRIVE] = "Comprobar unidad",
+@@ -225,43 +225,43 @@ static const char *const text_es[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "Reintentar",
+     [PW_TEXT_ERR_NO_STICK] = "No se encuentra ninguna unidad USB. Conéctala, espera unos segundos y vuelve a intentarlo. "
+         "Si ya está conectada, formatéala como exFAT con MBR: la PS5 no lee unidades GPT ni NTFS.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "La unidad no tiene una carpeta mihawkos en su raíz. Copia la carpeta en la unidad y vuelve "
++    [PW_TEXT_ERR_NO_FOLDER] = "La unidad no tiene una carpeta artcraft en su raíz. Copia la carpeta en la unidad y vuelve "
+         "a intentarlo.",
+-    [PW_TEXT_ERR_PARTIAL] = "La carpeta mihawkos está incompleta: tiene {1} de {2} partes. Copia de nuevo la carpeta entera "
++    [PW_TEXT_ERR_PARTIAL] = "La carpeta artcraft está incompleta: tiene {1} de {2} partes. Copia de nuevo la carpeta entera "
+         "y vuelve a intentarlo.",
+     [PW_TEXT_ERR_NO_SPACE] = "Tu PS5 necesita {1} libres y tiene {2}. Borra algo y vuelve a intentarlo.",
+     [PW_TEXT_ERR_READ] = "No se puede leer la unidad USB. Comprueba que sigue conectada y vuelve a intentarlo. Lo que ya "
+         "está instalado se conserva.",
+-    [PW_TEXT_ERR_DAMAGED] = "Un archivo de la unidad está dañado o es de otra versión. Copia de nuevo la carpeta mihawkos "
++    [PW_TEXT_ERR_DAMAGED] = "Un archivo de la unidad está dañado o es de otra versión. Copia de nuevo la carpeta artcraft "
+         "y vuelve a intentarlo.",
+     [PW_TEXT_ERR_FULL] = "El almacenamiento de tu PS5 está lleno. Borra algo y vuelve a intentarlo. Lo que ya está instalado "
+         "se conserva.",
+     [PW_TEXT_ERR_WRITE] = "El almacenamiento de tu PS5 ha rechazado una escritura. Vuelve a intentarlo; si pasa de nuevo, "
+         "reinicia la PS5.",
+     [PW_TEXT_ERR_CANCELLED] = "La instalación se ha detenido. Lo que ya está instalado se conserva.",
+-    [PW_TEXT_ERR_BUILD] = "Esta copia de MihawkOS no puede instalar un entorno de Windows. Vuelve a instalar MihawkOS.",
++    [PW_TEXT_ERR_BUILD] = "Esta copia de ArtCraft no puede instalar un entorno de Windows. Vuelve a instalar ArtCraft.",
+     [PW_TEXT_INSTALLING_TITLE] = "Instalando el entorno de Windows",
+     [PW_TEXT_INSTALLING_BODY] = "Deja la unidad conectada. Tarda alrededor de un minuto.",
+     [PW_TEXT_INSTALLING_CHECKING] = "Comprobando lo que ya está instalado…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} de {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "Instalado.",
+     [PW_TEXT_STOP] = "Detener",
+-    [PW_TEXT_PREPARE_TITLE] = "Preparando Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "Preparando ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "El primer inicio crea tu disco de Windows. Tarda unos minutos y la pantalla puede quedarse "
+         "quieta un rato. Termina solo y vuelve aquí.",
+-    [PW_TEXT_PREPARE_NOTE] = "Durante este primer inicio el mando no funciona en los juegos, así que MihawkOS lo termina "
++    [PW_TEXT_PREPARE_NOTE] = "Durante este primer inicio el mando no funciona en los juegos, así que ArtCraft lo termina "
+         "en cuanto el disco está listo.",
+     [PW_TEXT_PREPARE_START] = "Iniciar",
+     [PW_TEXT_PREPARE_FAILED] = "El primer inicio no ha terminado. Vuelve a intentarlo: continúa donde se quedó.",
+     [PW_TEXT_BUILD_TITLE] = "Creando tu disco de Windows",
+-    [PW_TEXT_BUILD_BODY] = "Tarda alrededor de un minuto. Cuando el disco esté listo, MihawkOS vuelve solo a la "
++    [PW_TEXT_BUILD_BODY] = "Tarda alrededor de un minuto. Cuando el disco esté listo, ArtCraft vuelve solo a la "
+         "configuración.",
+     [PW_TEXT_BUILD_SETTINGS] = "Configurando Windows",
+     [PW_TEXT_BUILD_DOTNET] = "Instalando la compatibilidad con .NET",
+     [PW_TEXT_BUILD_FINISHING] = "Terminando",
+     [PW_TEXT_DONE_TITLE] = "Todo listo",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS está listo. Puedes repetir esta configuración desde Settings, en la biblioteca.",
+-    [PW_TEXT_ENTER] = "Entrar en Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "ArtCraft está listo. Puedes repetir esta configuración desde Settings, en la biblioteca.",
++    [PW_TEXT_ENTER] = "Entrar en ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Elegir",
+     [PW_TEXT_HINT_BACK] = "Atrás",
+     [PW_TEXT_HINT_MOVE] = "Mover",
+@@ -271,15 +271,15 @@ static const char *const text_es[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_de[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Willkommen bei MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Willkommen bei ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Machen wir deine PS5 bereit für Windows-Spiele. Das dauert etwa zehn Minuten.",
+     [PW_TEXT_GET_STARTED] = "Los geht’s",
+     [PW_TEXT_SKIP_SETUP] = "Einrichtung überspringen",
+     [PW_TEXT_LANGUAGE_TITLE] = "Wähle deine Sprache",
+-    [PW_TEXT_LANGUAGE_BODY] = "Deine Windows-Spiele verwenden sie auch, samt Tastaturlayout. Der Desktop von Mihawk OS "
++    [PW_TEXT_LANGUAGE_BODY] = "Deine Windows-Spiele verwenden sie auch, samt Tastaturlayout. Der Desktop von ArtCraft "
+         "bleibt auf Englisch.",
+     [PW_TEXT_METHOD_TITLE] = "Wähle die Installationsart",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS braucht seine Windows-Laufzeitumgebung, etwa 1,2 GB.",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft braucht seine Windows-Laufzeitumgebung, etwa 1,2 GB.",
+     [PW_TEXT_METHOD_USB] = "USB-Laufwerk",
+     [PW_TEXT_METHOD_USB_BODY] = "Kopiere die Dateien an einem beliebigen Computer auf ein USB-Laufwerk.",
+     [PW_TEXT_METHOD_INTERNET] = "Internet",
+@@ -291,7 +291,7 @@ static const char *const text_de[PW_TEXT_COUNT] = {
+     [PW_TEXT_USB_TITLE] = "USB-Laufwerk vorbereiten",
+     [PW_TEXT_USB_STEP1] = "Formatiere an einem Computer ein USB-Laufwerk als exFAT mit MBR-Partitionstabelle. Dabei wird "
+         "das Laufwerk gelöscht.",
+-    [PW_TEXT_USB_STEP2] = "Lade MihawkOS herunter und kopiere den Ordner mihawkos in die oberste Ebene des Laufwerks.",
++    [PW_TEXT_USB_STEP2] = "Lade ArtCraft herunter und kopiere den Ordner artcraft in die oberste Ebene des Laufwerks.",
+     [PW_TEXT_USB_STEP3] = "Stecke das Laufwerk in einen USB-Anschluss deiner PS5.",
+     [PW_TEXT_USB_STEP4] = "Wähle Laufwerk prüfen.",
+     [PW_TEXT_CHECK_DRIVE] = "Laufwerk prüfen",
+@@ -300,21 +300,21 @@ static const char *const text_de[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "Erneut versuchen",
+     [PW_TEXT_ERR_NO_STICK] = "Kein USB-Laufwerk gefunden. Stecke es ein, warte ein paar Sekunden und versuche es erneut. "
+         "Steckt es schon, formatiere es als exFAT mit MBR: Die PS5 liest keine GPT- oder NTFS-Laufwerke.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "Auf der obersten Ebene des Laufwerks liegt kein Ordner mihawkos. Kopiere den Ordner auf "
++    [PW_TEXT_ERR_NO_FOLDER] = "Auf der obersten Ebene des Laufwerks liegt kein Ordner artcraft. Kopiere den Ordner auf "
+         "das Laufwerk und versuche es erneut.",
+-    [PW_TEXT_ERR_PARTIAL] = "Der Ordner mihawkos ist unvollständig: Er enthält {1} von {2} Teilen. Kopiere den ganzen Ordner "
++    [PW_TEXT_ERR_PARTIAL] = "Der Ordner artcraft ist unvollständig: Er enthält {1} von {2} Teilen. Kopiere den ganzen Ordner "
+         "noch einmal und versuche es erneut.",
+     [PW_TEXT_ERR_NO_SPACE] = "Deine PS5 braucht {1} freien Speicher und hat {2}. Lösche etwas und versuche es erneut.",
+     [PW_TEXT_ERR_READ] = "Das USB-Laufwerk konnte nicht gelesen werden. Prüfe, ob es noch steckt, und versuche es erneut. "
+         "Bereits Installiertes bleibt erhalten.",
+     [PW_TEXT_ERR_DAMAGED] = "Eine Datei auf dem Laufwerk ist beschädigt oder stammt aus einer anderen Version. Kopiere "
+-        "den Ordner mihawkos noch einmal und versuche es erneut.",
++        "den Ordner artcraft noch einmal und versuche es erneut.",
+     [PW_TEXT_ERR_FULL] = "Der Speicher deiner PS5 ist voll. Lösche etwas und versuche es erneut. Bereits Installiertes "
+         "bleibt erhalten.",
+     [PW_TEXT_ERR_WRITE] = "Der Speicher deiner PS5 hat einen Schreibvorgang abgelehnt. Versuche es erneut; passiert es "
+         "wieder, starte die PS5 neu.",
+     [PW_TEXT_ERR_CANCELLED] = "Die Installation wurde gestoppt. Bereits Installiertes bleibt erhalten.",
+-    [PW_TEXT_ERR_BUILD] = "Diese Kopie von MihawkOS kann keine Windows-Laufzeitumgebung installieren. Installiere MihawkOS "
++    [PW_TEXT_ERR_BUILD] = "Diese Kopie von ArtCraft kann keine Windows-Laufzeitumgebung installieren. Installiere ArtCraft "
+         "neu.",
+     [PW_TEXT_INSTALLING_TITLE] = "Windows-Laufzeitumgebung wird installiert",
+     [PW_TEXT_INSTALLING_BODY] = "Lass das Laufwerk eingesteckt. Das dauert etwa eine Minute.",
+@@ -322,23 +322,23 @@ static const char *const text_de[PW_TEXT_COUNT] = {
+     [PW_TEXT_INSTALLING_STATS] = "{1} von {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "Installiert.",
+     [PW_TEXT_STOP] = "Stoppen",
+-    [PW_TEXT_PREPARE_TITLE] = "Mihawk OS wird vorbereitet",
++    [PW_TEXT_PREPARE_TITLE] = "ArtCraft wird vorbereitet",
+     [PW_TEXT_PREPARE_BODY] = "Der erste Start legt dein Windows-Laufwerk an. Das dauert ein paar Minuten, und der Bildschirm "
+         "kann eine Weile stillstehen. Er endet von selbst und kehrt hierher zurück.",
+-    [PW_TEXT_PREPARE_NOTE] = "Beim ersten Start funktioniert der Controller in Spielen nicht. Deshalb beendet MihawkOS "
++    [PW_TEXT_PREPARE_NOTE] = "Beim ersten Start funktioniert der Controller in Spielen nicht. Deshalb beendet ArtCraft "
+         "ihn, sobald das Laufwerk bereit ist.",
+     [PW_TEXT_PREPARE_START] = "Starten",
+     [PW_TEXT_PREPARE_FAILED] = "Der erste Start wurde nicht abgeschlossen. Versuche es erneut: Er macht dort weiter, wo "
+         "er aufgehört hat.",
+     [PW_TEXT_BUILD_TITLE] = "Dein Windows-Laufwerk wird angelegt",
+-    [PW_TEXT_BUILD_BODY] = "Das dauert etwa eine Minute. Sobald das Laufwerk bereit ist, kehrt MihawkOS von selbst "
++    [PW_TEXT_BUILD_BODY] = "Das dauert etwa eine Minute. Sobald das Laufwerk bereit ist, kehrt ArtCraft von selbst "
+         "zur Einrichtung zurück.",
+     [PW_TEXT_BUILD_SETTINGS] = "Windows wird eingerichtet",
+     [PW_TEXT_BUILD_DOTNET] = ".NET-Unterstützung wird installiert",
+     [PW_TEXT_BUILD_FINISHING] = "Wird abgeschlossen",
+     [PW_TEXT_DONE_TITLE] = "Alles bereit",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS ist bereit. Diese Einrichtung kannst du in der Bibliothek unter Settings wiederholen.",
+-    [PW_TEXT_ENTER] = "Zu Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "ArtCraft ist bereit. Diese Einrichtung kannst du in der Bibliothek unter Settings wiederholen.",
++    [PW_TEXT_ENTER] = "Zu ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Auswählen",
+     [PW_TEXT_HINT_BACK] = "Zurück",
+     [PW_TEXT_HINT_MOVE] = "Bewegen",
+@@ -348,15 +348,15 @@ static const char *const text_de[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_it[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Benvenuto in MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Benvenuto in ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Prepariamo la tua PS5 per i giochi Windows. Ci vogliono circa dieci minuti.",
+     [PW_TEXT_GET_STARTED] = "Inizia",
+     [PW_TEXT_SKIP_SETUP] = "Salta la configurazione",
+     [PW_TEXT_LANGUAGE_TITLE] = "Scegli la lingua",
+-    [PW_TEXT_LANGUAGE_BODY] = "Anche i tuoi giochi Windows la useranno, con il suo layout di tastiera. Il desktop di Mihawk "
+-        "OS resta in inglese.",
++    [PW_TEXT_LANGUAGE_BODY] = "Anche i tuoi giochi Windows la useranno, con il suo layout di tastiera. Il desktop di ArtCraft "
++        "resta in inglese.",
+     [PW_TEXT_METHOD_TITLE] = "Scegli come installare",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS ha bisogno del suo ambiente Windows, circa 1,2 GB.",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft ha bisogno del suo ambiente Windows, circa 1,2 GB.",
+     [PW_TEXT_METHOD_USB] = "Unità USB",
+     [PW_TEXT_METHOD_USB_BODY] = "Copia i file su un’unità USB da qualsiasi computer.",
+     [PW_TEXT_METHOD_INTERNET] = "Internet",
+@@ -368,7 +368,7 @@ static const char *const text_it[PW_TEXT_COUNT] = {
+     [PW_TEXT_USB_TITLE] = "Prepara un’unità USB",
+     [PW_TEXT_USB_STEP1] = "Su un computer, formatta un’unità USB in exFAT con tabella delle partizioni MBR. L’unità verrà "
+         "cancellata.",
+-    [PW_TEXT_USB_STEP2] = "Scarica MihawkOS e copia la sua cartella mihawkos nella radice dell’unità.",
++    [PW_TEXT_USB_STEP2] = "Scarica ArtCraft e copia la sua cartella artcraft nella radice dell’unità.",
+     [PW_TEXT_USB_STEP3] = "Collega l’unità a una porta USB della PS5.",
+     [PW_TEXT_USB_STEP4] = "Scegli Controlla unità.",
+     [PW_TEXT_CHECK_DRIVE] = "Controlla unità",
+@@ -377,40 +377,40 @@ static const char *const text_it[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "Riprova",
+     [PW_TEXT_ERR_NO_STICK] = "Nessuna unità USB trovata. Collegala, attendi qualche secondo e riprova. Se è già collegata, "
+         "formattala in exFAT con MBR: la PS5 non legge le unità GPT o NTFS.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "L’unità non ha una cartella mihawkos nella radice. Copia la cartella sull’unità e riprova.",
+-    [PW_TEXT_ERR_PARTIAL] = "La cartella mihawkos è incompleta: contiene {1} parti su {2}. Copia di nuovo l’intera cartella "
++    [PW_TEXT_ERR_NO_FOLDER] = "L’unità non ha una cartella artcraft nella radice. Copia la cartella sull’unità e riprova.",
++    [PW_TEXT_ERR_PARTIAL] = "La cartella artcraft è incompleta: contiene {1} parti su {2}. Copia di nuovo l’intera cartella "
+         "e riprova.",
+     [PW_TEXT_ERR_NO_SPACE] = "La PS5 ha bisogno di {1} liberi e ne ha {2}. Elimina qualcosa e riprova.",
+     [PW_TEXT_ERR_READ] = "Impossibile leggere l’unità USB. Verifica che sia ancora collegata e riprova. Ciò che è già installato "
+         "viene conservato.",
+-    [PW_TEXT_ERR_DAMAGED] = "Un file sull’unità è danneggiato o di un’altra versione. Copia di nuovo la cartella mihawkos "
++    [PW_TEXT_ERR_DAMAGED] = "Un file sull’unità è danneggiato o di un’altra versione. Copia di nuovo la cartella artcraft "
+         "e riprova.",
+     [PW_TEXT_ERR_FULL] = "La memoria della PS5 è piena. Elimina qualcosa e riprova. Ciò che è già installato viene conservato.",
+     [PW_TEXT_ERR_WRITE] = "La memoria della PS5 ha rifiutato una scrittura. Riprova; se succede di nuovo, riavvia la PS5.",
+     [PW_TEXT_ERR_CANCELLED] = "Installazione interrotta. Ciò che è già installato viene conservato.",
+-    [PW_TEXT_ERR_BUILD] = "Questa copia di MihawkOS non può installare un ambiente Windows. Reinstalla MihawkOS.",
++    [PW_TEXT_ERR_BUILD] = "Questa copia di ArtCraft non può installare un ambiente Windows. Reinstalla ArtCraft.",
+     [PW_TEXT_INSTALLING_TITLE] = "Installazione dell’ambiente Windows",
+     [PW_TEXT_INSTALLING_BODY] = "Lascia l’unità collegata. Ci vuole circa un minuto.",
+     [PW_TEXT_INSTALLING_CHECKING] = "Controllo di ciò che è già installato…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} di {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "Installato.",
+     [PW_TEXT_STOP] = "Interrompi",
+-    [PW_TEXT_PREPARE_TITLE] = "Preparazione di Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "Preparazione di ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "Il primo avvio crea il tuo disco Windows. Ci vogliono alcuni minuti e lo schermo può restare "
+         "fermo per un po’. Termina da solo e torna qui.",
+-    [PW_TEXT_PREPARE_NOTE] = "Durante questo primo avvio il controller non funziona nei giochi, quindi MihawkOS lo termina "
++    [PW_TEXT_PREPARE_NOTE] = "Durante questo primo avvio il controller non funziona nei giochi, quindi ArtCraft lo termina "
+         "appena il disco è pronto.",
+     [PW_TEXT_PREPARE_START] = "Avvia",
+     [PW_TEXT_PREPARE_FAILED] = "Il primo avvio non è terminato. Riprova: riprende da dove si era fermato.",
+     [PW_TEXT_BUILD_TITLE] = "Creazione del tuo disco Windows",
+-    [PW_TEXT_BUILD_BODY] = "Ci vuole circa un minuto. Quando il disco è pronto, MihawkOS torna da solo alla "
++    [PW_TEXT_BUILD_BODY] = "Ci vuole circa un minuto. Quando il disco è pronto, ArtCraft torna da solo alla "
+         "configurazione.",
+     [PW_TEXT_BUILD_SETTINGS] = "Configurazione di Windows",
+     [PW_TEXT_BUILD_DOTNET] = "Installazione del supporto .NET",
+     [PW_TEXT_BUILD_FINISHING] = "Completamento",
+     [PW_TEXT_DONE_TITLE] = "Tutto pronto",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS è pronto. Puoi ripetere questa configurazione da Settings, nella libreria.",
+-    [PW_TEXT_ENTER] = "Entra in Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "ArtCraft è pronto. Puoi ripetere questa configurazione da Settings, nella libreria.",
++    [PW_TEXT_ENTER] = "Entra in ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Scegli",
+     [PW_TEXT_HINT_BACK] = "Indietro",
+     [PW_TEXT_HINT_MOVE] = "Sposta",
+@@ -420,15 +420,15 @@ static const char *const text_it[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_ru[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Добро пожаловать в MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Добро пожаловать в ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Подготовим вашу PS5 к играм для Windows. Это займёт около десяти минут.",
+     [PW_TEXT_GET_STARTED] = "Начать",
+     [PW_TEXT_SKIP_SETUP] = "Пропустить настройку",
+     [PW_TEXT_LANGUAGE_TITLE] = "Выберите язык",
+     [PW_TEXT_LANGUAGE_BODY] = "Ваши игры для Windows тоже будут его использовать вместе с раскладкой клавиатуры. Рабочий "
+-        "стол Mihawk OS останется на английском.",
++        "стол ArtCraft останется на английском.",
+     [PW_TEXT_METHOD_TITLE] = "Выберите способ установки",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS нужна своя среда Windows, около 1,2 ГБ.",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft нужна своя среда Windows, около 1,2 ГБ.",
+     [PW_TEXT_METHOD_USB] = "USB-накопитель",
+     [PW_TEXT_METHOD_USB_BODY] = "Скопируйте файлы на USB-накопитель на любом компьютере.",
+     [PW_TEXT_METHOD_INTERNET] = "Интернет",
+@@ -440,7 +440,7 @@ static const char *const text_ru[PW_TEXT_COUNT] = {
+     [PW_TEXT_USB_TITLE] = "Подготовьте USB-накопитель",
+     [PW_TEXT_USB_STEP1] = "На компьютере отформатируйте USB-накопитель в exFAT с таблицей разделов MBR. Все данные на нём "
+         "будут удалены.",
+-    [PW_TEXT_USB_STEP2] = "Загрузите MihawkOS и скопируйте его папку mihawkos в корень накопителя.",
++    [PW_TEXT_USB_STEP2] = "Загрузите ArtCraft и скопируйте его папку artcraft в корень накопителя.",
+     [PW_TEXT_USB_STEP3] = "Подключите накопитель к USB-порту PS5.",
+     [PW_TEXT_USB_STEP4] = "Выберите «Проверить накопитель».",
+     [PW_TEXT_CHECK_DRIVE] = "Проверить накопитель",
+@@ -449,38 +449,38 @@ static const char *const text_ru[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "Повторить",
+     [PW_TEXT_ERR_NO_STICK] = "USB-накопитель не найден. Подключите его, подождите несколько секунд и повторите попытку. "
+         "Если он уже подключён, отформатируйте его в exFAT с MBR: PS5 не читает накопители GPT и NTFS.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "В корне накопителя нет папки mihawkos. Скопируйте папку на накопитель и повторите попытку.",
+-    [PW_TEXT_ERR_PARTIAL] = "Папка mihawkos неполная, частей: {1} из {2}. Скопируйте всю папку заново и повторите попытку.",
++    [PW_TEXT_ERR_NO_FOLDER] = "В корне накопителя нет папки artcraft. Скопируйте папку на накопитель и повторите попытку.",
++    [PW_TEXT_ERR_PARTIAL] = "Папка artcraft неполная, частей: {1} из {2}. Скопируйте всю папку заново и повторите попытку.",
+     [PW_TEXT_ERR_NO_SPACE] = "PS5 нужно {1} свободного места, а доступно {2}. Удалите что-нибудь и повторите попытку.",
+     [PW_TEXT_ERR_READ] = "Не удалось прочитать USB-накопитель. Убедитесь, что он подключён, и повторите попытку. Уже установленное "
+         "сохранится.",
+-    [PW_TEXT_ERR_DAMAGED] = "Файл на накопителе повреждён или от другой версии. Скопируйте папку mihawkos заново и повторите "
++    [PW_TEXT_ERR_DAMAGED] = "Файл на накопителе повреждён или от другой версии. Скопируйте папку artcraft заново и повторите "
+         "попытку.",
+     [PW_TEXT_ERR_FULL] = "Хранилище PS5 заполнено. Удалите что-нибудь и повторите попытку. Уже установленное сохранится.",
+     [PW_TEXT_ERR_WRITE] = "Хранилище PS5 отказало в записи. Повторите попытку; если это повторится, перезапустите PS5.",
+     [PW_TEXT_ERR_CANCELLED] = "Установка остановлена. Уже установленное сохранится.",
+-    [PW_TEXT_ERR_BUILD] = "Эта копия MihawkOS не может установить среду Windows. Переустановите MihawkOS.",
++    [PW_TEXT_ERR_BUILD] = "Эта копия ArtCraft не может установить среду Windows. Переустановите ArtCraft.",
+     [PW_TEXT_INSTALLING_TITLE] = "Установка среды Windows",
+     [PW_TEXT_INSTALLING_BODY] = "Не отключайте накопитель. Это займёт около минуты.",
+     [PW_TEXT_INSTALLING_CHECKING] = "Проверка уже установленного…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} из {2} МБ · {3} МБ/с",
+     [PW_TEXT_INSTALLED] = "Установлено.",
+     [PW_TEXT_STOP] = "Остановить",
+-    [PW_TEXT_PREPARE_TITLE] = "Подготовка Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "Подготовка ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "При первом запуске создаётся ваш диск Windows. Это займёт несколько минут, и экран может "
+         "какое-то время не меняться. Запуск завершится сам и вернётся сюда.",
+-    [PW_TEXT_PREPARE_NOTE] = "Во время первого запуска контроллер не работает в играх, поэтому MihawkOS завершает его, "
++    [PW_TEXT_PREPARE_NOTE] = "Во время первого запуска контроллер не работает в играх, поэтому ArtCraft завершает его, "
+         "как только диск готов.",
+     [PW_TEXT_PREPARE_START] = "Запустить",
+     [PW_TEXT_PREPARE_FAILED] = "Первый запуск не завершился. Повторите попытку: он продолжится с того места, где остановился.",
+     [PW_TEXT_BUILD_TITLE] = "Создание вашего диска Windows",
+-    [PW_TEXT_BUILD_BODY] = "Это займёт около минуты. Когда диск будет готов, MihawkOS сам вернётся к настройке.",
++    [PW_TEXT_BUILD_BODY] = "Это займёт около минуты. Когда диск будет готов, ArtCraft сам вернётся к настройке.",
+     [PW_TEXT_BUILD_SETTINGS] = "Настройка Windows",
+     [PW_TEXT_BUILD_DOTNET] = "Установка поддержки .NET",
+     [PW_TEXT_BUILD_FINISHING] = "Завершение",
+     [PW_TEXT_DONE_TITLE] = "Всё готово",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS готова. Повторить эту настройку можно в разделе Settings в библиотеке.",
+-    [PW_TEXT_ENTER] = "Войти в Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "ArtCraft готова. Повторить эту настройку можно в разделе Settings в библиотеке.",
++    [PW_TEXT_ENTER] = "Войти в ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Выбрать",
+     [PW_TEXT_HINT_BACK] = "Назад",
+     [PW_TEXT_HINT_MOVE] = "Перейти",
+@@ -490,14 +490,14 @@ static const char *const text_ru[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_zh[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "欢迎使用 MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "欢迎使用 ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "让我们为 Windows 游戏准备好你的 PS5。大约需要十分钟。",
+     [PW_TEXT_GET_STARTED] = "开始",
+     [PW_TEXT_SKIP_SETUP] = "跳过设置",
+     [PW_TEXT_LANGUAGE_TITLE] = "选择语言",
+-    [PW_TEXT_LANGUAGE_BODY] = "你的 Windows 游戏也会使用该语言及其键盘布局。Mihawk OS 桌面仍为英文。",
++    [PW_TEXT_LANGUAGE_BODY] = "你的 Windows 游戏也会使用该语言及其键盘布局。ArtCraft 桌面仍为英文。",
+     [PW_TEXT_METHOD_TITLE] = "选择安装方式",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS 需要安装其 Windows 运行环境，约 1.2 GB。",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft 需要安装其 Windows 运行环境，约 1.2 GB。",
+     [PW_TEXT_METHOD_USB] = "U 盘",
+     [PW_TEXT_METHOD_USB_BODY] = "在任意电脑上将文件复制到 U 盘。",
+     [PW_TEXT_METHOD_INTERNET] = "互联网",
+@@ -508,7 +508,7 @@ static const char *const text_zh[PW_TEXT_COUNT] = {
+     [PW_TEXT_QR_CAPTION] = "扫码即可在手机上查看分步说明。",
+     [PW_TEXT_USB_TITLE] = "准备 U 盘",
+     [PW_TEXT_USB_STEP1] = "在电脑上将 U 盘格式化为 exFAT，分区表选择 MBR。这会清除 U 盘上的所有数据。",
+-    [PW_TEXT_USB_STEP2] = "下载 MihawkOS，并将其中的 mihawkos 文件夹复制到 U 盘根目录。",
++    [PW_TEXT_USB_STEP2] = "下载 ArtCraft，并将其中的 artcraft 文件夹复制到 U 盘根目录。",
+     [PW_TEXT_USB_STEP3] = "将 U 盘插入 PS5 的 USB 接口。",
+     [PW_TEXT_USB_STEP4] = "选择“检查 U 盘”。",
+     [PW_TEXT_CHECK_DRIVE] = "检查 U 盘",
+@@ -516,34 +516,34 @@ static const char *const text_zh[PW_TEXT_COUNT] = {
+     [PW_TEXT_INSTALL] = "安装",
+     [PW_TEXT_RETRY] = "重试",
+     [PW_TEXT_ERR_NO_STICK] = "未找到 U 盘。请插入 U 盘，等待几秒后重试。如果已经插入，请将其格式化为 exFAT（MBR）：PS5 无法读取 GPT 或 NTFS 格式的磁盘。",
+-    [PW_TEXT_ERR_NO_FOLDER] = "U 盘根目录中没有 mihawkos 文件夹。请将该文件夹复制到 U 盘后重试。",
+-    [PW_TEXT_ERR_PARTIAL] = "mihawkos 文件夹不完整：只有 {1}/{2} 个部分。请重新复制整个文件夹后重试。",
++    [PW_TEXT_ERR_NO_FOLDER] = "U 盘根目录中没有 artcraft 文件夹。请将该文件夹复制到 U 盘后重试。",
++    [PW_TEXT_ERR_PARTIAL] = "artcraft 文件夹不完整：只有 {1}/{2} 个部分。请重新复制整个文件夹后重试。",
+     [PW_TEXT_ERR_NO_SPACE] = "PS5 需要 {1} 可用空间，当前只有 {2}。请删除一些内容后重试。",
+     [PW_TEXT_ERR_READ] = "无法读取 U 盘。请确认它仍已插入，然后重试。已安装的内容会保留。",
+-    [PW_TEXT_ERR_DAMAGED] = "U 盘上的某个文件已损坏或来自其他版本。请重新复制 mihawkos 文件夹后重试。",
++    [PW_TEXT_ERR_DAMAGED] = "U 盘上的某个文件已损坏或来自其他版本。请重新复制 artcraft 文件夹后重试。",
+     [PW_TEXT_ERR_FULL] = "PS5 存储空间已满。请删除一些内容后重试。已安装的内容会保留。",
+     [PW_TEXT_ERR_WRITE] = "PS5 存储拒绝了一次写入。请重试；如果再次发生，请重启 PS5。",
+     [PW_TEXT_ERR_CANCELLED] = "安装已停止。已安装的内容会保留。",
+-    [PW_TEXT_ERR_BUILD] = "此 MihawkOS 副本无法安装 Windows 运行环境。请重新安装 MihawkOS。",
++    [PW_TEXT_ERR_BUILD] = "此 ArtCraft 副本无法安装 Windows 运行环境。请重新安装 ArtCraft。",
+     [PW_TEXT_INSTALLING_TITLE] = "正在安装 Windows 运行环境",
+     [PW_TEXT_INSTALLING_BODY] = "请勿拔出 U 盘。大约需要一分钟。",
+     [PW_TEXT_INSTALLING_CHECKING] = "正在检查已安装的内容…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} / {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "已安装。",
+     [PW_TEXT_STOP] = "停止",
+-    [PW_TEXT_PREPARE_TITLE] = "正在准备 Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "正在准备 ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "首次启动会创建你的 Windows 磁盘。这需要几分钟，期间画面可能会静止一段时间。完成后会自动结束并返回这里。",
+-    [PW_TEXT_PREPARE_NOTE] = "首次启动期间，手柄在游戏中无法使用，因此磁盘准备就绪后 MihawkOS 会立即结束本次启动。",
++    [PW_TEXT_PREPARE_NOTE] = "首次启动期间，手柄在游戏中无法使用，因此磁盘准备就绪后 ArtCraft 会立即结束本次启动。",
+     [PW_TEXT_PREPARE_START] = "启动",
+     [PW_TEXT_PREPARE_FAILED] = "首次启动未完成。请重试：它会从中断的地方继续。",
+     [PW_TEXT_BUILD_TITLE] = "正在创建你的 Windows 磁盘",
+-    [PW_TEXT_BUILD_BODY] = "大约需要一分钟。磁盘准备就绪后，MihawkOS 会自动返回设置。",
++    [PW_TEXT_BUILD_BODY] = "大约需要一分钟。磁盘准备就绪后，ArtCraft 会自动返回设置。",
+     [PW_TEXT_BUILD_SETTINGS] = "正在设置 Windows",
+     [PW_TEXT_BUILD_DOTNET] = "正在安装 .NET 支持",
+     [PW_TEXT_BUILD_FINISHING] = "即将完成",
+     [PW_TEXT_DONE_TITLE] = "一切就绪",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS 已准备就绪。如需再次运行此设置，请在资料库中打开 Settings。",
+-    [PW_TEXT_ENTER] = "进入 Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "ArtCraft 已准备就绪。如需再次运行此设置，请在资料库中打开 Settings。",
++    [PW_TEXT_ENTER] = "进入 ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "选择",
+     [PW_TEXT_HINT_BACK] = "返回",
+     [PW_TEXT_HINT_MOVE] = "移动",
+@@ -553,14 +553,14 @@ static const char *const text_zh[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_ja[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "MihawkOS へようこそ",
++    [PW_TEXT_WELCOME_TITLE] = "ArtCraft へようこそ",
+     [PW_TEXT_WELCOME_BODY] = "PS5 で Windows のゲームを遊ぶ準備をしましょう。所要時間は約 10 分です。",
+     [PW_TEXT_GET_STARTED] = "はじめる",
+     [PW_TEXT_SKIP_SETUP] = "セットアップをスキップ",
+     [PW_TEXT_LANGUAGE_TITLE] = "言語を選択",
+-    [PW_TEXT_LANGUAGE_BODY] = "Windows のゲームでもこの言語とそのキーボード配列が使われます。Mihawk OS のデスクトップは英語のままです。",
++    [PW_TEXT_LANGUAGE_BODY] = "Windows のゲームでもこの言語とそのキーボード配列が使われます。ArtCraft のデスクトップは英語のままです。",
+     [PW_TEXT_METHOD_TITLE] = "インストール方法を選択",
+-    [PW_TEXT_METHOD_BODY] = "MihawkOS には Windows 実行環境（約 1.2 GB）が必要です。",
++    [PW_TEXT_METHOD_BODY] = "ArtCraft には Windows 実行環境（約 1.2 GB）が必要です。",
+     [PW_TEXT_METHOD_USB] = "USB ドライブ",
+     [PW_TEXT_METHOD_USB_BODY] = "お好きなパソコンで USB ドライブにファイルをコピーします。",
+     [PW_TEXT_METHOD_INTERNET] = "インターネット",
+@@ -571,7 +571,7 @@ static const char *const text_ja[PW_TEXT_COUNT] = {
+     [PW_TEXT_QR_CAPTION] = "スマートフォンでスキャンすると、詳しい手順を確認できます。",
+     [PW_TEXT_USB_TITLE] = "USB ドライブを準備する",
+     [PW_TEXT_USB_STEP1] = "パソコンで USB ドライブを exFAT（パーティションテーブルは MBR）でフォーマットします。ドライブの内容は消去されます。",
+-    [PW_TEXT_USB_STEP2] = "MihawkOS をダウンロードし、mihawkos フォルダーをドライブの最上位にコピーします。",
++    [PW_TEXT_USB_STEP2] = "ArtCraft をダウンロードし、artcraft フォルダーをドライブの最上位にコピーします。",
+     [PW_TEXT_USB_STEP3] = "ドライブを PS5 の USB ポートに接続します。",
+     [PW_TEXT_USB_STEP4] = "「ドライブを確認」を選びます。",
+     [PW_TEXT_CHECK_DRIVE] = "ドライブを確認",
+@@ -580,34 +580,34 @@ static const char *const text_ja[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "再試行",
+     [PW_TEXT_ERR_NO_STICK] = "USB ドライブが見つかりません。接続して数秒待ってから、もう一度お試しください。接続済みの場合は exFAT（MBR）でフォーマットしてください。PS5 は GPT や NTFS "
+         "のドライブを読み取れません。",
+-    [PW_TEXT_ERR_NO_FOLDER] = "ドライブの最上位に mihawkos フォルダーがありません。フォルダーをドライブにコピーしてから、もう一度お試しください。",
+-    [PW_TEXT_ERR_PARTIAL] = "mihawkos フォルダーが不完全です（{2} 個中 {1} 個）。フォルダー全体をコピーし直してから、もう一度お試しください。",
++    [PW_TEXT_ERR_NO_FOLDER] = "ドライブの最上位に artcraft フォルダーがありません。フォルダーをドライブにコピーしてから、もう一度お試しください。",
++    [PW_TEXT_ERR_PARTIAL] = "artcraft フォルダーが不完全です（{2} 個中 {1} 個）。フォルダー全体をコピーし直してから、もう一度お試しください。",
+     [PW_TEXT_ERR_NO_SPACE] = "PS5 に {1} の空き容量が必要ですが、{2} しかありません。不要なデータを削除してから、もう一度お試しください。",
+     [PW_TEXT_ERR_READ] = "USB ドライブを読み取れません。接続されているか確認してから、もう一度お試しください。インストール済みの内容は保持されます。",
+-    [PW_TEXT_ERR_DAMAGED] = "ドライブ上のファイルが壊れているか、別のバージョンのものです。mihawkos フォルダーをコピーし直してから、もう一度お試しください。",
++    [PW_TEXT_ERR_DAMAGED] = "ドライブ上のファイルが壊れているか、別のバージョンのものです。artcraft フォルダーをコピーし直してから、もう一度お試しください。",
+     [PW_TEXT_ERR_FULL] = "PS5 のストレージがいっぱいです。不要なデータを削除してから、もう一度お試しください。インストール済みの内容は保持されます。",
+     [PW_TEXT_ERR_WRITE] = "PS5 のストレージへの書き込みが拒否されました。もう一度お試しください。繰り返し起こる場合は PS5 を再起動してください。",
+     [PW_TEXT_ERR_CANCELLED] = "インストールを停止しました。インストール済みの内容は保持されます。",
+-    [PW_TEXT_ERR_BUILD] = "この MihawkOS では Windows 実行環境をインストールできません。MihawkOS を入れ直してください。",
++    [PW_TEXT_ERR_BUILD] = "この ArtCraft では Windows 実行環境をインストールできません。ArtCraft を入れ直してください。",
+     [PW_TEXT_INSTALLING_TITLE] = "Windows 実行環境をインストール中",
+     [PW_TEXT_INSTALLING_BODY] = "ドライブは接続したままにしてください。約 1 分かかります。",
+     [PW_TEXT_INSTALLING_CHECKING] = "インストール済みの内容を確認しています…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} / {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "インストールしました。",
+     [PW_TEXT_STOP] = "停止",
+-    [PW_TEXT_PREPARE_TITLE] = "Mihawk OS を準備しています",
++    [PW_TEXT_PREPARE_TITLE] = "ArtCraft を準備しています",
+     [PW_TEXT_PREPARE_BODY] = "初回の起動で Windows ドライブを作成します。数分かかり、しばらく画面が止まって見えることがあります。完了すると自動で終了し、この画面に戻ります。",
+-    [PW_TEXT_PREPARE_NOTE] = "初回の起動中はゲームでコントローラーが使えないため、ドライブの準備ができしだい MihawkOS が起動を終了します。",
++    [PW_TEXT_PREPARE_NOTE] = "初回の起動中はゲームでコントローラーが使えないため、ドライブの準備ができしだい ArtCraft が起動を終了します。",
+     [PW_TEXT_PREPARE_START] = "起動",
+     [PW_TEXT_PREPARE_FAILED] = "初回の起動が完了しませんでした。もう一度お試しください。中断したところから再開します。",
+     [PW_TEXT_BUILD_TITLE] = "Windows ドライブを作成しています",
+-    [PW_TEXT_BUILD_BODY] = "約 1 分かかります。準備ができると、MihawkOS が自動でセットアップに戻ります。",
++    [PW_TEXT_BUILD_BODY] = "約 1 分かかります。準備ができると、ArtCraft が自動でセットアップに戻ります。",
+     [PW_TEXT_BUILD_SETTINGS] = "Windows を設定しています",
+     [PW_TEXT_BUILD_DOTNET] = ".NET サポートをインストールしています",
+     [PW_TEXT_BUILD_FINISHING] = "仕上げています",
+     [PW_TEXT_DONE_TITLE] = "準備完了",
+-    [PW_TEXT_DONE_BODY] = "Mihawk OS の準備ができました。このセットアップは、ライブラリの Settings からもう一度実行できます。",
+-    [PW_TEXT_ENTER] = "Mihawk OS に入る",
++    [PW_TEXT_DONE_BODY] = "ArtCraft の準備ができました。このセットアップは、ライブラリの Settings からもう一度実行できます。",
++    [PW_TEXT_ENTER] = "ArtCraft に入る",
+     [PW_TEXT_HINT_SELECT] = "決定",
+     [PW_TEXT_HINT_BACK] = "戻る",
+     [PW_TEXT_HINT_MOVE] = "移動",
+@@ -617,15 +617,15 @@ static const char *const text_ja[PW_TEXT_COUNT] = {
+ };
+ 
+ static const char *const text_pt[PW_TEXT_COUNT] = {
+-    [PW_TEXT_WELCOME_TITLE] = "Boas-vindas ao MihawkOS",
++    [PW_TEXT_WELCOME_TITLE] = "Boas-vindas ao ArtCraft",
+     [PW_TEXT_WELCOME_BODY] = "Vamos preparar seu PS5 para jogos do Windows. Leva cerca de dez minutos.",
+     [PW_TEXT_GET_STARTED] = "Começar",
+     [PW_TEXT_SKIP_SETUP] = "Pular configuração",
+     [PW_TEXT_LANGUAGE_TITLE] = "Escolha seu idioma",
+     [PW_TEXT_LANGUAGE_BODY] = "Seus jogos do Windows também vão usá-lo, com o layout de teclado dele. A área de trabalho "
+-        "do Mihawk OS continua em inglês.",
++        "do ArtCraft continua em inglês.",
+     [PW_TEXT_METHOD_TITLE] = "Escolha como instalar",
+-    [PW_TEXT_METHOD_BODY] = "O MihawkOS precisa do ambiente Windows dele, com cerca de 1,2 GB.",
++    [PW_TEXT_METHOD_BODY] = "O ArtCraft precisa do ambiente Windows dele, com cerca de 1,2 GB.",
+     [PW_TEXT_METHOD_USB] = "Pen drive",
+     [PW_TEXT_METHOD_USB_BODY] = "Copie os arquivos para um pen drive em qualquer computador.",
+     [PW_TEXT_METHOD_INTERNET] = "Internet",
+@@ -637,7 +637,7 @@ static const char *const text_pt[PW_TEXT_COUNT] = {
+     [PW_TEXT_USB_TITLE] = "Prepare um pen drive",
+     [PW_TEXT_USB_STEP1] = "Em um computador, formate um pen drive em exFAT com tabela de partição MBR. Isso apaga o pen "
+         "drive.",
+-    [PW_TEXT_USB_STEP2] = "Baixe o MihawkOS e copie a pasta mihawkos dele para a raiz do pen drive.",
++    [PW_TEXT_USB_STEP2] = "Baixe o ArtCraft e copie a pasta artcraft dele para a raiz do pen drive.",
+     [PW_TEXT_USB_STEP3] = "Conecte o pen drive a uma porta USB do seu PS5.",
+     [PW_TEXT_USB_STEP4] = "Escolha Verificar pen drive.",
+     [PW_TEXT_CHECK_DRIVE] = "Verificar pen drive",
+@@ -646,43 +646,43 @@ static const char *const text_pt[PW_TEXT_COUNT] = {
+     [PW_TEXT_RETRY] = "Tentar de novo",
+     [PW_TEXT_ERR_NO_STICK] = "Nenhum pen drive encontrado. Conecte-o, espere alguns segundos e tente de novo. Se ele já "
+         "estiver conectado, formate-o em exFAT com MBR: o PS5 não lê unidades GPT nem NTFS.",
+-    [PW_TEXT_ERR_NO_FOLDER] = "O pen drive não tem uma pasta mihawkos na raiz. Copie a pasta para o pen drive e tente de "
++    [PW_TEXT_ERR_NO_FOLDER] = "O pen drive não tem uma pasta artcraft na raiz. Copie a pasta para o pen drive e tente de "
+         "novo.",
+-    [PW_TEXT_ERR_PARTIAL] = "A pasta mihawkos está incompleta: tem {1} de {2} partes. Copie a pasta inteira de novo e tente "
++    [PW_TEXT_ERR_PARTIAL] = "A pasta artcraft está incompleta: tem {1} de {2} partes. Copie a pasta inteira de novo e tente "
+         "outra vez.",
+     [PW_TEXT_ERR_NO_SPACE] = "Seu PS5 precisa de {1} livres e tem {2}. Apague algo e tente de novo.",
+     [PW_TEXT_ERR_READ] = "Não foi possível ler o pen drive. Verifique se ele ainda está conectado e tente de novo. O que "
+         "já foi instalado é mantido.",
+-    [PW_TEXT_ERR_DAMAGED] = "Um arquivo do pen drive está danificado ou é de outra versão. Copie a pasta mihawkos de novo "
++    [PW_TEXT_ERR_DAMAGED] = "Um arquivo do pen drive está danificado ou é de outra versão. Copie a pasta artcraft de novo "
+         "e tente outra vez.",
+     [PW_TEXT_ERR_FULL] = "O armazenamento do seu PS5 está cheio. Apague algo e tente de novo. O que já foi instalado é "
+         "mantido.",
+     [PW_TEXT_ERR_WRITE] = "O armazenamento do seu PS5 recusou uma gravação. Tente de novo; se acontecer outra vez, reinicie "
+         "o PS5.",
+     [PW_TEXT_ERR_CANCELLED] = "A instalação parou. O que já foi instalado é mantido.",
+-    [PW_TEXT_ERR_BUILD] = "Esta cópia do MihawkOS não pode instalar um ambiente Windows. Reinstale o MihawkOS.",
++    [PW_TEXT_ERR_BUILD] = "Esta cópia do ArtCraft não pode instalar um ambiente Windows. Reinstale o ArtCraft.",
+     [PW_TEXT_INSTALLING_TITLE] = "Instalando o ambiente Windows",
+     [PW_TEXT_INSTALLING_BODY] = "Deixe o pen drive conectado. Leva cerca de um minuto.",
+     [PW_TEXT_INSTALLING_CHECKING] = "Verificando o que já está instalado…",
+     [PW_TEXT_INSTALLING_STATS] = "{1} de {2} MB · {3} MB/s",
+     [PW_TEXT_INSTALLED] = "Instalado.",
+     [PW_TEXT_STOP] = "Parar",
+-    [PW_TEXT_PREPARE_TITLE] = "Preparando o Mihawk OS",
++    [PW_TEXT_PREPARE_TITLE] = "Preparando o ArtCraft",
+     [PW_TEXT_PREPARE_BODY] = "A primeira inicialização cria seu disco do Windows. Leva alguns minutos, e a tela pode ficar "
+         "parada por um tempo. Ela termina sozinha e volta para cá.",
+-    [PW_TEXT_PREPARE_NOTE] = "Durante esta primeira inicialização o controle não funciona nos jogos, por isso o MihawkOS "
++    [PW_TEXT_PREPARE_NOTE] = "Durante esta primeira inicialização o controle não funciona nos jogos, por isso o ArtCraft "
+         "a encerra assim que o disco fica pronto.",
+     [PW_TEXT_PREPARE_START] = "Iniciar",
+     [PW_TEXT_PREPARE_FAILED] = "A primeira inicialização não terminou. Tente de novo: ela continua de onde parou.",
+     [PW_TEXT_BUILD_TITLE] = "Criando seu disco do Windows",
+-    [PW_TEXT_BUILD_BODY] = "Leva cerca de um minuto. Quando o disco estiver pronto, o MihawkOS volta sozinho para a "
++    [PW_TEXT_BUILD_BODY] = "Leva cerca de um minuto. Quando o disco estiver pronto, o ArtCraft volta sozinho para a "
+         "configuração.",
+     [PW_TEXT_BUILD_SETTINGS] = "Configurando o Windows",
+     [PW_TEXT_BUILD_DOTNET] = "Instalando o suporte a .NET",
+     [PW_TEXT_BUILD_FINISHING] = "Finalizando",
+     [PW_TEXT_DONE_TITLE] = "Tudo pronto",
+-    [PW_TEXT_DONE_BODY] = "O Mihawk OS está pronto. Você pode refazer esta configuração em Settings, na biblioteca.",
+-    [PW_TEXT_ENTER] = "Entrar no Mihawk OS",
++    [PW_TEXT_DONE_BODY] = "O ArtCraft está pronto. Você pode refazer esta configuração em Settings, na biblioteca.",
++    [PW_TEXT_ENTER] = "Entrar no ArtCraft",
+     [PW_TEXT_HINT_SELECT] = "Selecionar",
+     [PW_TEXT_HINT_BACK] = "Voltar",
+     [PW_TEXT_HINT_MOVE] = "Mover",
+diff --git a/tests/test_console_guard.py b/tests/test_console_guard.py
+index edf81c8..c7a0b6e 100644
+--- a/tests/test_console_guard.py
++++ b/tests/test_console_guard.py
+@@ -560,11 +560,11 @@ class RunnerHelperTests(unittest.TestCase):
+         self.assertEqual(run_console.installed_profiles([]), set())
+ 
+     def test_session_logs_status_is_the_last_report(self):
+-        lines = ['[MihawkOS] Wine: session logs status=2 removed=0',
+-                 '[MihawkOS] Wine: session logs status=0 removed=3 title=0 wine=0']
++        lines = ['[ArtCraft] Wine: session logs status=2 removed=0',
++                 '[ArtCraft] Wine: session logs status=0 removed=3 title=0 wine=0']
+         self.assertEqual(run_console.session_logs_status(lines), 0)
+         self.assertEqual(run_console.session_logs_status(lines[:1]), 2)
+-        self.assertIsNone(run_console.session_logs_status(['[MihawkOS] Wine: load status=0']))
++        self.assertIsNone(run_console.session_logs_status(['[ArtCraft] Wine: load status=0']))
+ 
+     def test_child_logs_come_only_from_this_session(self):
+         sessions = run_console.SESSIONS
+diff --git a/tests/test_console_setup.py b/tests/test_console_setup.py
+index 5fa37c3..9012b81 100644
+--- a/tests/test_console_setup.py
++++ b/tests/test_console_setup.py
+@@ -35,7 +35,7 @@ SETTINGS = {'host': HOST, 'ftp_port': 2121, 'klog_port': 3232, 'ctl_port': 9111,
+             'ftp_password': ''}
+ SIGNED = bytes.fromhex('4f153d1d')
+ DATA = '/data/ps5proton'
+-ELEVATION = '[MihawkOS] elevation: ok (filesystem access)'          # klog/mihawk-setup-2026-10-14-01.log:328
++ELEVATION = '[ArtCraft] elevation: ok (filesystem access)'          # klog/mihawk-setup-2026-10-14-01.log:328
+ BASELINE = 'PS5 prefix baseline ready: 118 files updated'              # ...-01-wine-child-118.log:134
+ ONION = ('<118>[onion_daemon.elf] [587.887] [OnionHEN] info: [lifecycle] Big App started pid=111 appid=8216 '
+          'tid=PPSA99170 via=exec source=exec')                         # klog/mihawk-setup-2026-10-14-01.log:94
+@@ -134,8 +134,8 @@ class World:
+ 
+     def run_console(self, args):
+         name, effect = args[args.index('--name') + 1], self.prefix
+-        (cs.KLOG / f'{name}.log').write_text('\n'.join(['[MihawkOS] starts', *effect['klog']]) + '\n')
+-        (cs.KLOG / f'{name}-title.log').write_text('[MihawkOS] starts (standard error to klog: yes)\n')
++        (cs.KLOG / f'{name}.log').write_text('\n'.join(['[ArtCraft] starts', *effect['klog']]) + '\n')
++        (cs.KLOG / f'{name}-title.log').write_text('[ArtCraft] starts (standard error to klog: yes)\n')
+         (cs.KLOG / f'{name}-wine-child-118.log').write_text('\n'.join(effect['child']) + '\n')
+         (cs.EVIDENCE / f'{name}.json').write_text(json.dumps({'run': name, 'passed': effect['passed'],
+                                                                'result': 'finished'}))
+diff --git a/tests/test_package_install.py b/tests/test_package_install.py
+index 0599ef4..00f1bd9 100644
+--- a/tests/test_package_install.py
++++ b/tests/test_package_install.py
+@@ -29,7 +29,7 @@ class PackageInstall(unittest.TestCase):
+                    '--out', str(out)]
+             made = subprocess.run(run, capture_output=True, text=True)
+             self.assertEqual(made.returncode, 0, made.stderr)
+-            self.assertEqual((out / 'usb/mihawkos' / f'{digest}.zst').read_bytes(), piece)
++            self.assertEqual((out / 'usb/artcraft' / f'{digest}.zst').read_bytes(), piece)
+             self.assertTrue((out / 'PPSA99170/eboot.bin').is_file() and (out / 'README.txt').is_file())
+             checked = subprocess.run(['sha256sum', '-c', '--quiet', 'SHA256SUMS'], cwd=out, capture_output=True, text=True)
+             self.assertEqual(checked.returncode, 0, checked.stdout)
+diff --git a/tests/test_pw_detailed_logs.c b/tests/test_pw_detailed_logs.c
+index ce3ab82..ef8cca8 100644
+--- a/tests/test_pw_detailed_logs.c
++++ b/tests/test_pw_detailed_logs.c
+@@ -270,7 +270,7 @@ static void filling(void)
+     assert(size_of(path) < 0);
+     snprintf(path, sizeof(path), "%s/README.txt", folder);
+     text = slurp(path, NULL);
+-    assert(strstr(text, "MihawkOS detailed logs"));
++    assert(strstr(text, "ArtCraft detailed logs"));
+     free(text);
+     snprintf(path, sizeof(path), "%s/wine-child-77.log", folder);
+     assert(size_of(path) == 6);
+diff --git a/tests/test_run_console_verdicts.py b/tests/test_run_console_verdicts.py
+index 4074a59..4bab3f5 100644
+--- a/tests/test_run_console_verdicts.py
++++ b/tests/test_run_console_verdicts.py
+@@ -105,12 +105,12 @@ class ForeignMappings(unittest.TestCase):
+ 
+ 
+ TITLE_ENDING = [
+-    '[MihawkOS] Wine: stop: ending 2 helpers by SIGKILL, not through the server',
+-    '[MihawkOS] Wine: helper 901: SIGKILL sent (errno 0)',
+-    '[MihawkOS] Wine: helper 902: SIGKILL found it gone already (errno 3)',
+-    '[MihawkOS] Wine: helper 901 gone 300 ms after SIGKILL',
+-    '[MihawkOS] Wine: helper 902 gone 0 ms after SIGKILL',
+-    '[MihawkOS] Wine: after the kill: census 420 ms old, frames +12 in 1500 ms',
++    '[ArtCraft] Wine: stop: ending 2 helpers by SIGKILL, not through the server',
++    '[ArtCraft] Wine: helper 901: SIGKILL sent (errno 0)',
++    '[ArtCraft] Wine: helper 902: SIGKILL found it gone already (errno 3)',
++    '[ArtCraft] Wine: helper 901 gone 300 ms after SIGKILL',
++    '[ArtCraft] Wine: helper 902 gone 0 ms after SIGKILL',
++    '[ArtCraft] Wine: after the kill: census 420 ms old, frames +12 in 1500 ms',
+ ]
+ 
+ 
+@@ -152,9 +152,9 @@ class HelpersEnded(unittest.TestCase):
+ 
+ 
+ WEDGE_ENDING = [
+-    "[MihawkOS] flight recorder: wedge broker_busy_s=20: the GPU broker's client lock is held; "
++    "[ArtCraft] flight recorder: wedge broker_busy_s=20: the GPU broker's client lock is held; "
+     "ending the game's helpers",
+-    "[MihawkOS] Wine: the GPU broker's client lock held 20 s: ending 2 helpers by SIGKILL, not through the server",
++    "[ArtCraft] Wine: the GPU broker's client lock held 20 s: ending 2 helpers by SIGKILL, not through the server",
+ ] + TITLE_ENDING[1:]
+ FLIGHT = 'fr t={}.0 verdict=fine present=16 census=420 flips=+0 mem_lock=free broker={} display=free fences=900/900{}'
+ 
+@@ -358,22 +358,22 @@ class WineRobustness(unittest.TestCase):
+ # each line arrived at.
+ STAGE_KLOG = [
+     (1.2, '<118>[SceLncService] launchApp(PPSA99170)'),
+-    (2.1, '[MihawkOS] starts (standard error to klog: yes)'),
+-    (2.3, '[MihawkOS] elevation: ok (filesystem access)'),
+-    (3.0, '[MihawkOS] Wine: load status=0 stage=6 module=24803'),
+-    (3.4, '[MihawkOS] wine-ps5: payload rendezvous native=5302 held=1 errno=0'),
+-    (3.6, '[MihawkOS] wine-ps5: child ready native=5303 service=0x1'),
+-    (3.7, '[MihawkOS] Wine: process wineboot.exe command line 1/1: "C:\\windows\\system32\\wineboot.exe" --init'),
+-    (3.8, '[MihawkOS] wine-ps5: child ready native=5304 service=0x1'),
+-    (4.0, '[MihawkOS] wine-ps5: child ready native=5305 service=0x1'),
+-    (6.4, '[MihawkOS] wine-ps5: payload close native=5306 absent=1 polls=3 begin_ms=35775192 end_ms=35775392'),
+-    (9.6, '[MihawkOS] wine-ps5: child native=5304 completion=0 service=0x1'),
+-    (9.9, '[MihawkOS] wine-ps5: payload close native=5304 absent=1 polls=4 begin_ms=35778745 end_ms=35779045'),
+-    (10.0, '[MihawkOS] wine-ps5: child native=5303 completion=0 service=0x1'),
+-    (11.0, '[MihawkOS] Wine: process completed; returning to launcher'),
+-    (13.0, '[MihawkOS] starts (standard error to klog: yes)'),
+-    (13.2, '[MihawkOS] launch: mode=launcher profile= path= cycle=1 argc=2 env=0'),
+-    (13.9, '[MihawkOS] ends: status 0'),
++    (2.1, '[ArtCraft] starts (standard error to klog: yes)'),
++    (2.3, '[ArtCraft] elevation: ok (filesystem access)'),
++    (3.0, '[ArtCraft] Wine: load status=0 stage=6 module=24803'),
++    (3.4, '[ArtCraft] wine-ps5: payload rendezvous native=5302 held=1 errno=0'),
++    (3.6, '[ArtCraft] wine-ps5: child ready native=5303 service=0x1'),
++    (3.7, '[ArtCraft] Wine: process wineboot.exe command line 1/1: "C:\\windows\\system32\\wineboot.exe" --init'),
++    (3.8, '[ArtCraft] wine-ps5: child ready native=5304 service=0x1'),
++    (4.0, '[ArtCraft] wine-ps5: child ready native=5305 service=0x1'),
++    (6.4, '[ArtCraft] wine-ps5: payload close native=5306 absent=1 polls=3 begin_ms=35775192 end_ms=35775392'),
++    (9.6, '[ArtCraft] wine-ps5: child native=5304 completion=0 service=0x1'),
++    (9.9, '[ArtCraft] wine-ps5: payload close native=5304 absent=1 polls=4 begin_ms=35778745 end_ms=35779045'),
++    (10.0, '[ArtCraft] wine-ps5: child native=5303 completion=0 service=0x1'),
++    (11.0, '[ArtCraft] Wine: process completed; returning to launcher'),
++    (13.0, '[ArtCraft] starts (standard error to klog: yes)'),
++    (13.2, '[ArtCraft] launch: mode=launcher profile= path= cycle=1 argc=2 env=0'),
++    (13.9, '[ArtCraft] ends: status 0'),
+ ]
+ 
+ 
+diff --git a/tools/build-wine-theme.py b/tools/build-wine-theme.py
+index 5515f53..bdfe39e 100644
+--- a/tools/build-wine-theme.py
++++ b/tools/build-wine-theme.py
+@@ -350,7 +350,7 @@ def main():
+     destination = OUTPUT / 'proton.bmp'
+     stamp = OUTPUT / 'proton.bmp.sha256'
+     generator = ROOT / 'tools/make-mihawk-wallpaper.py'
+-    note = [f'MihawkOS v{(ROOT / "VERSION").read_text().strip()}', 'https://discord.gg/mihawk']
++    note = ['ArtCraft']
+     want = hashlib.sha256(generator.read_bytes() + '\n'.join(note).encode()).hexdigest()
+     if not destination.is_file() or not stamp.is_file() or stamp.read_text().strip() != want:
+         spec = importlib.util.spec_from_file_location('mihawk_wallpaper', generator)
+diff --git a/tools/package-install.py b/tools/package-install.py
+index 7b2e4ca..5aa6f0a 100644
+--- a/tools/package-install.py
++++ b/tools/package-install.py
+@@ -1,12 +1,12 @@
+ #!/usr/bin/env python3
+ # SPDX-License-Identifier: GPL-3.0-or-later
+-"""The first-install package: what a user copies to install MihawkOS (docs/SELF_INSTALL.md, phase 7's route; phase 9
++"""The first-install package: what a user copies to install ArtCraft (docs/SELF_INSTALL.md, phase 7's route; phase 9
+ publishes it beside the signed update, tools/sign-release.py).
+ 
+   tools/package-install.py [--title dist/PPSA99170] [--runtime dist/runtime] [--out dist/package]
+ 
+   OUT/PPSA99170/       the title folder: copy it into /data/homebrew (FTP from a phone or a PC, or a file manager)
+-  OUT/usb/mihawkos/    the runtime's pieces: copy usb/'s contents to the root of a USB stick (MBR, exFAT or FAT32)
++  OUT/usb/artcraft/    the runtime's pieces: copy usb/'s contents to the root of a USB stick (MBR, exFAT or FAT32)
+   OUT/SHA256SUMS       every file's SHA-256, to check a copy (sha256sum -c, from OUT)
+   OUT/README.txt       those steps
+ 
+@@ -24,15 +24,15 @@ ROOT = Path(__file__).resolve().parents[1]
+ LEFTOVERS = {'install-source.txt', 'update-source.txt', 'test-run.txt', 'wine-run.txt', 'elevation-retry',
+              'session-running', 'session-notices', 'install-probe.txt', 'install-probe-results.txt', 'title-pack.txt'}
+ NEEDED = ('eboot.bin', 'sce_sys/param.json', 'runtime-pack.txt', 'runtime-stamp')
+-README = """MihawkOS: install it on a jailbroken PS5 (tested on firmware 10.01 and 13.40; supported up to 13.60)
++README = """ArtCraft: install it on a jailbroken PS5 (tested on firmware 10.01 and 13.40; supported up to 13.60)
+ 
+ 1. Copy PPSA99170 into /data/homebrew on the console: over FTP from a phone or a PC, or with a file manager from a USB
+    stick. ShadowMountPlus shows its tile on the home screen within about 45 seconds.
+-2. Copy the contents of usb/ (the mihawkos folder) to the root of a USB stick formatted exFAT or FAT32 with an MBR
++2. Copy the contents of usb/ (the artcraft folder) to the root of a USB stick formatted exFAT or FAT32 with an MBR
+    partition table (the PS5 does not mount a GPT stick), and plug it into the console.
+-3. Open MihawkOS. Its guided setup installs the Windows runtime from the stick and starts Mihawk OS once.
++3. Open ArtCraft. Its guided setup installs the Windows runtime from the stick and starts ArtCraft once.
+ 
+-Each boot: load kstuff, elfldr and websrv, and ShadowMountPlus first. If another homebrew will not start after MihawkOS
++Each boot: load kstuff, elfldr and websrv, and ShadowMountPlus first. If another homebrew will not start after ArtCraft
+ closes, restart the PS5 (a known issue with ShadowMountPlus 1.7beta4).
+ SHA256SUMS lists every file here; from this folder, `sha256sum -c SHA256SUMS` checks a copy.
+ """
+@@ -73,7 +73,7 @@ def main():
+         shutil.rmtree(args.out)
+     title = args.out / args.title.name
+     shutil.copytree(args.title, title)
+-    usb = args.out / 'usb/mihawkos'
++    usb = args.out / 'usb/artcraft'
+     usb.mkdir(parents=True)
+     for piece in pieces:
+         shutil.copyfile(piece, usb / piece.name)
+@@ -82,7 +82,7 @@ def main():
+     (args.out / 'SHA256SUMS').write_text('\n'.join(sums) + '\n')
+     size = lambda folder: sum(p.stat().st_size for p in folder.rglob('*') if p.is_file())
+     print(f'package: {args.out}\n  {title.name}/: {len(files)} files, {size(title)} bytes\n'
+-          f'  usb/mihawkos/: {len(set(pieces))} files for {len(pieces)} pieces (identical pieces share one), '
++          f'  usb/artcraft/: {len(set(pieces))} files for {len(pieces)} pieces (identical pieces share one), '
+           f'{size(usb)} bytes\n  SHA256SUMS: {len(sums)} files')
+     return 0
+ 
+diff --git a/tools/run-console.py b/tools/run-console.py
+index f313dda..ea21f5b 100755
+--- a/tools/run-console.py
++++ b/tools/run-console.py
+@@ -99,10 +99,10 @@ PERF = {
+ 
+ 
+ # Where a run's seconds go: each stage's first line, in host seconds since the launch request, as klog delivered it.
+-STAGES = {'title_started': '[MihawkOS] starts', 'elevated': '[MihawkOS] elevation: ok',
++STAGES = {'title_started': '[ArtCraft] starts', 'elevated': '[ArtCraft] elevation: ok',
+           'wine_loaded': 'Wine: load status=0', 'wineboot_started': 'Wine: process wineboot.exe command line',
+           'wine_ended': 'Wine: process completed; returning to launcher', 'launcher_started': 'launch: mode=launcher',
+-          'launcher_ended': '[MihawkOS] ends: status'}
++          'launcher_ended': '[ArtCraft] ends: status'}
+ READY = re.compile(r'child ready native=(\d+)')
+ COMPLETED = re.compile(r'child native=(\d+) completion=')
+ END_MS = re.compile(r' end_ms=(\d+)')
+@@ -852,7 +852,7 @@ def main():
+         with lock:
+             native_pids.update(map(int, re.findall(r'(?:payload rendezvous native=|child ready native=)(\d+)', line)))
+         note_stage(marks, line, round(time.monotonic() - started, 2))
+-        if '[MihawkOS] Wine: load status=0' in line:
++        if '[ArtCraft] Wine: load status=0' in line:
+             state['loaded'] = True
+         if marker and state['verdict'] is None and marker in line:
+             state['verdict'] = 'PASS' if f'{marker} PASS' in line else 'FAIL' if f'{marker} FAIL' in line else None
+@@ -949,9 +949,9 @@ def main():
+         started = time.monotonic()
+         console_guard.after_launch()
+         launched = True
+-        result, log, _ = runner.run_title(TITLE, r'\[MihawkOS\].*ends: status', (args.watchdog or args.seconds + 90),
++        result, log, _ = runner.run_title(TITLE, r'\[ArtCraft\].*ends: status', (args.watchdog or args.seconds + 90),
+                                           str(log_path), on_line=on_line, exit_grace=30,
+-                                          echo_pattern=r'\[MihawkOS\] (perf:|Wine: (load|alive|process completed|test override))|'
++                                          echo_pattern=r'\[ArtCraft\] (perf:|Wine: (load|alive|process completed|test override))|'
+                                                        r'PS5_PROTON_|fatal signal|returning to launcher')
+         elapsed = time.monotonic() - started
+         state['returned'] = True
+@@ -1017,7 +1017,7 @@ def main():
+         # klog line arrives in the drain. Use that captured status too; a crash
+         # or timeout still cannot pass, nor can a nonzero launcher status.
+         launcher_statuses = [int(match.group(1)) for line in lines
+-                             if (match := re.search(r'\[MihawkOS\].*ends: status(?:=|\s+)(-?\d+)', line))]
++                             if (match := re.search(r'\[ArtCraft\].*ends: status(?:=|\s+)(-?\d+)', line))]
+         launcher_end_status = launcher_statuses[-1] if launcher_statuses else None
+         # A run that injects a fault, or whose probe must be ended from outside, is judged on how it ended, not on the
+         # probe's verdict or exit status.
+diff --git a/tools/run-launcher.py b/tools/run-launcher.py
+index cf078aa..3776dfc 100644
+--- a/tools/run-launcher.py
++++ b/tools/run-launcher.py
+@@ -75,7 +75,7 @@ def main():
+     evidence_path.write_text(json.dumps({'passed': False, 'status': 'incomplete',
+         'capture': str(run.relative_to(ROOT))}, indent=2) + '\n')
+     identity = uuid.uuid4().hex
+-    marker = '[MihawkOS] test run identity: ' + identity
++    marker = '[ArtCraft] test run identity: ' + identity
+     script = f'identity {identity}\nframes {args.frames}\nscreenshot\nsamples ps5proton\n'
+     if args.themes:
+         script += 'press ps5proton 2 square\n'
+@@ -143,9 +143,9 @@ def main():
+             captured = bytearray()
+             # Klog has no timestamps: note when each startup step reached this host. The
+             # kernel's exec line is the base; the title's own first line follows its /data request.
+-            steps = {'exec': ' EXEC /app0/eboot.bin ', 'starts': '[MihawkOS] starts',
+-                     'elevation': '[MihawkOS] elevation: ', 'library': '[MihawkOS] launcher: ',
+-                     'ui': '[MihawkOS] launcher UI: '}
++            steps = {'exec': ' EXEC /app0/eboot.bin ', 'starts': '[ArtCraft] starts',
++                     'elevation': '[ArtCraft] elevation: ', 'library': '[ArtCraft] launcher: ',
++                     'ui': '[ArtCraft] launcher UI: '}
+             seen = {}
+             def stamp(line):
+                 for step, marker in steps.items():
+@@ -180,7 +180,7 @@ def main():
+         spec = importlib.util.spec_from_file_location('check_run', ROOT / 'ps5/tools/check-run.py')
+         checker = importlib.util.module_from_spec(spec)
+         spec.loader.exec_module(checker)
+-        finished = bool(idle_since and marker in text and '[MihawkOS] ends: status 0' in current)
++        finished = bool(idle_since and marker in text and '[ArtCraft] ends: status 0' in current)
+         checked = checker.check(run, ['ps5proton']) if finished else 1
+         probe_passed = None
+         probe_lines = []
+@@ -219,11 +219,11 @@ def main():
+             'title_finished_successfully': finished, 'picture_and_log_check_passed': checked == 0,
+             'post_launch_fault_records': len(checker.CRASH.findall(text)),
+             'post_launch_driver_errors': len(checker.DRIVER_ERROR.findall(text)),
+-            'elevation': re.findall(r'\[MihawkOS\] elevation: (.*)', text),
+-            'sample': re.findall(r'\[MihawkOS\] sample ps5proton: (.*)', current),
+-            'library': re.findall(r'\[MihawkOS\] launcher: (.*)', current),
++            'elevation': re.findall(r'\[ArtCraft\] elevation: (.*)', text),
++            'sample': re.findall(r'\[ArtCraft\] sample ps5proton: (.*)', current),
++            'library': re.findall(r'\[ArtCraft\] launcher: (.*)', current),
+             # The system notifications the title posted, in either process (native/proton_wine.cpp notices_post).
+-            'notices': re.findall(r'\[MihawkOS\] notice: (.*)', text),
++            'notices': re.findall(r'\[ArtCraft\] notice: (.*)', text),
+             # Seconds after the kernel's exec line that each step's line arrived here.
+             'startup_seconds': {step: round(seen[step] - seen['exec'], 2) for step in seen} if 'exec' in seen else None,
+             'probe': args.probe, 'probe_passed': probe_passed, 'probe_records': probe_lines,
+@@ -233,10 +233,10 @@ def main():
+             'storage_errors': len(storage),
+         }
+         if args.setup:
+-            steps = [int(n) for n in re.findall(r'\[MihawkOS\] setup: step (\d+)', current)]
++            steps = [int(n) for n in re.findall(r'\[ArtCraft\] setup: step (\d+)', current)]
+             sky = [float(ms) for ms in re.findall(r'setup sky: ([0-9.]+) ms GPU', current)]
+             evidence['setup'] = {
+-                'steps': steps, 'language_ja': '[MihawkOS] setup: language ja-JP' in current,
++                'steps': steps, 'language_ja': '[ArtCraft] setup: language ja-JP' in current,
+                 'installed': bool(re.search(r'setup: install 4 problem 0', current)),
+                 'sky_gpu_ms': sky, 'fps': re.findall(r'sample ps5proton: ok, \d+ frames in [0-9.]+ s, ([0-9.]+) fps', current)}
+             evidence['passed'] = evidence['passed'] and steps == [0, 1, 2, 3, 4, 5] and evidence['setup']['language_ja'] \
+diff --git a/tools/run-setup-unattended.py b/tools/run-setup-unattended.py
+index 6ce9013..1c568fa 100644
+--- a/tools/run-setup-unattended.py
++++ b/tools/run-setup-unattended.py
+@@ -1,14 +1,14 @@
+ #!/usr/bin/env python3
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ """The first-install rehearsal with nobody at the console (docs/SELF_INSTALL.md): the guided setup walked by scripted
+-presses with the real install engine, its first Mihawk OS session, Done, and one Mihawk OS session that logs off.
++presses with the real install engine, its first ArtCraft session, Done, and one ArtCraft session that logs off.
+ 
+   tools/run-setup-unattended.py --name RUN
+   tools/run-setup-unattended.py --name RUN --read --package DIR    afterwards: downloads only, nothing launched or
+                                                                    written
+ 
+ Before it: the title folder holds the build under test, the tour has not finished (no setup.txt with done=1), and a USB
+-stick with mihawkos/ is plugged in. The harness writes only its own hooks (/data/ps5proton/setup-unattended, the title
++stick with artcraft/ is plugged in. The harness writes only its own hooks (/data/ps5proton/setup-unattended, the title
+ folder's test-run.txt, /data/ps5proton/stop-game) and removes them when the console is idle, failure or not; the title
+ writes what a first install writes. With the marker, a scripted run gives the tour the real engine and lets it restart
+ into its sessions (proton_setup_unattended, ps5/src/proton_launch.h); without it nothing of this happens.
+@@ -21,7 +21,7 @@ No person can close a title, so every launcher is a scripted one that ends itsel
+      it outlives the install). It waits for "install: done" (or a failure) and for the launcher's end. Skipped when
+      the runtime's stamp is already on the console (a rerun after an install that finished).
+   2. prepare: until setup.txt says done=1 the tour starts at Welcome, and with the runtime in place How to install
+-     focuses Continue: Welcome, language, Continue, Preparing → Start. The title restarts into the first Mihawk OS session, which ends itself once the prefix
++     focuses Continue: Welcome, language, Continue, Preparing → Start. The title restarts into the first ArtCraft session, which ends itself once the prefix
+      is made. The launcher after it (its test-run.txt planted during the session) is at Done → Enter Mihawk OS. The
+      session after that is logged off through stop-game once its desktop has been up 45 s, and the launcher after it
+      runs its frames and ends.
+@@ -54,7 +54,7 @@ from console_log import LineLog, redact   # noqa: E402
+ TITLE = '/data/homebrew/PPSA99170'
+ MARKER = '/data/ps5proton/setup-unattended'
+ STOP = re.compile(r'fatal signal|maxpipekva|TTY\(STDIN\)|errno=5|\[IOD\] process_completion: error|nsid1_read')
+-MILESTONE = re.compile(r'\[MihawkOS\] (setup: (?!sky)|install: (from|done|failed|stopped)|restart: |'
++MILESTONE = re.compile(r'\[ArtCraft\] (setup: (?!sky)|install: (from|done|failed|stopped)|restart: |'
+                        r'Wine: (process completed|'
+                        r'stop requested)|Mihawk: desktop session|ends: status|elevation: |first run: )')
+ 
+@@ -295,7 +295,7 @@ def main():
+         mark = len(lines)
+         ps5_console.ps5vkctl_command(settings, 'launch PPSA99170', timeout=120)
+         record['launches'].append('prepare')
+-        if not wait(seen('setup: the first Mihawk OS session starts'), 120):
++        if not wait(seen('setup: the first ArtCraft session starts'), 120):
+             raise SystemExit('Preparing did not start the first session; stopped here')
+         put(TITLE + '/test-run.txt', script(uuid.uuid4().hex, 1200, [(90, 'cross')]))   # for the launcher after it
+         if not wait(seen('setup: the prefix is made'), 900) or not wait(seen('setup: ends (finished)'), 300):
+@@ -303,7 +303,7 @@ def main():
+         put(TITLE + '/test-run.txt', script(uuid.uuid4().hex, 600, []))   # for the launcher after the next session
+         mark = len(lines)
+         if not wait(seen('Mihawk: desktop session'), 300):
+-            raise SystemExit('the Mihawk OS session did not reach its desktop; stopped here')
++            raise SystemExit('the ArtCraft session did not reach its desktop; stopped here')
+         wait(lambda all_lines: False, 45)
+         if record['stop_lines']:
+             raise SystemExit('stopped on a stop line')
+-- 
+2.43.0
+

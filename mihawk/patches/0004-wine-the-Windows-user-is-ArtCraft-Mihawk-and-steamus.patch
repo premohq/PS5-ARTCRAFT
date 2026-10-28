@@ -1,7 +1,7 @@
 From 91a2df581e4bbe41e5cdef26d3d820eb66794f52 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 28 Oct 2026 04:00:08 +0000
-Subject: [PATCH 4/5] wine: the Windows user is ArtCraft; Mihawk and steamuser
+Subject: [PATCH] wine: the Windows user is ArtCraft; Mihawk and steamuser
  profiles move to it
 
 Every prefix's Windows user was Mihawk (patch 1240's GetUserNameA/W, the

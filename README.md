@@ -13,7 +13,7 @@ Windows programs on the PS5 through Wine and Proton's stack.
 
 | Piece | Where | What it does |
 |---|---|---|
-| The title | `mihawk/patches/` on the fork at `mihawk/mihawk.lock.json` | Boots straight into the ArtCraft desktop on a cold start (a session that ends shows the library, so a failing one never loops); its Start and taskbar keep only File Explorer and Settings; no MihawkBrowser shortcut; the Windows user is ArtCraft |
+| The title | `mihawk/patches/` on the fork at `mihawk/mihawk.lock.json` ([what each patch does](mihawk/README.md)) | Boots straight into the ArtCraft desktop on a cold start (a session that ends shows the library, so a failing one never loops); its Start and taskbar keep only File Explorer and Settings; no MihawkBrowser shortcut; the Windows user is ArtCraft (older Mihawk and steamuser profiles move to it with their saves); everything the user reads says ArtCraft, with ArtCraft's own mark on the Start button and the PS5 tile, while the credits stay Mihawk's |
 | The desktop | `artcraft_ps5/stage.py` | A prefix of its own (`artcraft`): `C:\ArtCraft\Launcher` (ArtCraft Launcher, portable), `C:\ArtCraft\Apps\<app>` (each app, installed exactly as the launcher installs a portable ZIP, so the launcher adopts and updates them), the wallpaper, and the library entry that starts it |
 | The session start | `session/artcraft-session.c` | Run by the desktop once it is up: installs the code-signing root and policy the launcher's self-update needs, applies the wallpaper and Start pins once, keeps a desktop shortcut per installed app, sets `WGPU_BACKEND=vulkan`, starts the launcher |
 | The pins | `edition/suite.lock.json` | Every release the edition installs, by version, URL, size and SHA-256 |

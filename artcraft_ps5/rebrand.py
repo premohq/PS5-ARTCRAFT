@@ -1,6 +1,6 @@
 """Put the edition's name (edition.json title name) where a Mihawk OS fork shows "MihawkOS" or "Mihawk OS".
 
-Everything the user reads: the title's name and its screens, the guided setup in every language, the desktop's
+Everything the user reads: the title's name and its screens (the loading screen's footer among them), the guided setup in every language, the desktop's
 shortcut tips, the logging README, the browser's title, the runtime wallpaper's corner note. The credits stay
 Mihawk's: the About page says the title is a modified version of MihawkOS (GPLv3 section 5a), keeps "Copyright (C)
 2026 Mihawk and the authors credited in NOTICE.md" and names both source repositories; the music is "by Mihawk".
@@ -31,7 +31,7 @@ REFERENCES = ('"The Mihawk OS prefix"',)
 VISIBLE_SOURCES = (
     'src/pw_setup.c', 'src/pw_detailed_logs.c', 'examples/ps5proton/setup_tour.hpp',
     'examples/ps5proton/ps5proton.cpp', 'ps5/src/samples.cpp', 'ps5/src/proton_launch.cpp',
-    'native/proton_wine.cpp',
+    'native/proton_wine.cpp', 'native/proton_loading.cpp',
 )
 # Where the USB stick's folder of runtime pieces is named (src/pw_setup.c tells the user its name). The pack format's
 # own tags (mihawkos-runtime-pack and the like) are not the folder and stay, as the packs carry them.
@@ -79,6 +79,8 @@ def targeted(brand: str) -> list[tuple[str, str, str, int]]:
         ('ps5/src/proton_launch.cpp', '"edition: %s, profile %s, Mihawk OS desktop %s, browser shortcut %s"',
          '"edition: %s, profile %s, the Windows desktop %s, browser shortcut %s"', 1),
         ('src/pw_browser.c', 'L"%.*s - MihawkBrowser"', f'L"%.*s - {brand} Browser"', 1),
+        ('src/pw_browser.c', 'CreateWindowExW(0, L"MihawkBrowser", L"MihawkBrowser",',
+         f'CreateWindowExW(0, L"MihawkBrowser", L"{brand} Browser",', 1),
         ('src/pw_browser.c', 'L"MihawkBrowser opens https:// addresses only."',
          f'L"{brand} Browser opens https:// addresses only."', 1),
         ('tools/build-wine-theme.py',
@@ -166,12 +168,3 @@ def rebrand(fork: Path, brand: str, *, say=print) -> dict[str, int]:
         say(f'{name}: {count}')
     return changes
 
-
-def write_icon(fork: Path, colours: list[tuple[int, int, int]]) -> Path:
-    """The title's PS5 icon (ps5/sce_sys/icon0.png, 512 x 512 RGB) replaced by the edition's (artwork.icon)."""
-    from . import artwork
-    path = fork / 'ps5/sce_sys/icon0.png'
-    if not path.is_file():
-        raise RebrandError(f'{path} is missing')
-    artwork.icon(colours).save(path, format='PNG', optimize=True)
-    return path
