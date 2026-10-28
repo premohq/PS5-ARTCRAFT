@@ -1,7 +1,7 @@
 From 44c3a46dad21aa04f5d7dee1fd252f00de2e0bae Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Wed, 28 Oct 2026 03:47:49 +0000
-Subject: [PATCH 2/4] native: an edition's desktop can leave MihawkBrowser's
+Subject: [PATCH 2/5] native: an edition's desktop can leave MihawkBrowser's
  shortcut out
 
 The ArtCraft edition's desktop is for the Craft App Suite only. When the
