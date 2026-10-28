@@ -25,32 +25,51 @@ other as it was. The cost is disk space: ArtCraft brings its own copy of the run
 
 ## On the PC
 
-You need an x86_64 Linux machine (or WSL2) with Git, Python 3.10+ with `numpy` and `Pillow`
-(`pip install -e .`), MinGW-w64 (`gcc-mingw-w64-x86-64`), and what the Mihawk fork's README asks for to build the
-title and runtime.
+### Build (once; hours the first time)
+
+You need Docker (Docker Engine on Linux, or Docker Desktop on Windows or macOS), about 60 GB free and a few hours: the
+build compiles Wine three times. Everything else is in the container, at pinned versions.
 
 ```sh
-# 1. The fork at its pin with the edition's patches (branch artcraft in ../PS5_MihawkOS), then build and
-#    install the title and runtime as the fork's README says (tools/fetch-all.sh, tools/build-production.sh,
-#    tools/console-setup.py). With the patches its tools build and install ArtCraft as PPSA99278 into
-#    /data/artcraft; an installed Mihawk OS is not touched.
-python3 -m artcraft_ps5 mihawk prepare
-
-# 2. The session helper (or take artcraft-session.exe from the CI run's artcraft-session artifact)
-make -C session
-
-# 3. The suite: download and check every pinned release, lay out the console's files, send them
-python3 -m artcraft_ps5 fetch
-python3 -m artcraft_ps5 stage              # draws the wallpaper the first time
-python3 -m artcraft_ps5 deploy --dry-run   # what would go where
-python3 -m artcraft_ps5 deploy             # PS5_HOST / FTP_PORT from ../PS5_Vulkan/.env, the environment or --host
+git clone -b claude/tender-fermat-z3l05c https://github.com/premohq/PS5-ARTCRAFT && cd PS5-ARTCRAFT
+docker build -t artcraft-build build
+docker run --rm -it -v artcraft-work:/work -v "$PWD":/src artcraft-build      # PowerShell: -v "${PWD}:/src"
 ```
 
-Close the ArtCraft title on the console before a deploy. The first deploy sends everything (about 1.25 GB).
-After that ArtCraft Launcher owns itself and the apps and updates them as on a PC, so later deploys send only the
-edition's own files: the session helper, its settings, the registry files, the wallpaper and the library entry.
-Install more apps from the launcher; `deploy --force` re-sends everything as a repair. `python3 -m artcraft_ps5 lock
---refresh` pins the newest releases for the next fresh console.
+`build/build.sh` runs inside: the Mihawk OS fork at its pin with ArtCraft's patches, its sibling sources, the fork's
+own build (`tools/fetch-all.sh`, `tools/build-production.sh`), and the ArtCraft desktop. Running it again resumes. The
+result is in this checkout:
+
+- `out/package/`: the ArtCraft title folder `PPSA99278` and `usb/artcraft/`, the Windows runtime's pieces, with a
+  `README.txt`;
+- `dist/artcraft/`: the ArtCraft desktop (ArtCraft Launcher, the 13 apps, the session helper, the wallpaper).
+
+On an Arch Linux PC with the packages `build/Dockerfile` installs, `WORK=~/artcraft-build build/build.sh` does the
+same without Docker.
+
+### Install on the console
+
+The console runs homebrew as the fork's README describes (its payloads, and your own ShadowMountPlus) and serves FTP on
+port 2121. Mihawk OS, if installed, is left as it is.
+
+1. Copy `out/package/PPSA99278` into `/data/homebrew` over FTP. The ArtCraft tile appears within about 45 seconds.
+2. Copy the contents of `out/package/usb/` to a USB stick (exFAT or FAT32, MBR) and plug it into the console.
+3. Open ArtCraft. Its guided setup installs the runtime from the stick and makes its folder, `/data/artcraft`. Then
+   close it.
+4. Send the ArtCraft desktop:
+
+   ```sh
+   docker run --rm -it -v artcraft-work:/work -v "$PWD":/src -e PS5_HOST=<console address> artcraft-build \
+       python3 -m artcraft_ps5 deploy
+   ```
+
+5. Open ArtCraft again: it starts its own desktop, and ArtCraft Launcher starts by itself.
+
+Close ArtCraft before a deploy. The first deploy sends everything (about 1.25 GB). After that ArtCraft Launcher owns
+itself and the apps and updates them as on a PC, so later deploys send only the edition's own files: the session
+helper, its settings, the registry files, the wallpaper and the library entry. Install more apps from the launcher;
+`deploy --force` re-sends everything as a repair. `python3 -m artcraft_ps5 lock --refresh` pins the newest releases
+for the next fresh console.
 
 On the console, test in the order of [docs/console-checklist.md](docs/console-checklist.md).
 

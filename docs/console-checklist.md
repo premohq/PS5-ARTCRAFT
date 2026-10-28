@@ -1,10 +1,9 @@
 # Testing the ArtCraft edition on a console
 
-Nothing here has run on a PS5 yet. Work through this in order on a console that has the patched fork's title and
-runtime installed: its `tools/console-setup.py` puts them in `/data/homebrew/PPSA99278` and `/data/artcraft` (the
-fork's README; its commit gate, `tools/gate.py`, should pass on the patched build first). If the console has Mihawk OS
-too, take the listing in section 9 before installing ArtCraft. Each step names what to look for and where to read what
-went wrong.
+Nothing here has run on a PS5 yet. Work through this in order on a console with the ArtCraft title and its runtime
+installed (README.md, Install on the console, steps 1 to 3: `/data/homebrew/PPSA99278` and `/data/artcraft`). If the
+console has Mihawk OS too, take the listing in section 9 before installing ArtCraft. Each step names what to look for
+and where to read what went wrong.
 
 Where to look:
 
@@ -19,9 +18,10 @@ Where to look:
 
 The launcher updating itself is the part most worth seeing. Pin it, and one small app, one release back for the
 first deploy only. Both releases read the same `installed.json` and settings as the current ones, and 0.7.0 updates
-itself the same way 0.8.1 does.
+itself the same way 0.8.1 does. Run this in the build container, in place of README.md's step 4:
 
 ```sh
+docker run --rm -it -v artcraft-work:/work -v "$PWD":/src -e PS5_HOST=<console address> artcraft-build bash
 python3 -m artcraft_ps5 lock --pin artcraft-launcher=0.7.0 soundcraft=0.12.1
 python3 -m artcraft_ps5 fetch && rm -rf dist/artcraft && python3 -m artcraft_ps5 stage
 python3 -m artcraft_ps5 deploy            # close the title first; about 1.25 GB the first time
