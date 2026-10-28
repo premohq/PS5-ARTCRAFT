@@ -2,10 +2,13 @@ name: Build ArtCraft
 
 # The whole build on a GitHub runner: build/build.sh in the build container (the Mihawk OS fork with ArtCraft's
 # patches, its Wine builds, the title, the runtime, and the ArtCraft desktop), then build/package-release.sh. The
-# result is a workflow artifact and, unless declined, a GitHub release with three ZIPs and the steps to install them.
-# Started by hand (Actions, Build ArtCraft, Run workflow): it takes hours.
+# result is a workflow artifact and a GitHub prerelease with three ZIPs and the steps to install them. It runs when a push
+# changes the build or the fork's patches (a newer push cancels a run still going), or by hand (Actions, Build
+# ArtCraft, Run workflow, once this workflow is on the default branch). It takes hours.
 
 on:
+  push:
+    paths: ['build/**', 'mihawk/**', 'edition/**', 'session/**', 'artcraft_ps5/**', '.github/workflows/build.yml']
   workflow_dispatch:
     inputs:
       release:
@@ -13,12 +16,18 @@ on:
         type: boolean
         default: true
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
 jobs:
   build:
     name: Build the title, its runtime and the ArtCraft desktop
+    # A push builds only once the repository is public, where runners are larger and minutes free; by hand, always.
+    if: github.event_name == 'workflow_dispatch' || !github.event.repository.private
     runs-on: ubuntu-24.04
     timeout-minutes: 358
     steps:
@@ -62,7 +71,7 @@ jobs:
           retention-days: 30
           compression-level: 0
       - name: Publish the release
-        if: inputs.release
+        if: github.event_name == 'push' || inputs.release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
