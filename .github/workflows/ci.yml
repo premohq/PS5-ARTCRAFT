@@ -10,16 +10,20 @@ permissions:
 
 jobs:
   python:
-    name: Python tools (ruff, pytest)
+    name: Python tools (ruff, pytest) on Python ${{ matrix.python }}
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ['3.10', '3.13']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
       - run: pip install numpy pillow pytest pyftpdlib ruff
       - run: ruff check artcraft_ps5 tests
       - run: python -m pytest -q tests
+      - run: python -m artcraft_ps5 show
 
   session:
     name: Session helper (MinGW-w64)

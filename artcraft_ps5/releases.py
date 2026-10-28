@@ -86,8 +86,8 @@ def release_pin(app: App, arch: str, opener: Opener | None = None, version: str 
 
 
 def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, versions: dict[str, str] | None = None,
-                 say=print) -> dict:
-    """Pin the newest release of the launcher and every app, and write the lock file.
+                 write: bool = True, say=print) -> dict:
+    """Pin the newest release of the launcher and every app, and write the lock file (unless `write` is false).
 
     With versions ({app id: version}), pin just those apps at those releases and keep every other pin: an older
     launcher or app on a fresh console shows its update working."""
@@ -110,7 +110,8 @@ def refresh_lock(edition: Edition, path: Path, opener: Opener | None = None, *, 
         'refreshed': datetime.date.today().isoformat(),
         'pins': pins,
     }
-    path.write_text(json.dumps(lock, indent=2) + '\n')
+    if write:
+        path.write_text(json.dumps(lock, indent=2) + '\n')
     return lock
 
 

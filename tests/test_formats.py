@@ -10,7 +10,7 @@ import pytest
 
 from artcraft_ps5 import authenticode, launcher_state, regfile
 from artcraft_ps5.edition import EditionError
-from conftest import minimal_pe
+from tests.conftest import minimal_pe
 
 
 def test_ron_strings_escape_like_rust():

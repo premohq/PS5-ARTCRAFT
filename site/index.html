@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PS5-ArtCraft: the Craft App Suite on PlayStation 5</title>
+<meta name="description" content="PhotoCraft, VectorCraft, FilmCraft and ten more creative apps on a desktop of their own on a PS5, with a USB keyboard and mouse, your files from home, and a launcher that keeps them up to date.">
+<meta property="og:title" content="PS5-ArtCraft">
+<meta property="og:description" content="The Craft App Suite on PlayStation 5: {{count}} creative apps, a USB keyboard and mouse, and your files from home.">
+<meta property="og:image" content="social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="brand" href="#"><img src="icon.png" alt="" width="28" height="28"><span>PS5-Art<b>Craft</b></span></a>
+    <nav>
+      <a href="#apps">Apps</a>
+      <a href="#files">Files</a>
+      <a href="#how">How it works</a>
+      <a href="#status">Status</a>
+      <a class="nav-gh" href="{{repo}}">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <p class="label"><span class="dot"></span>Work in progress · runs under Wine today, the console next</p>
+      <h1 class="word">PS5-Art<b>Craft</b></h1>
+      <p class="lead">The Craft App Suite on PlayStation 5. PhotoCraft, VectorCraft, FilmCraft and {{others}} more creative
+        apps on a desktop of their own, with a USB keyboard and mouse, your files from home, and a launcher that keeps
+        everything up to date.</p>
+      <div class="actions">
+        <a class="button primary" href="{{repo}}">Get it on GitHub</a>
+        <a class="button" href="#how">How it works</a>
+      </div>
+      <div class="dock" aria-label="The {{count}} Craft apps">
+        <!-- dock -->
+      </div>
+    </div>
+  </section>
+
+  <section class="strip">
+    <div class="wrap facts">
+      <div><span class="label">Apps</span><strong>{{count}}</strong><span>from the Craft App Suite</span></div>
+      <div><span class="label">Updates</span><strong>Itself</strong><span>the launcher keeps every app current</span></div>
+      <div><span class="label">Input</span><strong>USB</strong><span>keyboard and mouse</span></div>
+      <div><span class="label">Files</span><strong>Home</strong><span>SMB, WebDAV and FTP servers</span></div>
+    </div>
+  </section>
+
+  <section id="apps" class="section">
+    <div class="wrap">
+      <p class="label">01 · The suite</p>
+      <h2>Thirteen apps. One desktop.</h2>
+      <p class="intro">Every app ArtCraft Launcher's catalog lists, installed the way the launcher installs them, so it
+        adopts them and keeps them up to date on the console as it does on a PC. The versions below are the ones this
+        edition pins.</p>
+      <div class="cards">
+        <!-- cards -->
+      </div>
+    </div>
+  </section>
+
+  <section id="files" class="section alt">
+    <div class="wrap">
+      <p class="label">02 · Your files <span class="tag">In development</span></p>
+      <h2>Your files, wherever they live.</h2>
+      <p class="intro">ArtCraft Files runs on the PS5's desktop and connects the apps to the servers you already have.</p>
+      <div class="features">
+        <article>
+          <span class="label">Server drives</span>
+          <h3>Open and save on your home server</h3>
+          <p>A shared folder on your PC or NAS (SMB), Nextcloud or any WebDAV server, or an FTP server shows up as a
+            drive, H:, I: and on, in every app's Open and Save windows. Changes go both ways.</p>
+        </article>
+        <article>
+          <span class="label">Send to the PS5</span>
+          <h3>Drop files in over FTP</h3>
+          <p>Point any FTP app on your PC or phone at the PS5 and copy pictures, footage and projects straight into
+            Documents, Pictures, Videos or Music. No USB drive.</p>
+        </article>
+        <article>
+          <span class="label">Backups</span>
+          <h3>Keep a copy of your work</h3>
+          <p>Your work is copied to your home server or an FTP server when you ask, and as you save. Nothing on the
+            server is deleted by a backup.</p>
+        </article>
+      </div>
+      <div class="chips"><span>SMB</span><span>WebDAV</span><span>Nextcloud</span><span>FTP</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="label">03 · On the couch</p>
+      <h2>A PC's creative studio, on the TV.</h2>
+      <div class="features four">
+        <article><h3>USB keyboard and mouse</h3><p>Plug them into the PS5 and work the way the apps were made to be used.</p></article>
+        <article><h3>A desktop of its own</h3><p>ArtCraft starts straight into its own desktop, with a file manager, Settings and a shortcut for every app.</p></article>
+        <article><h3>Updates itself</h3><p>ArtCraft Launcher starts with the desktop and keeps itself and every app up to date.</p></article>
+        <article><h3>Official releases</h3><p>Each app is the ArtCraft Team's own Windows release, pinned by version and checked by SHA-256.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="section alt">
+    <div class="wrap">
+      <p class="label">04 · How it works</p>
+      <h2>Three steps from your PC.</h2>
+      <ol class="steps">
+        <li><span class="num">1</span><h3>Build it</h3><p>On a Linux PC (or WSL2), fetch and check every pinned release and lay out what the console gets.</p><code>python3 -m artcraft_ps5 build</code></li>
+        <li><span class="num">2</span><h3>Send it</h3><p>Copy it to a jailbroken PS5 over FTP. Later runs send only what changed.</p><code>python3 -m artcraft_ps5 deploy</code></li>
+        <li><span class="num">3</span><h3>Start ArtCraft</h3><p>The ArtCraft title opens its desktop, and ArtCraft Launcher starts on it.</p><code>PS5 → ArtCraft</code></li>
+      </ol>
+      <p class="more"><a href="{{repo}}#build-it">The full guide on GitHub ↗</a></p>
+    </div>
+  </section>
+
+  <section id="status" class="section">
+    <div class="wrap">
+      <p class="label">05 · Status</p>
+      <h2>Where it stands.</h2>
+      <p class="intro">The whole edition builds from the real releases and runs under Wine on a Linux PC: the desktop
+        starts, ArtCraft Launcher finds every app installed, and the apps open from it. It has not run on a console
+        yet; that is next.</p>
+      <div class="shots">
+        <figure><img src="screenshots/launcher-window-wine.png" alt="ArtCraft Launcher listing the apps as installed"><figcaption>ArtCraft Launcher, every app installed</figcaption></figure>
+        <figure><img src="screenshots/cadcraft-window-wine.png" alt="CADCraft open on an empty drawing"><figcaption>CADCraft, opened from it</figcaption></figure>
+      </div>
+      <p class="more"><a href="{{repo}}#what-is-proven">What is proven, and how ↗</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-row">
+    <div>
+      <a class="brand" href="#"><img src="icon.png" alt="" width="24" height="24"><span>PS5-Art<b>Craft</b></span></a>
+      <p>Made by <a href="https://github.com/premohq">premohq</a>.</p>
+    </div>
+    <p class="fine">The Craft App Suite and ArtCraft Launcher are by the ArtCraft Team and each app's contributors (MIT OR
+      Apache-2.0); this project installs their official releases. Built on Mihawk OS, with Wine and Proton. ArtCraft
+      and its marks are trademarks of the ArtCraft Team; PlayStation and PS5 are trademarks of Sony Interactive
+      Entertainment. This project is not affiliated with or endorsed by either.</p>
+  </div>
+</footer>
+
+</body>
+</html>

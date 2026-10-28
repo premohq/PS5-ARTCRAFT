@@ -7,7 +7,7 @@ import pytest
 
 from artcraft_ps5 import portable
 from artcraft_ps5.edition import App, EditionError
-from conftest import portable_zip
+from tests.conftest import portable_zip
 
 APP = App('photocraft', 'PhotoCraft', 'Image editing', 'storytold/photocraft', '#2f7bf5')
 DEST = PureWindowsPath(r'C:\ArtCraft\Apps\photocraft')

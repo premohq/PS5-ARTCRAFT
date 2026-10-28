@@ -3,11 +3,12 @@ name: Build ArtCraft
 # The whole build on a GitHub runner: build/build.sh in the build container (the Mihawk OS fork with ArtCraft's
 # patches, its Wine builds, the title, the runtime, and the ArtCraft desktop), then build/package-release.sh. The
 # result is a workflow artifact and a GitHub prerelease with three ZIPs and the steps to install them. It runs when a push
-# changes the build or the fork's patches (a newer push cancels a run still going), or by hand (Actions, Build
-# ArtCraft, Run workflow, once this workflow is on the default branch). It takes hours.
+# to main changes the build or the fork's patches (a newer push cancels a run still going), or by hand (Actions, Build
+# ArtCraft, Run workflow, from the default branch). It takes hours.
 
 on:
   push:
+    branches: [main]
     paths: ['build/**', 'mihawk/**', 'edition/**', 'session/**', 'artcraft_ps5/**', '.github/workflows/build.yml']
   workflow_dispatch:
     inputs:

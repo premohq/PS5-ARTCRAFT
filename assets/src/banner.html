@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- The README banner, 1280x320 (rendered at 2x). assets/render.cjs supplies SUITE and the fonts. -->
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="artcraft.css">
+<style>
+  .card { width: 1280px; height: 320px; border-radius: 24px; grid-template-rows: 40px 1fr 40px; }
+  .main { display: flex; align-items: center; justify-content: center; gap: 60px; }
+  .icons { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .icons .row { display: flex; gap: 10px; }
+  .icons img { width: 58px; height: 58px; }
+  .word { font-size: 96px; }
+  .sub { font-size: 25px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="bar"><span>PS5 homebrew</span><span id="count"></span></div>
+  <div class="main">
+    <div class="icons" id="icons"></div>
+    <div>
+      <div class="word">PS5-Art<b>Craft</b></div>
+      <div class="sub">The Craft App Suite on PlayStation 5</div>
+    </div>
+  </div>
+  <div class="bar foot"><span>Updates itself</span><span>USB keyboard + mouse</span></div>
+</div>
+<script>
+  const apps = window.SUITE;
+  document.getElementById('count').textContent = `${apps.length} Craft apps`;
+  const box = document.getElementById('icons');
+  for (const [from, to] of [[0, 5], [5, 9], [9, 13]]) {
+    const row = box.appendChild(document.createElement('div'));
+    row.className = 'row';
+    for (const app of apps.slice(from, to)) row.appendChild(icon(app));
+  }
+</script>
+</body>
+</html>

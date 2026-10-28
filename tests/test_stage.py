@@ -10,7 +10,7 @@ import pytest
 from artcraft_ps5 import edition as edition_module
 from artcraft_ps5 import stage
 from artcraft_ps5.edition import EditionError
-from conftest import minimal_pe, portable_zip
+from tests.conftest import minimal_pe, portable_zip
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = Path('data/artcraft/prefixes/artcraft/drive_c/ArtCraft')

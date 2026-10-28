@@ -6,10 +6,15 @@ What each value does, and where Wine or the Mihawk shell reads it:
   HKCU\\Software\\MihawkOS      WallpaperInitialized  nonempty choice; 1 = never replace it with proton.bmp)
   HKCU\\Software\\Mihawk\\Shell  StartPins            Start's pinned apps, paths (wine/ps5/pw_shell_start.c)
                                 BrowserPinned         1: never pin MihawkBrowser
-  HKLM\\Software\\Microsoft\\SystemCertificates\\Root\\Certificates\\<SHA-1>  Blob
+  HKCU\\Software\\Microsoft\\SystemCertificates\\Root\\Certificates\\<SHA-1>  Blob
                                                      a trusted root (crypt32's registry store: the key is the
                                                      certificate's SHA-1 in uppercase hex, the blob its serialized
-                                                     element, property 32 = CERT_CERT_PROP_ID holding the DER)
+                                                     element, property 32 = CERT_CERT_PROP_ID holding the DER).
+                                                     The user's store, not the machine's (HKLM): Wine 9.0's crypt32
+                                                     deletes a root there that the host lacks the first time a
+                                                     process opens the Root store, before any chain is built. Wine
+                                                     9.0 and 11.0 both keep the user's copy, and their chain engine
+                                                     trusts it (CertGetCertificateChain on HCCE_CURRENT_USER).
   HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Wintrust\\Trust Providers\\Software Publishing  State
                                                      WinVerifyTrust's policy flags (wintrust_main.c
                                                      WintrustGetRegPolicyFlags; Wine's default when absent is
@@ -33,7 +38,7 @@ WTPF_DEFAULT = (WTPF_IGNOREREVOCATIONONTS | WTPF_OFFLINEOKNBU_COM | WTPF_OFFLINE
                 | WTPF_OFFLINEOK_COM | WTPF_OFFLINEOK_IND)
 CERT_CERT_PROP_ID = 32
 
-ROOT_STORE = r'HKEY_LOCAL_MACHINE\Software\Microsoft\SystemCertificates\Root\Certificates'
+ROOT_STORE = r'HKEY_CURRENT_USER\Software\Microsoft\SystemCertificates\Root\Certificates'
 SOFTWARE_PUBLISHING = (r'HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Wintrust\Trust Providers'
                        r'\Software Publishing')
 
@@ -87,7 +92,7 @@ def certificate_blob(der: bytes) -> bytes:
 
 
 def trust_root(reg: RegFile, der: bytes) -> str:
-    """Add a root certificate to the machine's Root store; returns its key name (uppercase SHA-1)."""
+    """Add a root certificate to the user's Root store; returns its key name (uppercase SHA-1)."""
     thumbprint = hashlib.sha1(der).hexdigest().upper()
     reg.binary(f'{ROOT_STORE}\\{thumbprint}', 'Blob', certificate_blob(der))
     return thumbprint

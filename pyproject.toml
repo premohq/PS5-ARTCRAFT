@@ -25,4 +25,4 @@ select = ["E", "F", "W", "I", "B", "UP"]
 ignore = ["E731"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["artcraft_ps5", "conftest"]
+known-first-party = ["artcraft_ps5", "tests"]

@@ -6,3 +6,4 @@ __pycache__/
 /session/artcraft-session.exe
 .env
 /out/
+/_site/
