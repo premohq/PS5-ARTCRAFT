@@ -8,7 +8,11 @@
       Theme/      the wallpaper
   <out>/data/ps5proton/games/<profile>/game.json          the library entry that starts the ArtCraft desktop
   <out>/data/homebrew/<title>/edition.json                 tells the (patched) title to start that entry itself
-  <out>/manifest.json                                      every file: its console path, size and sha256
+  <out>/manifest.json                                      every file: its console path, size and sha256, and
+                                                           seed: true for the launcher's and the apps' files
+
+The seed is what ArtCraft Launcher manages once it runs (it updates itself and the apps in place, as on a PC), so
+artcraft_ps5/deploy.py sends it to a console once; the rest is the edition's and stays as staged.
 
 Nothing is written under drive_c/windows: wineboot makes that folder, and one made before it breaks a new prefix
 (Mihawk src/pw_wine_launch.h). drive_c/ArtCraft beside it is safe: the title makes the prefix folder, drive_c and
@@ -213,10 +217,13 @@ def stage(edition: Edition, downloads: Path, out: Path, session_exe: Path, wallp
     windows_dir = prefix_dir / 'drive_c' / 'windows'
     if windows_dir.exists():
         raise EditionError(f'{windows_dir} must not be staged: wineboot makes it')
+    seed = (host(edition.launcher_dir), host(edition.apps_dir))
     entries = []
     for file in sorted(p for p in out.rglob('*') if p.is_file()):
-        entries.append({'path': '/' + file.relative_to(out).as_posix(), 'size': file.stat().st_size,
-                        'sha256': _sha256(file)})
+        entry = {'path': '/' + file.relative_to(out).as_posix(), 'size': file.stat().st_size, 'sha256': _sha256(file)}
+        if any(file.is_relative_to(folder) for folder in seed):
+            entry['seed'] = True
+        entries.append(entry)
     manifest = {'edition': edition.version, 'prefix': str(paths['prefix']), 'apps': [a.id for a in apps],
                 'files': entries}
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=1) + '\n')

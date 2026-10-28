@@ -6,7 +6,8 @@
   stage [--apps ID ...]            lay out everything for the console (dist/artcraft): needs fetch, and
         [--with-cli]               session/artcraft-session.exe (make -C session); draws the wallpaper if missing
   deploy [--dry-run] [--force]     send dist/artcraft to the console over FTP (PS5_HOST and FTP_PORT from the
-                                   environment, ../PS5_Vulkan/.env or --host/--port); close the title first
+                                   environment, ../PS5_Vulkan/.env or --host/--port); close the title first.
+                                   The launcher and the apps go once: ArtCraft Launcher updates them from then on
   mihawk prepare [--dir DIR]       clone the Mihawk OS fork at its pin into DIR (../PS5_MihawkOS) and apply
                                    mihawk/patches with git am on a branch named artcraft
   mihawk rebrand|mark [--dir DIR]  regenerate patch 0005 or 0006's changes in DIR (after a rebase; mihawk/README.md)
@@ -142,7 +143,8 @@ def main(argv: list[str] | None = None) -> int:
     deploy.add_argument('--port', type=int)
     deploy.add_argument('--env-file', default=str(ROOT.parent / 'PS5_Vulkan' / '.env'))
     deploy.add_argument('--dry-run', action='store_true', help='list what would be sent; connect to nothing')
-    deploy.add_argument('--force', action='store_true', help='send every file, whatever the console has')
+    deploy.add_argument('--force', action='store_true',
+                        help='send every file, the launcher and the apps too, over whatever the console has (a repair)')
     deploy.set_defaults(run=command_deploy)
     mihawk = commands.add_parser('mihawk', help='the Mihawk OS fork: prepare it, or regenerate patches 0005/0006')
     mihawk.add_argument('action', choices=('prepare', 'rebrand', 'mark'))

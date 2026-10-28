@@ -18,7 +18,13 @@ from pyftpdlib.servers import FTPServer  # noqa: E402
 PREFIX = '/data/ps5proton/prefixes/artcraft'
 
 
-def write_staged(folder: Path, files: dict[str, bytes]) -> Path:
+SEED = (f'{PREFIX}/drive_c/ArtCraft/Launcher/', f'{PREFIX}/drive_c/ArtCraft/Apps/')
+LAUNCHER = f'{PREFIX}/drive_c/ArtCraft/Launcher/artcraft-launcher.exe'
+INSTALLED = f'{PREFIX}/drive_c/ArtCraft/Launcher/ArtCraftLauncherData/data/installed.json'
+SESSION = f'{PREFIX}/drive_c/ArtCraft/System/artcraft-session.exe'
+
+
+def write_staged(folder: Path, files: dict[str, bytes], apps: tuple[str, ...] = ()) -> Path:
     import hashlib
     entries = []
     for path, data in files.items():
@@ -26,8 +32,15 @@ def write_staged(folder: Path, files: dict[str, bytes]) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
         entries.append({'path': path, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
-    (folder / 'manifest.json').write_text(json.dumps({'edition': '0.1.0', 'prefix': PREFIX, 'apps': [], 'files': entries}))
+        if path.startswith(SEED):
+            entries[-1]['seed'] = True
+    manifest = {'edition': '0.1.0', 'prefix': PREFIX, 'apps': list(apps), 'files': entries}
+    (folder / 'manifest.json').write_text(json.dumps(manifest))
     return folder
+
+
+def on_console(root: Path, path: str) -> Path:
+    return root / path.lstrip('/')
 
 
 @pytest.fixture
@@ -89,3 +102,47 @@ def test_settings_come_from_the_env_file_and_the_address_is_masked(tmp_path):
     assert deploy.console_settings(env_file=env, environ={'PS5_HOST': '10.0.0.9'}).host == '10.0.0.9'
     with pytest.raises(EditionError, match='PS5_HOST'):
         deploy.console_settings(env_file=tmp_path / 'none', environ={})
+
+
+def test_the_launcher_owns_the_launcher_and_the_apps_once_they_are_on_the_console(tmp_path, console):
+    root, address = console
+    app = f'{PREFIX}/drive_c/ArtCraft/Apps/photocraft/photocraft.exe'
+    files = {LAUNCHER: b'launcher 0.8.1', INSTALLED: b'{"apps": 0.16}', app: b'photocraft 0.16', SESSION: b'session 1'}
+    staged = write_staged(tmp_path / 'dist', files, apps=('photocraft',))
+    assert len(deploy.deploy(staged, address, say=lambda *a: None)) == 4
+    assert json.loads(on_console(root, f'{PREFIX}/{deploy.REMOTE_MANIFEST}').read_text())['seeded'] is True
+    # On the console the launcher updates itself and PhotoCraft; on the PC the pins move and the helper changes.
+    on_console(root, LAUNCHER).write_bytes(b'launcher 0.9.0')
+    on_console(root, app).write_bytes(b'photocraft 0.17')
+    on_console(root, INSTALLED).write_bytes(b'{"apps": 0.17}')
+    files.update({LAUNCHER: b'launcher 0.8.2', INSTALLED: b'{"apps": 0.16, "at": 2}', app: b'photocraft 0.16.1',
+                  SESSION: b'session 2'})
+    staged = write_staged(tmp_path / 'dist2', files, apps=('photocraft',))
+    lines = []
+    assert [e['path'] for e in deploy.deploy(staged, address, say=lines.append)] == [SESSION]
+    assert on_console(root, LAUNCHER).read_bytes() == b'launcher 0.9.0'
+    assert on_console(root, app).read_bytes() == b'photocraft 0.17'
+    assert on_console(root, INSTALLED).read_bytes() == b'{"apps": 0.17}'
+    assert on_console(root, SESSION).read_bytes() == b'session 2'
+    assert any('3 launcher and app files left' in line for line in lines)
+    assert len(deploy.deploy(staged, address, force=True, say=lambda *a: None)) == 4
+    assert on_console(root, LAUNCHER).read_bytes() == b'launcher 0.8.2'
+
+
+def test_a_cut_seed_resumes_and_apps_staged_later_are_the_launchers_to_install(tmp_path, console):
+    root, address = console
+    app = f'{PREFIX}/drive_c/ArtCraft/Apps/soundcraft/soundcraft.exe'
+    files = {LAUNCHER: b'launcher', app: b'soundcraft', SESSION: b'session'}
+    staged = write_staged(tmp_path / 'dist', files, apps=('soundcraft',))
+    # A transfer cut after the launcher: the console's manifest holds it, not yet the seed.
+    remote = on_console(root, f'{PREFIX}/{deploy.REMOTE_MANIFEST}')
+    remote.parent.mkdir(parents=True)
+    digests = {e['path']: e['sha256'] for e in json.loads((staged / 'manifest.json').read_text())['files']}
+    remote.write_text(json.dumps({'edition': '0.1.0', 'seeded': False, 'files': {LAUNCHER: digests[LAUNCHER]}}))
+    assert sorted(e['path'] for e in deploy.deploy(staged, address, say=lambda *a: None)) == sorted([app, SESSION])
+    later = f'{PREFIX}/drive_c/ArtCraft/Apps/gridcraft/gridcraft.exe'
+    staged = write_staged(tmp_path / 'dist2', {**files, later: b'gridcraft'}, apps=('soundcraft', 'gridcraft'))
+    lines = []
+    assert deploy.deploy(staged, address, say=lines.append) == []
+    assert not on_console(root, later).exists()
+    assert any('seeded without them: gridcraft' in line for line in lines)

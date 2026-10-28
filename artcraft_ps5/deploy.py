@@ -9,6 +9,12 @@ What it does, as the fork's tools/deploy-folder.py does:
     half a program where the old one was;
   - keeps a manifest of what it sent (sha256 per file) in the prefix folder, and next time sends only what changed.
 
+The launcher and the apps (the manifest's seed files) go to a console once, like an installer's first run. After
+that ArtCraft Launcher owns them: it updates itself and the apps in place, so a later deploy leaves them as the
+launcher left them, even when the pins moved. That deploy still sends the edition's own files (the session helper, its
+settings, the wallpaper, the library entry). Add apps from the launcher; --force sends the seed again over whatever is
+there, a repair that can take the launcher and the apps back to the pinned versions.
+
 Close the ArtCraft title on the console first: a running desktop holds its programs open.
 """
 
@@ -63,15 +69,27 @@ def console_settings(host: str | None = None, port: int | None = None, env_file:
                    user=values.get('FTP_USER', 'anonymous'), password=values.get('FTP_PASSWORD', ''))
 
 
-def plan(staged: Path, remote: dict[str, str], force: bool = False) -> tuple[list[dict], list[dict]]:
-    """(files to send, files already current) from the staged manifest and the console's last one."""
+@dataclass
+class Plan:
+    send: list[dict]
+    current: list[dict]          # on the console as staged
+    launchers: list[dict]        # seed files the launcher has owned since the console was seeded
+
+
+def plan(staged: Path, remote: dict[str, str], *, seeded: bool = False, force: bool = False) -> Plan:
+    """What to send, from the staged manifest, the console's last one and whether that console holds the seed."""
     manifest = json.loads((staged / 'manifest.json').read_text())
-    send, keep = [], []
+    result = Plan([], [], [])
     for entry in manifest['files']:
         if '/drive_c/windows/' in entry['path'].lower():
             raise EditionError(f'{entry["path"]}: never written (wineboot makes C:\\windows)')
-        (keep if not force and remote.get(entry['path']) == entry['sha256'] else send).append(entry)
-    return send, keep
+        if force:
+            result.send.append(entry)
+        elif entry.get('seed') and seeded:
+            result.launchers.append(entry)
+        else:
+            (result.current if remote.get(entry['path']) == entry['sha256'] else result.send).append(entry)
+    return result
 
 
 class Uploader:
@@ -136,7 +154,7 @@ def deploy(staged: Path, console: Console | None, *, dry_run: bool = False, forc
     manifest = json.loads((staged / 'manifest.json').read_text())
     remote_manifest = posixpath.join(manifest['prefix'], REMOTE_MANIFEST)
     if dry_run:
-        send, _ = plan(staged, {}, force=True)
+        send = plan(staged, {}, force=True).send
         for entry in send:
             say(f'would send {entry["path"]} ({entry["size"]} bytes)')
         say(f'{len(send)} files, {sum(e["size"] for e in send) / 2**20:.1f} MiB (dry run: nothing sent)')
@@ -150,16 +168,27 @@ def deploy(staged: Path, console: Console | None, *, dry_run: bool = False, forc
     try:
         uploader = Uploader(ftp)
         uploader.self_off()
-        sent = uploader.read_json(remote_manifest).get('files', {})
-        send, keep = plan(staged, sent, force=force)
-        say(f'{len(send)} files to send, {len(keep)} already current')
+        remote = uploader.read_json(remote_manifest)
+        sent, seeded = remote.get('files', {}), bool(remote.get('seeded'))
+        todo = plan(staged, sent, seeded=seeded, force=force)
+        send = todo.send
+        say(f'{len(send)} files to send, {len(todo.current)} already current')
+        if todo.launchers:
+            say(f'{len(todo.launchers)} launcher and app files left as ArtCraft Launcher keeps them (--force sends them)')
+            missing = [app for app in manifest['apps'] if not any(f'/{app}/' in path for path in sent)]
+            if missing:
+                say(f'not on the console, as it was seeded without them: {", ".join(missing)}; install them from '
+                    'ArtCraft Launcher')
+
+        def record(seeded: bool) -> None:
+            uploader.write_json(remote_manifest, {'edition': manifest['edition'], 'seeded': seeded, 'files': sent})
         for number, entry in enumerate(send, 1):
             uploader.put(staged / entry['path'].lstrip('/'), entry['path'])
             sent[entry['path']] = entry['sha256']
             if number % 50 == 0 or number == len(send):
                 say(f'  {number}/{len(send)} {entry["path"]}')
-                uploader.write_json(remote_manifest, {'edition': manifest['edition'], 'files': sent})
-        uploader.write_json(remote_manifest, {'edition': manifest['edition'], 'files': sent})
+                record(seeded)       # a cut transfer resumes the seed next time
+        record(seeded or any(entry.get('seed') for entry in manifest['files']))
     finally:
         try:
             ftp.quit()

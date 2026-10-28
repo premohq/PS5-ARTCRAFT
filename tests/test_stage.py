@@ -107,6 +107,9 @@ def test_the_manifest_lists_every_file_with_its_digest(staged):
     assert len(manifest['files']) == result.files
     for entry in manifest['files']:
         assert hashlib.sha256((out / entry['path'].lstrip('/')).read_bytes()).hexdigest() == entry['sha256']
+        under = entry['path'].removeprefix('/data/ps5proton/prefixes/artcraft/drive_c/ArtCraft/')
+        assert entry.get('seed', False) == under.startswith(('Launcher/', 'Apps/')), entry['path']
+    assert any(e.get('seed') for e in manifest['files']) and not all(e.get('seed') for e in manifest['files'])
 
 
 def test_staging_refuses_a_used_folder_and_a_missing_helper(staged, tmp_path):
