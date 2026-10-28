@@ -94,6 +94,10 @@ On the console, test in the order of [docs/console-checklist.md](docs/console-ch
   packages them, which rebuilds Mihawk OS's pinned daemon byte for byte (`.github/workflows/daemon.yml`). The fork's
   Python tests (148) and host tests have the same outcome as before it. `deploy` refuses to write anything under
   Mihawk OS's title or data folder.
+- The PC build's container (`build/Dockerfile`, CI's Build environment workflow): it builds; the sources check out at
+  their pins with the eight patches; every pinned input of the fork's build answers at its URL (the one that no longer
+  did, the PS5 OpenGL SDK, is patch 0008's mirror); and it builds PS5_Vulkan's `libc.prx` (reproducibly, matching its
+  pin) and native tool, the first things the title's build needs. The hours-long Wine builds after that have not run.
 - The fork patches (CI applies them at the pin and runs the fork's host tests on every push): the title code
   compiles in the host-reference configuration, as PPSA99278; the shell changes compile with MinGW in a mock; the profile move
   passes the fork's own host test, extended for MihawkOS v3 prefixes, under ASan and UBSan, as root and as a user.
