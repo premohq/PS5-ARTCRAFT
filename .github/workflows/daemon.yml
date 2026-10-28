@@ -67,6 +67,24 @@ jobs:
           pinned=$(sed -n 's/^daemon_sha256=//p' pin/tools/build-production.sh)
           sha256sum "$daemon/lapy-root-daemon.elf"
           echo "$pinned  $daemon/lapy-root-daemon.elf" | sha256sum -c
+      - name: When it does not, how it differs from the daemon Mihawk OS released (v3.0.0-alpha-3)
+        if: failure()
+        run: |
+          curl -sSfLo release.zip \
+            https://github.com/mihawk-99/PS5_MihawkOS/releases/download/v3.0.0-alpha-3/PS5_MihawkOS-v3.0.0-alpha-3-PPSA99170.zip
+          echo "1dd6297c343908060cf56d61b162f6553c5dc6e5894f03ee23f7c547582b2a3d  release.zip" | sha256sum -c
+          unzip -q -o release.zip PPSA99170/lapy-root-daemon.elf -d release
+          echo "5651f2ade61731a302e2a630344e6bd893a33f6503c90237d0abed699364bd7f  release/PPSA99170/lapy-root-daemon.elf" | sha256sum -c
+          ours=pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/lapy-root-daemon.elf
+          bin=$("$LLVM_CONFIG" --bindir)
+          for f in "$ours" release/PPSA99170/lapy-root-daemon.elf; do
+            echo "== $f"; "$bin/llvm-readelf" -S -l -n "$f"; "$bin/llvm-readelf" -p .comment "$f" || true
+          done
+          "$bin/llvm-objdump" -d --no-show-raw-insn "$ours" | sed 1,3d > ours.s
+          "$bin/llvm-objdump" -d --no-show-raw-insn release/PPSA99170/lapy-root-daemon.elf | sed 1,3d > release.s
+          diff ours.s release.s | head -80 || true
+          cmp -l "$ours" release/PPSA99170/lapy-root-daemon.elf | wc -l
+          cat pin/.deps/lapy-validation/source/build/owned_root_daemon-service-verified-client/build.log
       - name: ArtCraft's daemon (PPSA99278) from the patched fork matches ArtCraft's pin
         run: |
           python fork/tools/build-lapy-validation.py --resident --sdk-zip "$PWD/sdk.zip"
