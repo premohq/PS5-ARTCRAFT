@@ -1,0 +1,222 @@
+From 1b4fba9ca61525e5f888aef98e2da7b5e394bd42 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 28 Oct 2026 03:47:16 +0000
+Subject: [PATCH 1/4] ps5: an edition's title opens its own desktop at a cold
+ start
+
+An edition of the title (PS5-ARTCRAFT's ArtCraft) is a library entry with a
+prefix of its own whose desktop the title should open by itself, the way a
+PC boots into its desktop. The title reads <title folder>/edition.json once
+(proton_edition): profile names that entry; hide_mihawk_desktop drops Mihawk
+OS's own desktop from the library once the edition's entry is installed;
+browser_shortcut is for the desktop shortcuts (next patch). Without the file
+nothing changes.
+
+A cold start (no launch request: proton_launch().requested is false) opens
+the profile at once. A start that returns from a session always carries
+cycle=, so a session that fails or is logged off shows the library and never
+restarts itself; nor does a test run, a self-test, or a start after a
+session that did not end normally (its note shows in the library). The
+guided setup's first session prepares the edition's desktop instead of
+Mihawk OS's.
+
+A library entry whose executable is the desktop session's entry
+(C:\windows\system32\mihawk.exe) is no longer refused as "the executable is
+not there": the title starts Explorer for it, no such file exists, and a new
+edition prefix has no files before its first session.
+
+Proven: proton_launch.cpp compiles in the host-reference configuration
+(g++ 13, -fsyntax-only); the ps5proton.cpp additions compile against the real
+proton_launch.h in a mock of the class (its UI headers come from a sibling
+repository not in this checkout). No console run: the gate battery has not
+seen this commit.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01ErqzkhbC5fRkeGcCmR5R95
+---
+ examples/ps5proton/ps5proton.cpp | 36 +++++++++++++++++++++-
+ ps5/src/proton_launch.cpp        | 52 +++++++++++++++++++++++++++++++-
+ ps5/src/proton_launch.h          | 20 ++++++++++++
+ 3 files changed, 106 insertions(+), 2 deletions(-)
+
+diff --git a/examples/ps5proton/ps5proton.cpp b/examples/ps5proton/ps5proton.cpp
+index a0cadab..fd280d7 100644
+--- a/examples/ps5proton/ps5proton.cpp
++++ b/examples/ps5proton/ps5proton.cpp
+@@ -570,6 +570,13 @@ public:
+ 			proton_say("launcher: library shows %zu of %zu (Mihawk OS and entries with a prefix of their own; %s/library-show-all "
+ 				"shows them all)", games.size(), installed, PROTON_DATA_ROOT);
+ 		}
++		// An edition (proton_edition) that has its own desktop installed lists that one instead of Mihawk OS's.
++		const ProtonEdition &edition = proton_edition();
++		const bool editionInstalled = std::any_of(games.begin(), games.end(), [&edition](const ProtonGame &game) {
++			return !edition.profile.empty() && game.id == edition.profile; });
++		if (edition.hide_mihawk_desktop && editionInstalled)
++			games.erase(std::remove_if(games.begin(), games.end(), [](const ProtonGame &game) {
++				return game.id == "mihawk-os"; }), games.end());
+ 		// Checked here, before LoadExec: a game that cannot start is shown why instead of being started.
+ 		const std::string blocked = dataAvailable ? proton_runtime_problem() : proton_data_problem();
+ 		for (auto &game : games)
+@@ -704,6 +711,28 @@ public:
+ 		proton_say("launcher UI: %zu themes, active=%s", themes.items().size(), theme().id);
+ 		if (setupStep != PW_SETUP_NONE) startSetup(setupStep);
+ 		prepared = true;
++		if (setupStep == PW_SETUP_NONE) openEdition();
++	}
++
++	/* An edition opens its own desktop at a cold start (proton_edition). Not when the start returns from a session
++	 * (a restart always carries cycle=, so a session that fails or is logged off never restarts itself), not in a
++	 * test run, and not when the last session did not end normally: the library shows why instead. */
++	void openEdition()
++	{
++		const ProtonEdition &edition = proton_edition();
++		if (edition.profile.empty() || ps5.frameBudget || proton_selftest_active() || proton_launch().requested ||
++			!sessionNote.empty())
++			return;
++		const auto chosen = std::find_if(games.begin(), games.end(), [&edition](const ProtonGame &game) {
++			return game.id == edition.profile; });
++		if (chosen == games.end() || !chosen->complaint.empty()) {
++			proton_say("edition: %s cannot open %s: %s", edition.name.c_str(), edition.profile.c_str(),
++				chosen == games.end() ? "no such library entry" : chosen->complaint.c_str());
++			return;
++		}
++		proton_say("edition: %s opens %s at a cold start", edition.name.c_str(), chosen->id.c_str());
++		proton_queue_restart(&*chosen, proton_launch().cycle, "edition");
++		quit = true;
+ 	}
+ 
+ 	void startSetup(PwSetupStep step)
+@@ -759,7 +788,12 @@ public:
+ 		submitFrame();
+ 		const auto outcome = tour->outcome;
+ 		if (outcome == SetupTour::Outcome::none) return;
+-		const auto mihawk = std::find_if(games.begin(), games.end(), [](const ProtonGame &game) { return game.id == "mihawk-os"; });
++		// The setup's first session prepares the desktop this title opens: an edition's own, else Mihawk OS.
++		const std::string &profile = proton_edition().profile;
++		auto mihawk = std::find_if(games.begin(), games.end(), [&profile](const ProtonGame &game) {
++			return !profile.empty() && game.id == profile; });
++		if (mihawk == games.end())
++			mihawk = std::find_if(games.begin(), games.end(), [](const ProtonGame &game) { return game.id == "mihawk-os"; });
+ 		if (outcome != SetupTour::Outcome::library && (!ps5.frameBudget || setupUnattended) && mihawk != games.end()) {
+ 			proton_queue_restart(&*mihawk, proton_launch().cycle, outcome == SetupTour::Outcome::prepare ? "setup-prepare" : "setup");
+ 			quit = true;
+diff --git a/ps5/src/proton_launch.cpp b/ps5/src/proton_launch.cpp
+index 9c647a3..e0ea233 100644
+--- a/ps5/src/proton_launch.cpp
++++ b/ps5/src/proton_launch.cpp
+@@ -33,6 +33,8 @@
+ #endif
+ #include "../../src/pw_pe_arch.h"
+ #include "../../src/pw_firmware.h"
++#include "../../src/pw_desktop_session.h"
++#include <strings.h>
+ extern "C" {
+ #include "../../src/pw_wine_launch.h"
+ }
+@@ -615,7 +617,11 @@ ProtonGame read_game(const std::string &id, const std::string &directory)
+ 					}
+ 				}
+ 				const std::string prefix = proton_game_prefix(game) + "/drive_c";
+-				const std::string host = drive == 'z' ? rest : drive == 'c' ? prefix + rest : std::string();
++				/* The desktop session's entry names no file (the title starts Explorer for it,
++				 * src/pw_desktop_session.h), and an edition's prefix has none before its first session. */
++				const bool session = !strcasecmp(game.executable.c_str(), PW_DESKTOP_SESSION_ENTRY);
++				const std::string host = session ? std::string() :
++					drive == 'z' ? rest : drive == 'c' ? prefix + rest : std::string();
+ 				struct stat status;
+ 				if (!host.empty() && stat(host.c_str(), &status) != 0) {
+ 					game.complaint = "the executable is not there: " + host;
+@@ -690,6 +696,8 @@ void proton_set_args(int argc, char **argv)
+ 		}
+ 		const std::string key = word.substr(0, equals);
+ 		const std::string value = trim(word.substr(equals + 1));
++		for (const char *request : { "profile", "path", "cycle", "env", "args", "ended" })
++			gLaunch.requested = gLaunch.requested || key == request;
+ 		if (key == "profile") {
+ 			gLaunch.profile = value;
+ 			gLaunch.game = !value.empty();
+@@ -717,6 +725,48 @@ const ProtonLaunch &proton_launch()
+ 	return gLaunch;
+ }
+ 
++const ProtonEdition &proton_edition()
++{
++	static const ProtonEdition edition = [] {
++		ProtonEdition read;
++		const std::string path = proton_title_path("/app0/edition.json");
++		FILE *file = fopen(path.c_str(), "rb");
++		if (!file) {
++			return read;
++		}
++		std::string text;
++		char buffer[4096];
++		size_t got = 0;
++		while ((got = fread(buffer, 1, sizeof(buffer), file)) > 0) {
++			text.append(buffer, got);
++		}
++		fclose(file);
++		try {
++			const nlohmann::json json = nlohmann::json::parse(text);
++			auto word = [&json](const char *key, std::string &into) {
++				auto found = json.find(key);
++				if (found != json.end() && found->is_string()) into = trim(found->get<std::string>());
++			};
++			auto flag = [&json](const char *key, bool &into) {
++				auto found = json.find(key);
++				if (found != json.end() && found->is_boolean()) into = found->get<bool>();
++			};
++			word("name", read.name);
++			word("profile", read.profile);
++			flag("hide_mihawk_desktop", read.hide_mihawk_desktop);
++			flag("browser_shortcut", read.browser_shortcut);
++		} catch (const std::exception &error) {
++			proton_say("edition: %s is not readable json (%s); none applies", path.c_str(), error.what());
++			return ProtonEdition();
++		}
++		proton_say("edition: %s, profile %s, Mihawk OS desktop %s, browser shortcut %s", read.name.c_str(),
++			read.profile.empty() ? "(none)" : read.profile.c_str(), read.hide_mihawk_desktop ? "hidden" : "listed",
++			read.browser_shortcut ? "kept" : "left out");
++		return read;
++	}();
++	return edition;
++}
++
+ std::string proton_game_prefix(const ProtonGame &game)
+ {
+ 	char id[65];
+diff --git a/ps5/src/proton_launch.h b/ps5/src/proton_launch.h
+index 19ee185..543e715 100644
+--- a/ps5/src/proton_launch.h
++++ b/ps5/src/proton_launch.h
+@@ -60,8 +60,28 @@ struct ProtonLaunch {
+ 	bool arguments_override{ false };
+ 	/* ended=<reason>: why the last session ended, when it failed (native/proton_wine.cpp fail), for the launcher. */
+ 	std::string ended;
++	/* The start carried a launch request (profile=, path=, cycle=, env=, args= or ended=; a restart always writes
++	 * cycle=). False: a cold start, from the home screen, or a title update's first start. */
++	bool requested{ false };
+ };
+ 
++/* An edition of this title: <title folder>/edition.json, read once (PS5-ARTCRAFT writes ArtCraft's).
++ *
++ *   {"name": "ArtCraft", "profile": "artcraft", "hide_mihawk_desktop": true, "browser_shortcut": false}
++ *
++ * profile: the library entry a cold start opens at once instead of showing the library, and the one the guided
++ * setup's first session prepares. A start that returns from a session (cycle=) shows the library as before, so a
++ * session that fails or is logged off never restarts itself. hide_mihawk_desktop: the library does not list Mihawk
++ * OS's own desktop. browser_shortcut: false keeps MihawkBrowser's shortcut off the desktops. Without the file, or
++ * with one that does not read, nothing changes. */
++struct ProtonEdition {
++	std::string name;
++	std::string profile;
++	bool hide_mihawk_desktop{ false };
++	bool browser_shortcut{ true };
++};
++const ProtonEdition &proton_edition();
++
+ /* Present while a session runs (native/proton_wine.cpp): written at its start, removed when it ends through the title.
+  * One the launcher finds is a session that crashed, froze or lost power. Holds the session's game name. */
+ #define PROTON_SESSION_MARKER "/app0/session-running"
+-- 
+2.43.0
+

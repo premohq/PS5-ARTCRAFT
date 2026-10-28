@@ -1,0 +1,7 @@
+{
+  "comment": "The Mihawk OS fork the ArtCraft edition builds on, and the commit mihawk/patches applies to with `git am`.",
+  "repo": "https://github.com/premohq/PS5_MihawkOS",
+  "upstream": "https://github.com/mihawk-99/PS5_MihawkOS",
+  "commit": "b91f6eeef116d824c4307129547dd35adbf42cbe",
+  "version": "3.0.0-alpha-3"
+}

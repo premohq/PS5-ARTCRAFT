@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "version": "0.1.0",
+  "comment": "The ArtCraft edition of Mihawk OS. docs/ARCHITECTURE.md says what each field drives and why.",
+  "title": {
+    "id": "PPSA99170",
+    "name": "ArtCraft",
+    "comment": "The fork's tools (console-setup.py, gate.py, pack-runtime.py, package-install.py) and ShadowMountPlus all name PPSA99170, so the edition takes that slot and replaces MihawkOS on the console. A tile of its own beside MihawkOS needs a new id here and those tools taught to read it (docs/ROADMAP.md)."
+  },
+  "profile": {
+    "id": "artcraft",
+    "name": "ArtCraft",
+    "detail": "The Craft App Suite on a desktop of its own",
+    "prefix": "artcraft"
+  },
+  "root": "C:\\ArtCraft",
+  "seed": {
+    "apps": "all",
+    "include_cli": false,
+    "arch": "x64"
+  },
+  "environment": [
+    "WGPU_BACKEND=vulkan"
+  ],
+  "launcher_settings": {
+    "auto_update": true,
+    "check_every": "Hour",
+    "notify": true,
+    "close_to_tray": false,
+    "preferred_kinds": ["PortableZip"]
+  },
+  "trust": {
+    "code_signing_roots": [
+      {
+        "subject": "Microsoft Identity Verification Root Certificate Authority 2020",
+        "sha1": "F40042E2E5F7E8EF8189FED15519AECE42C3BFA2",
+        "sha256": "5367F20C7ADE0E2BCA790915056D086B720C33C1FA2A2661ACF787E3292E1270",
+        "source": "embedded in the launcher's own Authenticode signature (Azure Trusted Signing chain)"
+      }
+    ],
+    "ignore_signature_expiry": true
+  },
+  "wallpaper": {
+    "theme": "dark",
+    "seed": 20261027
+  }
+}
