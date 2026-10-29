@@ -2,6 +2,7 @@ import contextlib
 import io
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -123,6 +124,37 @@ class Commands(unittest.TestCase):
         run('wallpaper', '--out', self.dir / 'b.bmp', '--width', 48, '--height', 27)
         self.assertEqual((self.dir / 'a.bmp').read_bytes(), (self.dir / 'b.bmp').read_bytes())
         self.assertEqual((self.dir / 'a.bmp').read_bytes()[:2], b'BM')
+
+
+class MihawkPrepare(unittest.TestCase):
+    """A fork with no origin: preparing it for real fails at the fetch, so leaving it alone is what succeeds."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.fork = Path(self.tmp.name) / 'PS5_MihawkOS'
+        git = lambda *words: subprocess.run(['git', *words], cwd=self.fork, check=True, capture_output=True)
+        self.fork.mkdir()
+        git('init', '-q', '-b', 'artcraft')
+        git('-c', 'user.name=t', '-c', 'user.email=t@example.invalid', 'commit', '-q', '--allow-empty', '-m', 'built')
+        self.head = git('rev-parse', 'HEAD').stdout.decode().strip()
+        lock = json.loads((cli.ROOT / 'mihawk/mihawk.lock.json').read_text())
+        self.stamp = cli.prepare_stamp(lock, sorted((cli.ROOT / 'mihawk/patches').glob('*.patch')))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_a_prepared_fork_is_left_as_it_is(self):
+        (self.fork / '.git/artcraft-prepared').write_text(f'{self.stamp} {self.head}\n')
+        code, out, err = run('mihawk', 'prepare', '--dir', self.fork)
+        self.assertEqual((code, err), (0, ''))
+        self.assertIn('already prepared', out)
+
+    def test_a_changed_patch_or_a_moved_branch_prepares_it_again(self):
+        for marker in (f'{"0" * 64} {self.head}', f'{self.stamp} {"0" * 40}'):
+            (self.fork / '.git/artcraft-prepared').write_text(marker)
+            code, out, _ = run('mihawk', 'prepare', '--dir', self.fork)
+            self.assertEqual(code, 1, marker)
+            self.assertNotIn('already prepared', out)
 
 
 if __name__ == '__main__':

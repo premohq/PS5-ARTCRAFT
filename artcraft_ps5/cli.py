@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import ftplib
+import hashlib
 import json
 import os
 import shutil
@@ -201,11 +202,31 @@ def _git(*words: str, cwd: Path | None = None) -> None:
     subprocess.run(['git', *words], cwd=cwd, check=True)
 
 
+def _head(fork: Path) -> str:
+    return subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=fork, check=True, capture_output=True,
+                          text=True).stdout.strip()
+
+
+def prepare_stamp(lock: dict, patches: list[Path]) -> str:
+    """What the artcraft branch is made from: the pin and every patch's bytes."""
+    digest = hashlib.sha256(lock['commit'].encode())
+    for patch in patches:
+        digest.update(hashlib.sha256(patch.read_bytes()).digest())
+    return digest.hexdigest()
+
+
 def cmd_mihawk(args) -> int:
     fork = args.dir.resolve()
     e = edition.load(args.edition)
     lock = json.loads((ROOT / 'mihawk' / 'mihawk.lock.json').read_text())
     if args.action == 'prepare':
+        patches = sorted((ROOT / 'mihawk' / 'patches').glob('*.patch'))
+        # A fork prepared from this pin and these patches, still at the commit that made, is left as it is: build/build.sh
+        # runs this each time, and a build resuming after a failure must find what it built from untouched.
+        marker = fork / '.git' / 'artcraft-prepared'
+        if marker.is_file() and marker.read_text().split() == [prepare_stamp(lock, patches), _head(fork)]:
+            print(f'{fork}: branch artcraft, {len(patches)} patches on {lock["commit"][:7]}, already prepared')
+            return 0
         if not fork.exists():
             _git('clone', lock['repo'], str(fork))
         status = subprocess.run(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=fork, check=True,
@@ -213,10 +234,10 @@ def cmd_mihawk(args) -> int:
         if status:
             raise edition.EditionError(f'{fork} has changes of its own; commit or stash them first:\n{status}')
         _git('fetch', 'origin', lock['commit'], cwd=fork)
-        # The branch is made again from the pin each time, so running this again picks up changed patches.
+        # The branch is made again from the pin whenever the pin or a patch changed.
         _git('checkout', '-B', 'artcraft', lock['commit'], cwd=fork)
-        patches = sorted(str(p) for p in (ROOT / 'mihawk' / 'patches').glob('*.patch'))
-        _git('am', *patches, cwd=fork)
+        _git('am', *map(str, patches), cwd=fork)
+        marker.write_text(f'{prepare_stamp(lock, patches)} {_head(fork)}\n')
         print(f'{fork}: branch artcraft, {len(patches)} patches applied on {lock["commit"][:7]}; build it with build/build.sh')
     elif args.action == 'rebrand':
         from . import rebrand

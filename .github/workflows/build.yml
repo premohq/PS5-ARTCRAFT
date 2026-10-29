@@ -46,9 +46,15 @@ jobs:
       - name: build/build.sh (the sources, the fork's own build, the ArtCraft desktop)
         timeout-minutes: 330
         shell: bash   # -o pipefail: the build's own exit status, not tee's
+        # build.sh resumes: each step skips what is already built. A download that drops mid-build (ffmpeg.org reset
+        # the connection in run 9, after an hour of building) costs a run of what is left, not of everything before it.
         run: |
-          docker run --rm -v "$PWD":/src -v /mnt/artcraft-work:/work artcraft-build bash /src/build/build.sh 2>&1 |
-            tee build.log
+          for attempt in 1 2 3; do
+            docker run --rm -v "$PWD":/src -v /mnt/artcraft-work:/work artcraft-build bash /src/build/build.sh 2>&1 |
+              tee -a build.log && exit 0
+            echo "::warning::build/build.sh stopped (attempt $attempt of 3); running it again resumes where it stopped"
+          done
+          exit 1
       - name: Where the time and the space went
         if: always()
         run: |
