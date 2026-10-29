@@ -38,14 +38,20 @@ step() { printf '\n==> [%s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 # the whole list, not hours in. Beyond the tools the fork's README names, three parts are compiled for this machine
 # against its own libraries, which the fork's owner's desktop happens to have: Proton Wine's amd_ags_x64 (libdrm),
 # win32u (EGL) and winebus (SDL2), and Mesa's mesa_clc for RADV (the SPIR-V LLVM translator of this LLVM's
-# major.minor, SPIRV-Tools, Clang's library). Every other part is built with a pinned cross toolchain.
+# major.minor, SPIRV-Tools, Clang's library). Every other part is built with a pinned cross toolchain. Two more tools
+# run on this machine during the build: FFmpeg with x264 and AAC (tools/make-mf-video-clip.py makes the media probe's
+# clip) and qrencode (ps5/tools/generate_assets.py draws the setup screen's QR code).
 llvm=$(llvm-config --version 2>/dev/null || echo none)
 [[ $llvm == 23.1.3 ]] || { echo "LLVM is $llvm; the pinned binaries need 23.1.3 (build/Dockerfile)" >&2; exit 2; }
 IFS=. read -r llvm_major llvm_minor _ <<< "$llvm"
 missing=()
 for tool in git curl wget clang ld.lld python3 x86_64-w64-mingw32-gcc magick meson ninja cmake pkg-config cc \
-    glslangValidator bison flex nasm m4 perl autoreconf patch rsync zip unzip sha256sum; do
+    glslangValidator bison flex nasm m4 perl autoreconf patch rsync zip unzip sha256sum ffmpeg ffprobe qrencode \
+    rsvg-convert; do
     command -v "$tool" > /dev/null || missing+=("$tool")
+done
+for encoder in libx264 aac; do
+    ffmpeg -hide_banner -encoders 2> /dev/null | grep -qw "$encoder" || missing+=("ffmpeg's $encoder encoder")
 done
 for module in libdrm libdrm_amdgpu sdl2 freetype2 gnutls zlib expat libudev 'SPIRV-Tools >= 2024.1'; do
     pkg-config --exists "$module" 2> /dev/null || missing+=("pkg-config: $module")
