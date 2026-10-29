@@ -75,7 +75,13 @@ cd "$work"
 
 # clone NAME URL: a plain clone of each default branch; the fork's build reads them at its own pins (git archive).
 clone() {
-    if [[ -d $1/.git ]]; then git -C "$1" fetch -q origin; else git clone -q "$2" "$1"; fi
+    local try
+    for try in 1 2 3 4 5; do   # a dropped connection is tried again; a half-made clone is cleared first
+        if [[ -d $1/.git ]]; then git -C "$1" fetch -q origin && return; else git clone -q "$2" "$1" && return; rm -rf "$1"; fi
+        (( try < 5 )) || return 1
+        echo "git: $1, try $try failed; again in $((try * 15)) s" >&2
+        sleep $((try * 15))
+    done
 }
 
 step "sources beside the fork, in $work (the fork's README, Set up the console, step 0)"
