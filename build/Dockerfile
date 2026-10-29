@@ -1,6 +1,8 @@
 # The ArtCraft build environment, at fixed versions: the host tools Mihawk OS's README lists, on Arch Linux as its owner
 # builds, with clang/LLD/LLVM 23.1.3 as Arch packages them (the build that reproduces the fork's pinned root-access
-# daemon byte for byte, .github/workflows/daemon.yml) and MinGW for ArtCraft's session helper.
+# daemon byte for byte, .github/workflows/daemon.yml) and MinGW for ArtCraft's session helper. libdrm, libglvnd (EGL),
+# SDL2 and the SPIR-V LLVM translator are for the parts built for this machine itself: Proton Wine's amd_ags_x64,
+# win32u and winebus, and Mesa's mesa_clc for RADV. build/build.sh checks all of it before it starts.
 #
 #   docker build -t artcraft-build build
 #   docker run --rm -it -v artcraft-work:/work -v "$PWD":/src artcraft-build
@@ -17,7 +19,7 @@ RUN echo "Server = https://archive.archlinux.org/repos/${ARCH_SNAPSHOT}/\$repo/o
  && pacman -S --noconfirm --needed \
       git curl wget unzip zip xz zstd patch make cmake ninja meson pkgconf autoconf automake libtool bison flex perl \
       gettext nasm glslang spirv-tools zlib freetype2 gnutls libunwind vulkan-headers libdrm libglvnd sdl2 \
-      libclc spirv-llvm-translator \
+      spirv-llvm-translator \
       python python-pillow python-pefile python-fonttools python-numpy python-mako python-markupsafe python-yaml \
       python-packaging python-cryptography python-pytest \
       imagemagick librsvg cairo pango fontconfig \

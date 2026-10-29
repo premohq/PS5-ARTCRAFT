@@ -34,10 +34,35 @@ while [ $# -gt 0 ]; do
     shift
 done
 step() { printf '\n==> [%s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
-need() { command -v "$1" >/dev/null || { echo "$1 is missing: run this in the build container (build/Dockerfile)" >&2; exit 2; }; }
-for tool in git curl clang ld.lld llvm-config python3 x86_64-w64-mingw32-gcc magick meson ninja cmake; do need "$tool"; done
-llvm=$(llvm-config --version)
+# Everything the build needs from this machine, checked before it starts, so a missing piece stops it in seconds with
+# the whole list, not hours in. Beyond the tools the fork's README names, three parts are compiled for this machine
+# against its own libraries, which the fork's owner's desktop happens to have: Proton Wine's amd_ags_x64 (libdrm),
+# win32u (EGL) and winebus (SDL2), and Mesa's mesa_clc for RADV (the SPIR-V LLVM translator of this LLVM's
+# major.minor, SPIRV-Tools, Clang's library). Every other part is built with a pinned cross toolchain.
+llvm=$(llvm-config --version 2>/dev/null || echo none)
 [[ $llvm == 23.1.3 ]] || { echo "LLVM is $llvm; the pinned binaries need 23.1.3 (build/Dockerfile)" >&2; exit 2; }
+IFS=. read -r llvm_major llvm_minor _ <<< "$llvm"
+missing=()
+for tool in git curl wget clang ld.lld python3 x86_64-w64-mingw32-gcc magick meson ninja cmake pkg-config cc \
+    glslangValidator bison flex nasm m4 perl autoreconf patch rsync zip unzip sha256sum; do
+    command -v "$tool" > /dev/null || missing+=("$tool")
+done
+for module in libdrm libdrm_amdgpu sdl2 freetype2 gnutls zlib expat libudev 'SPIRV-Tools >= 2024.1'; do
+    pkg-config --exists "$module" 2> /dev/null || missing+=("pkg-config: $module")
+done
+pkg-config --exists "LLVMSPIRVLib >= $llvm_major.$llvm_minor" "LLVMSPIRVLib < $llvm_major.$((llvm_minor + 1))" \
+    2> /dev/null || missing+=("pkg-config: LLVMSPIRVLib $llvm_major.$llvm_minor.x (the SPIR-V LLVM translator of this LLVM)")
+printf '#include <EGL/egl.h>\nint main(void) { return !eglGetProcAddress("eglInitialize"); }\n' |
+    cc -x c - -lEGL -o /dev/null 2> /dev/null || missing+=("EGL (EGL/egl.h, -lEGL)")
+[[ -e $(llvm-config --libdir)/libclang-cpp.so ]] || missing+=("libclang-cpp.so beside LLVM")
+for module in PIL numpy fontTools pefile mako markupsafe yaml packaging cryptography; do
+    python3 -c "import $module" 2> /dev/null || missing+=("python: $module")
+done
+if (( ${#missing[@]} )); then
+    printf 'missing: %s\n' "${missing[@]}" >&2
+    echo "run this in the build container (build/Dockerfile), or install the above" >&2
+    exit 2
+fi
 mkdir -p "$work"
 cd "$work"
 
