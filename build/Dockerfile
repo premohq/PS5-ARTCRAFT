@@ -16,7 +16,7 @@ RUN echo "Server = https://archive.archlinux.org/repos/${ARCH_SNAPSHOT}/\$repo/o
  && pacman -Syyuu --noconfirm \
  && pacman -S --noconfirm --needed \
       git curl wget unzip zip xz zstd patch make cmake ninja meson pkgconf autoconf automake libtool bison flex perl \
-      gettext nasm glslang spirv-tools zlib freetype2 gnutls libunwind vulkan-headers libdrm \
+      gettext nasm glslang spirv-tools zlib freetype2 gnutls libunwind vulkan-headers libdrm libglvnd \
       python python-pillow python-pefile python-fonttools python-numpy python-mako python-markupsafe python-yaml \
       python-packaging python-cryptography python-pytest \
       imagemagick librsvg cairo pango fontconfig \
