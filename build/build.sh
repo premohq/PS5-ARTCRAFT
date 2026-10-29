@@ -50,8 +50,9 @@ for tool in git curl wget clang ld.lld python3 x86_64-w64-mingw32-gcc magick mes
     rsvg-convert; do
     command -v "$tool" > /dev/null || missing+=("$tool")
 done
+encoders=$(ffmpeg -hide_banner -encoders 2> /dev/null || true)   # read whole: grep -q would close the pipe early
 for encoder in libx264 aac; do
-    ffmpeg -hide_banner -encoders 2> /dev/null | grep -qw "$encoder" || missing+=("ffmpeg's $encoder encoder")
+    grep -qw "$encoder" <<< "$encoders" || missing+=("ffmpeg's $encoder encoder")
 done
 for module in libdrm libdrm_amdgpu sdl2 freetype2 gnutls zlib expat libudev 'SPIRV-Tools >= 2024.1'; do
     pkg-config --exists "$module" 2> /dev/null || missing+=("pkg-config: $module")
